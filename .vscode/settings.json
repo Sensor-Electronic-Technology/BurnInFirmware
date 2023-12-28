@@ -1,0 +1,16 @@
+{
+    "files.associations": {
+        "vector": "cpp",
+        "associative_base": "cpp",
+        "bitset": "cpp",
+        "deque": "cpp",
+        "initializer_list": "cpp",
+        "list": "cpp",
+        "queue": "cpp",
+        "stack": "cpp",
+        "valarray": "cpp",
+        "functional": "cpp",
+        "typeinfo": "cpp",
+        "map": "cpp"
+    }
+}
