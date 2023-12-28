@@ -1,4 +1,4 @@
-#include "controller.hpp"
+#include "Controller.hpp"
 
 // void controller::handle_serial(){
 //     byte inByte1 = 0;

@@ -17,19 +17,19 @@ enum ControllerState{
     TEST_RUNNING
 };
 
-typedef struct system_state{
+typedef struct SystemStatus{
     bool running=false;
     bool pasued=false;
 	unsigned long elapsed=0;
-}system_state;
+}SystemStatus;
 
-typedef struct system_configuration{
+typedef struct SystemConfiguration{
     bool currentSwEnabled=false;
     int temperatureSp=TEMP_DEFAULT;
     CurrentValue setCurrent=CURRENT_DEFAULT;
-}system_configuration;
+}SystemConfiguration;
 
-typedef struct state{
+typedef struct State{
 	bool latched=false;
 	bool continue_task=false;
 	ControllerState controlState=IDLE;
@@ -38,19 +38,19 @@ typedef struct state{
         this->continue_task=0;
 		this->controlState=IDLE;
 	}
-	bool operator==(const state &rhs)const{
+	bool operator==(const State &rhs)const{
 		return this->controlState==rhs.controlState;
 	}
-	bool operator!=(const state &rhs)const{
+	bool operator!=(const State &rhs)const{
 		return this->controlState!=rhs.controlState;
 	}
-	state& operator=(const state &rhs){
+	State& operator=(const State &rhs){
 		this->latched=rhs.latched;
 		this->controlState=rhs.controlState;
         this->continue_task=rhs.continue_task;
 		return *this;
 	}
-}state;
+}State;
 
 
 

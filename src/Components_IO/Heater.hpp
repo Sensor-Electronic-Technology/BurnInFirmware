@@ -1,8 +1,8 @@
 #pragma once
 #include <ArduinoComponents.h>
-#include "util.hpp"
-#include "ntc.hpp"
-#include "PID_AutoTune_v0.h"
+#include "../util.hpp"
+#include "../Components_IO/TemperatureSensor.hpp"
+#include "../ExternalLibraries/PID_AutoTune_v0.h"
 #include <PID_v1.h>
 
 using namespace components;
@@ -288,7 +288,7 @@ public:
 	}
 
 private:
-	ntc 			ntc;
+	TemperatureSensor 			ntc;
 	DigitalOutput 	output;
 	Timer 			dutyTimer;	
 	Timer 			runTimer;

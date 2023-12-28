@@ -17,6 +17,7 @@
 #define NTC3_C  8.503e-7f
 #define Rref	1000
 
+
 /*template <class T> int EEPROM_write(int addr, const T& value) {
     const byte* p = (const byte*)(const void*)&value;
     int newAddr;

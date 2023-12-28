@@ -1,23 +1,23 @@
 #pragma once
 #include <ArduinoComponents.h>
 #include <ArduinoSTL.h>
-#include "burn_timer.hpp"
+#include "BurnInTimer.hpp"
 #include "util.hpp"
-#include "state.hpp"
+#include "State.hpp"
 
 using namespace components;
 using namespace std;
 
-class controller:public Component{
+class Controller:public Component{
 public:
-    void handle_serial();
-    void start(); 
-    void stop();
-    void pause();
-    void probe_test();
-    void toggle_heaters();
-    void change_current(CurrentValue current);
-    void send_coms();
+    void HandlerSerial();
+    void Start(); 
+    void Stop();
+    void Pause();
+    void RunProbeTest();
+    void ToggleHeaters();
+    void ChangeCurrent(CurrentValue current);
+    void SendComs();
 
     void invoke_action(ControllerAction action);
     // void transition_state(Task task);
@@ -25,8 +25,8 @@ public:
     
 
 private:
-    vector<burn_timer*> burnInTimers;
+    vector<BurnInTimer*> burnInTimers;
 
-    typedef void(controller::*StateHandlers)(void);
+    typedef void(Controller::*StateHandlers)(void);
     StateHandlers state_handler[6];
 };

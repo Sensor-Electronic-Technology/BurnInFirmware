@@ -4,21 +4,20 @@
 
 using namespace components;
 
-typedef struct timer_data{
+typedef struct TimerData{
     bool            running,paused=false;
     unsigned long   elapsed_secs=0;
     unsigned long   lastCheck=0;
     unsigned long   duration_secs=0;
-}timer_data;
+}TimerData;
 
 
 
-class burn_timer{
+class BurnInTimer{
 private:  
-    timer_data td;
-
+    TimerData td;
 public:
-    void start(unsigned long dur){
+    void Start(unsigned long dur){
         if(!this->td.running && !this->td.paused){
             this->td.duration_secs=dur;
             this->td.elapsed_secs=0;
@@ -27,7 +26,7 @@ public:
         }
     }
    
-    void start_from(unsigned long dur,unsigned long elap){
+    void StartFrom(unsigned long dur,unsigned long elap){
         if(!this->td.running && !this->td.paused){
             this->td.duration_secs=dur;
             this->td.elapsed_secs=elap;
@@ -36,7 +35,7 @@ public:
         }
     }
    
-    void stop(){
+    void Stop(){
         this->td.running=false;
         this->td.paused=false;
         this->td.lastCheck=0; 
@@ -44,27 +43,27 @@ public:
         this->td.lastCheck=millisTime();
     }
 
-    void pause(){
+    void Pause(){
         if(this->td.running && !this->td.paused){
             this->td.paused=true;
         }
     }
 
-    void cont(){
+    void Continue(){
         if(this->td.running && this->td.paused){
             this->td.paused=false;
         }
     }
 
-    bool is_done(){
+    bool IsDone(){
         return !this->td.running;
     }
     
-    unsigned long get_elapsed(){
+    unsigned long GetElapsed(){
         return this->td.elapsed_secs;
     }
     
-    void increment_timer(){
+    void Increment(){
         if(this->td.running && !this->td.paused){
             auto millis=millisTime();
             if(millisTime()-this->td.lastCheck>=(TPeriod*TFactor)){
@@ -74,5 +73,10 @@ public:
                 this->td.running=!done;
             }
         }
+    }
+
+    BurnInTimer operator++(){
+        this->Increment();
+        return *this;
     }
 };

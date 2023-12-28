@@ -13,9 +13,9 @@ enum class CurrentMode{
     HalfMode
 };
 
-class current_switch:public Component{
+class CurrentSwitch:public Component{
 public:
-    current_switch(bool switchingEnabled,CurrentMode cmode,int lPin,int fPin)
+    CurrentSwitch(bool switchingEnabled,CurrentMode cmode,int lPin,int fPin)
         :Component(),
         currentOutput(lPin),fullCurrentOutput(fPin),mode(cmode){  
     }

@@ -1,12 +1,12 @@
 #pragma once
 #include <ArduinoComponents.h>
-#include "util.hpp"
+#include "../util.hpp"
 
 using namespace components;
 
-class ntc:public Component{
+class TemperatureSensor:public Component{
 public:
-	ntc(PinNumber pin,float a,float b,float c) :Component(),input(pin),
+	TemperatureSensor(PinNumber pin,float a,float b,float c) :Component(),input(pin),
 		temperature(0),aValue(a),bValue(b),cValue(c) {    }
 
 	float Read(){

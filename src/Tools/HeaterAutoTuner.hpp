@@ -1,9 +1,9 @@
 #pragma once
 #include <ArduinoComponents.h>
-#include "util.hpp"
-#include "ntc.hpp"
-#include "PID_AutoTune_v0.h"
-#include "heater.hpp"
+#include "../util.hpp"
+#include "../Components_IO/TemperatureSensor.hpp"
+#include "../ExternalLibraries/PID_AutoTune_v0.h"
+#include "../Components_IO/Heater.hpp"
 #include <PID_v1.h>
 
 using namespace components;
@@ -13,11 +13,11 @@ using namespace components;
 #define KD_DEFAULT		1
 #define Window_Default	500
 
-class heater_pid_tune{
+class HeaterAutoTuner{
 
 public:
 
-    heater_pid_tune(Heater* heater){
+    HeaterAutoTuner(Heater* heater){
         this->heater=heater;
         this->pid=this->heater->GetPid();
     }

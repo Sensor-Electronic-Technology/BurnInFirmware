@@ -1,6 +1,6 @@
 #pragma once
-#include "state.hpp"
-#include "burn_timer.hpp"
+#include "../State.hpp"
+#include "../BurnInTimer.hpp"
 #include <ArduinoSTL.h>
 #include <ArduinoComponents.h>
 #include <ArduinoJson.h>
@@ -13,13 +13,13 @@ using namespace components;
 #define TimerFile      "timers.txt"
 
 
-class logger{
+class Logger{
 private:
     vector<timer_data> timer_states;
     system_state* sysState;
     
 public:
-    void read_state(){
+    void LoadState(){
         File file = SD.open(StateFile);
         StaticJsonDocument<128> doc;
 
