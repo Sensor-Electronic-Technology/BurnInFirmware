@@ -4,24 +4,28 @@
 #include "src/util.hpp"
 #include "src/Controller.hpp"
 #include "src/BurnInTimer.hpp"
-#include "src/Components_IO/TemperatureSensor.hpp"
-#include "src/Components_IO/CurrentSelector.hpp"
-#include "src/Components_IO/CurrentSensor.hpp"
-#include "src/Components_IO/CurrentSwitch.hpp"
-#include "src/Components_IO/Heater.hpp"
-#include "src/Components_IO/Probe.hpp"
-#include "src/Components_IO/TemperatureSensor.hpp"
+#include "src/Components_IO/includes_io.hpp"
 #include "src/SerialData.hpp"
 #include "src/Tests/SerialOutputTests.hpp"
+#include "src/Tests/SerialInputTests.hpp"
+#include <Array.h>
 
-SerialOutputTests outputTests;
+//SerialOutputTests outputTests;
+SerialInputTests inputTests;
 
 void setup(){
-    outputTests.setup();
+    //outputTests.setup();
+    inputTests.setup();
+    
 }
 
 void loop(){
-    outputTests.loop();
+    //outputTests.loop();
+    inputTests.loop();
+}
+
+void serialEvent(){
+    inputTests.HandleSerial();
 }
 
 

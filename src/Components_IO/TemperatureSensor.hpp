@@ -1,20 +1,31 @@
 #pragma once
 #include <ArduinoComponents.h>
-#include "../util.hpp"
+#include "../Configuration/Configuration.hpp"
+#include "../constants.h"
 
 using namespace components;
 
 class TemperatureSensor:public Component{
 public:
-	TemperatureSensor(PinNumber pin,float a,float b,float c) :Component(),input(pin),
-		temperature(0),aValue(a),bValue(b),cValue(c) {    }
+	TemperatureSensor(PinNumber pin,float a,float b,float c) 
+		:Component(),input(pin),temperature(0),
+		aValue(a),bValue(b),cValue(c),fWeight(DEFAULT_FWEIGHT) {   }
+
+	TemperatureSensor(const NtcConfig& config)
+		:Component(),
+		input(config.Pin),
+		configuration(config),
+		aValue(config.aCoeff),
+		bValue(config.bCoeff),
+		cValue(config.cCoeff),
+		fWeight(config.fWeight){ /***/ }
 
 	float Read(){
 		double aValue = this->input.read();
-		double ntc_res=Rref/(MaxADC/aValue-1);
+		double ntc_res=R_REF/(ADC_MAX/aValue-1);
 		//Steinhart and Hart Equation 1/A+Bln(R)+C[ln(R)]^3  
-		double temp=(1/(this->aValue+(this->bValue*log(ntc_res))+(this->cValue*pow(log(ntc_res),3))))-273.15;
-		this->temperature+=(temp-this->temperature)*tempfilter;
+		double temp=(1/(this->aValue+(this->bValue*log(ntc_res))+(this->cValue*pow(log(ntc_res),3))))-KELVIN_RT;
+		this->temperature+=(temp-this->temperature)*fWeight;
 		return this->temperature;
 	}
 
@@ -22,16 +33,26 @@ public:
 		return this->temperature;
 	}
 
+	void UpdateConfig(const NtcConfig& config){
+		//if pin is changed the controller will need to be reset
+		this->configuration=config;
+		this->aValue=config.aCoeff;
+		this->bValue=config.bCoeff;
+		this->cValue=config.cCoeff;
+		this->fWeight=config.fWeight;
+	}
+
 private:
 	AnalogInput input;
+	NtcConfig	configuration;
 	Timer       readTimer;
-	float       temperature=0;
-	float       aValue;
-	float       bValue;
-	float       cValue;
-
-
+	double		fWeight;		
+	double      temperature;
+	double      aValue;
+	double      bValue;
+	double      cValue;
+	
 	void privateLoop() {
-		this->Read();
+		//this->Read();
 	}
 };

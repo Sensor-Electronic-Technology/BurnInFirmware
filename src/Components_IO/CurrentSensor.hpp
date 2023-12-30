@@ -1,35 +1,42 @@
 #pragma once
 #include <ArduinoComponents.h>
-#include "../util.hpp"
+#include "../Configuration/Configuration.hpp"
+#include "../constants.h"
 
 using namespace components;
-
-#define CurrentFilter   0.02f
 
 class CurrentSensor:public Component{
 public:
 
-	CurrentSensor(PinNumber pin):Component(),currentIn(pin){
+	CurrentSensor(PinNumber pin)
+			:Component(),
+			currentIn(pin),
+			fWeight(DEFAULT_FWEIGHT){
 		this->current=0;
 	}
 
-	void ReadCurrent() {
-		int value=this->currentIn.read();
-		value=map(value,MinADC,MaxADC,MinCurrent,MaxCurrent);
-		this->current+=(((float)value)-this->current)*CurrentFilter;
+	CurrentSensor(const CurrentSensorConfig& config)
+			:Component(),currentIn(config.Pin),
+			fWeight(config.fWeight){
 	}
 
-	float GetCurrent() {
+	double ReadCurrent() {
+		int value=this->currentIn.read();
+		value=map(value,ADC_MIN,ADC_MAX,CURRENT_MIN,CURRENT_MAX);
+		this->current+=(((float)value)-this->current)*this->fWeight;
+		return this->current;
+	}
+
+	float GetCurrent(){
 		return this->current;
 	}
 
 private:
 	AnalogInput currentIn;
-
-	Timer readTimer;
-	float current=0;
+	double current=0;
+	double fWeight=1;
 
 	void privateLoop() {
-		this->ReadCurrent();
+		//this->ReadCurrent();
 	}
 };

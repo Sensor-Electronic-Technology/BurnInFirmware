@@ -12,6 +12,26 @@ typedef struct SerialDataOutput{
      double temperatureSP=85;
      long runTimeSecs=54234;
      long elapsedSecs=12345;
+     void DeSerialize(StaticJsonDocument<512>* doc){
+        for(int i=0;i<6;i++){
+            this->voltages[i]=(*doc)["Voltages"][i];
+            this->currents[i]=(*doc)["Currents"][i];
+            this->probeRuntimes[i]=(*doc)["ProbeRuntimes"][i];
+        }
+        for(int i=0;i<3;i++){
+            this->temperatures[i]=(*doc)["Temperatures"][i];
+        }
+        this->heater1=(*doc)["Heater1State"];
+        this->heater2=(*doc)["Heater2State"];
+        this->heater3=(*doc)["Heater3State"];
+        this->currentSP=(*doc)["CurrentSetPoint"];
+        this->temperatureSP=(*doc)["TemperatureSetPoint"];
+        this->runTimeSecs=(*doc)["RuntimeSeconds"];
+        this->elapsedSecs=(*doc)["ElapsedSeconds"];
+        this->running=(*doc)["Running"];
+        this->paused=(*doc)["Paused"];
+     }
+
      void Serialize(StaticJsonDocument<384>* doc,bool initialize){
         if(initialize){
             JsonArray v_array = doc->createNestedArray("Voltages");

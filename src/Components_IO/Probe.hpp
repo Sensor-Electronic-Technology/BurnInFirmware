@@ -1,36 +1,47 @@
 #pragma once
 #include <ArduinoComponents.h>
+#include "CurrentSensor.hpp"
+#include "VoltageSensor.hpp"
+#include "../Configuration/Configuration.hpp"
 #include "../util.hpp"
 
 using namespace components;
 
+typedef struct ProbeResult{
+	double voltage;
+	double current;
+}ProbeResult;
+
 class Probe:public Component{
 public:
+	Probe(const ProbeConfig& config)
+		:Component(),voltSensor(config.voltageConfig),
+		currentSensor(config.currentConfig),
+		readInterval(config.readInterval){
 
-	Probe(PinNumber voltagePin):Component(),voltageIn(voltagePin) {
- 	  RegisterChild(this->readTimer);
-		this->voltage=0.0;
-		this->current=0.0;
-	} 
-
-	void ReadVoltage() {
-		int value=this->voltageIn.read();
-		value=map(value,MinADC,MaxADC,MinVoltage,MaxVoltage);
-		this->voltage += (((float)value) - this->voltage) * fWeight;
+		readTimer.onInterval([&](){
+			this->Read();
+		},this->readInterval);
+		RegisterChild(this->readTimer);
 	}
 
-	float GetVoltage() {
-		return this->voltage;
+	ProbeResult Read(){
+		this->probeResult.voltage=this->voltSensor.ReadVoltage();
+		this->probeResult.current=this->currentSensor.ReadCurrent();
+	}
+
+	ProbeResult GetProbeReading(){
+		return this->probeResult;
 	}
 
 private:
-	AnalogInput voltageIn;
-
 	Timer readTimer;
-	float voltage;
-	float current;
-
+	ProbeResult		probeResult;
+	unsigned long readInterval;
+	ProbeConfig configuration;
+	VoltageSensor voltSensor;
+	CurrentSensor currentSensor;
 	void privateLoop() {
-		this->ReadVoltage();
+		//this->ReadVoltage();
 	}
 };

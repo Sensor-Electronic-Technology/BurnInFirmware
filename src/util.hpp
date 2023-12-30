@@ -36,11 +36,7 @@ template <class T> int EEPROM_read(int addr, T& value) {
 }//End read any value/type
 */
 
-enum CurrentValue:int{
-    c150=150,
-    c120=120,
-    c060=60
-};
+
 
 #define TEMP_DEFAULT            85
 #define CURRENT_DEFAULT         CurrentValue::c150
@@ -130,7 +126,7 @@ enum CurrentValue:int{
 //Probe Constants
 #define MaxVoltage              108
 #define MinVoltage              0
-#define fWeight				    .1
+//#define fWeight				    .1
 #define MaxCurrent              250
 #define MinCurrent              0
 #define CurrentTol              6             
