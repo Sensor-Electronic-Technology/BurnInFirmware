@@ -2,7 +2,7 @@
 #include <ArduinoComponents.h>
 #include <Array.h>
 #include "Probe.hpp"
-#include "../Configuration/Configuration.hpp"
+#include "../Configuration/ProbeConfiguration.hpp"
 #include "../constants.h"
 
 using namespace std;
@@ -15,7 +15,14 @@ public:
     ProbeController(const ProbeControllerConfig& config):Component(){
         for(int i=0;i<PROBE_COUNT;i++){
             probes.push_back(new Probe(config.probeConfigs[i]));
+            ProbeResult result; 
+            results.push_back(result);
         }
+        
+        this->readTimer.onInterval([&]{
+            this->Read();
+        },config.readInterval);
+        RegisterChild(this->readTimer);
     }
 
     void Initialize(){
@@ -24,10 +31,14 @@ public:
         }
     }
 
-     Read(){
+    void Read(){
         for(int i=0;i<PROBE_COUNT;i++){
             results[i]=probes[i]->Read();
         }
+    }
+
+    Array<ProbeResult,PROBE_COUNT> GetProbeResults(){
+        return this->results;
     }
 
 private:

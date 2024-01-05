@@ -1,6 +1,6 @@
 #pragma once
 #include <ArduinoComponents.h>
-#include "util.hpp"
+#include "constants.h"
 
 using namespace components;
 
@@ -66,10 +66,10 @@ public:
     void Increment(){
         if(this->td.running && !this->td.paused){
             auto millis=millisTime();
-            if(millisTime()-this->td.lastCheck>=(TPeriod*TFactor)){
+            if(millisTime()-this->td.lastCheck>=(TIMER_PERIOD*TIMER_FACTOR)){
                 this->td.lastCheck=millis;
                 this->td.elapsed_secs++;
-                bool done=(this->td.elapsed_secs*TPeriod)>=this->td.duration_secs;
+                bool done=(this->td.elapsed_secs*TIMER_PERIOD)>=this->td.duration_secs;
                 this->td.running=!done;
             }
         }

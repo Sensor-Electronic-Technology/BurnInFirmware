@@ -1,4 +1,4 @@
-#pragma once
+/*#pragma once
 #include "../State.hpp"
 #include "../BurnInTimer.hpp"
 #include <ArduinoSTL.h>
@@ -43,4 +43,4 @@ public:
         int CurrentSetPoint = doc["CurrentSetPoint"]; // 150
     }
 
-};
+};*/

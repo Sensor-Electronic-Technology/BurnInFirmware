@@ -1,5 +1,5 @@
 #pragma once
-#include "util.hpp"
+#include "constants.h"
 
 enum ControllerAction{
     START,
@@ -25,8 +25,7 @@ typedef struct SystemStatus{
 
 typedef struct SystemConfiguration{
     bool currentSwEnabled=false;
-    int temperatureSp=TEMP_DEFAULT;
-    CurrentValue setCurrent=CURRENT_DEFAULT;
+
 }SystemConfiguration;
 
 typedef struct State{

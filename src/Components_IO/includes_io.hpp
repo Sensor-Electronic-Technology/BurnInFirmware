@@ -6,4 +6,5 @@
 #include "Probe.hpp"
 #include "TemperatureSensor.hpp"
 #include "ProbeController.hpp"
+#include "HeaterController.hpp"
 

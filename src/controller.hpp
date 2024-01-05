@@ -2,7 +2,7 @@
 #include <ArduinoComponents.h>
 #include <ArduinoSTL.h>
 #include "BurnInTimer.hpp"
-#include "util.hpp"
+#include "constants.h"
 #include "State.hpp"
 
 using namespace components;

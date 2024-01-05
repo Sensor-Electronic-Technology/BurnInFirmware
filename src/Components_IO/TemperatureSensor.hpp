@@ -1,6 +1,6 @@
 #pragma once
 #include <ArduinoComponents.h>
-#include "../Configuration/Configuration.hpp"
+#include "../Configuration/HeaterConfiguration.hpp"
 #include "../constants.h"
 
 using namespace components;
@@ -20,7 +20,7 @@ public:
 		cValue(config.cCoeff),
 		fWeight(config.fWeight){ /***/ }
 
-	float Read(){
+	double Read(){
 		double aValue = this->input.read();
 		double ntc_res=R_REF/(ADC_MAX/aValue-1);
 		//Steinhart and Hart Equation 1/A+Bln(R)+C[ln(R)]^3  
@@ -45,7 +45,6 @@ public:
 private:
 	AnalogInput input;
 	NtcConfig	configuration;
-	Timer       readTimer;
 	double		fWeight;		
 	double      temperature;
 	double      aValue;

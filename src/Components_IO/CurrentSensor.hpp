@@ -1,6 +1,6 @@
 #pragma once
 #include <ArduinoComponents.h>
-#include "../Configuration/Configuration.hpp"
+#include "../Configuration/ProbeConfiguration.hpp"
 #include "../constants.h"
 
 using namespace components;
@@ -8,10 +8,9 @@ using namespace components;
 class CurrentSensor:public Component{
 public:
 
-	CurrentSensor(PinNumber pin)
-			:Component(),
-			currentIn(pin),
-			fWeight(DEFAULT_FWEIGHT){
+	CurrentSensor(PinNumber pin):Component(),
+		currentIn(pin),
+		fWeight(DEFAULT_FWEIGHT){
 		this->current=0;
 	}
 

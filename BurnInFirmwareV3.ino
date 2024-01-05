@@ -1,32 +1,88 @@
 #include <ArduinoSTL.h>
 #include <ArduinoJson.h>
-#include <PID_v1.h>
-#include "src/util.hpp"
+#include <SD.h>
 #include "src/Controller.hpp"
 #include "src/BurnInTimer.hpp"
 #include "src/Components_IO/includes_io.hpp"
 #include "src/SerialData.hpp"
 #include "src/Tests/SerialOutputTests.hpp"
 #include "src/Tests/SerialInputTests.hpp"
+#include "src/Tests/HeaterTests.hpp"
+#include "src/Configuration/ConfigurationManager.hpp"
+#include "src/Configuration/ConfigurationManager.hpp"
 #include <Array.h>
 
 //SerialOutputTests outputTests;
 SerialInputTests inputTests;
+unsigned long lastWindowCheck=0;
+unsigned long windowSize=1000;
+
+HeaterControllerConfig config;
+ProbeControllerConfig probeConfig;
+HeaterController controller(config);
+HeaterTests heaterTests(&controller);
+
+bool serializeLatch=false,deserializeLatch=false;
 
 void setup(){
-    //outputTests.setup();
-    inputTests.setup();
-    
+    //heaterTests.setup_pid();
+    Serial.begin(38400);
+    while(!Serial){  }
+    Serial.println("Opening SD Card");
+    if(!SD.begin(SS)){
+        Serial.println("Error: Failed to open sd card");
+        while(true){}
+    }
+
+    Serial.println("Press s to serialize and d to deserialize");
 }
 
 void loop(){
-    //outputTests.loop();
-    inputTests.loop();
+    //heaterTests.loop_pid();
+    if(deserializeLatch){
+        deserializeLatch=false;
+        Serial.println("Serializing doc");
+        ConfigurationManager::LoadConfig(probeConfig,PROBE_CONFIG_INDEX);
+        Serial.println("Serializing Done, Press s to serialize and d to deserialize");
+    }
+    if(serializeLatch){
+        serializeLatch=false;
+        Serial.println("Serializing doc");
+        ConfigurationManager::SaveConfig(probeConfig,PROBE_CONFIG_INDEX);
+        Serial.println("Serializing Done, Press s to serialize and d to deserialize");
+    }
 }
 
 void serialEvent(){
-    inputTests.HandleSerial();
+    //heaterTests.handleSerial_pid();
+    if(Serial.available()){
+        char b = Serial.read();
+        Serial.flush();  
+        if(b=='s'){
+            serializeLatch=true;
+        }else if(b=='d'){
+            deserializeLatch=true;
+        }
+    }
 }
+
+/*
+void serialEvent(){
+    if(Serial.available()){
+        char b = Serial.read();
+        Serial.flush();  
+        if(b=='s'){
+            Serial.println("Tuning Starting");
+            controller.StartTuning();
+        }else if(b=='t'){
+            Serial.println("Stopping AutoTune");
+            controller.StopTuning();
+        }
+    }
+    //inputTests.HandleSerial();
+}*/
+
+
 
 
 
