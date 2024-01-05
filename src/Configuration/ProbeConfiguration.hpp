@@ -3,7 +3,7 @@
 #include "../constants.h"
 
 
-class CurrentSensorConfig:public Configuration{
+class CurrentSensorConfig{
 public:
     CurrentSensorConfig(int pin=0,double fweight=DEFAULT_FWEIGHT)
 	:Pin(pin),fWeight(fweight){}
@@ -11,18 +11,17 @@ public:
     int Pin;
 	double fWeight;
 
-
-    virtual void Deserialize(JsonObject configJson) override{
+    void Deserialize(JsonObject configJson){
         this->Pin=configJson[F("Pin")];
         this->fWeight=configJson[F("fWeight")];
     }
     
-    virtual void Serialize(JsonObject *configJson) override{
+    void Serialize(JsonObject *configJson){
         (*configJson)[F("Pin")] = this->Pin;
         (*configJson)[F("fWeight")] = this->fWeight;
     }
 
-    virtual void Serialize(JsonObject*,bool);
+    void Serialize(JsonObject*,bool);
 
 };
 
@@ -49,6 +48,7 @@ class ProbeConfig{
 public:
 	VoltageSensorConfig voltageConfig;
 	CurrentSensorConfig currentConfig;
+	ProbeConfig(){}
 	ProbeConfig(const VoltageSensorConfig& vConfig,const CurrentSensorConfig& cConfig,
                 unsigned long readInterval=PROBE_READINTERVAL)
 		:voltageConfig(vConfig),currentConfig(cConfig){
