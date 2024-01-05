@@ -155,3 +155,10 @@ const char* const json_filenames[] PROGMEM = {
     "/hConfigs.txt",
     "/pConfigs.txt"
 };
+
+const char* const prefixes[] PROGMEM = {
+    "CH",
+    "CP",
+    "CS"
+};
+

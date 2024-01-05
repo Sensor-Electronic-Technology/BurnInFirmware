@@ -9,7 +9,7 @@
 #include "src/Tests/SerialInputTests.hpp"
 #include "src/Tests/HeaterTests.hpp"
 #include "src/Configuration/ConfigurationManager.hpp"
-#include "src/Configuration/ConfigurationManager.hpp"
+#include "src/MessagePacket.hpp"
 #include <Array.h>
 
 //SerialOutputTests outputTests;
@@ -27,30 +27,47 @@ bool serializeLatch=false,deserializeLatch=false;
 void setup(){
     //heaterTests.setup_pid();
     Serial.begin(38400);
-    while(!Serial){  }
+    //while(!Serial){  }
     Serial.println("Opening SD Card");
     if(!SD.begin(SS)){
         Serial.println("Error: Failed to open sd card");
         while(true){}
     }
+    // MessagePacket<HeaterControllerConfig> msg;
+    JsonDocument doc;
+    MsgPacketSerialize(&doc,probeConfig,Prefix::PROBE_CONFIG,true);
+    serializeJsonPretty(doc,Serial);
 
     Serial.println("Press s to serialize and d to deserialize");
 }
 
 void loop(){
     //heaterTests.loop_pid();
-    if(deserializeLatch){
-        deserializeLatch=false;
-        Serial.println("Serializing doc");
-        ConfigurationManager::LoadConfig(probeConfig,PROBE_CONFIG_INDEX);
-        Serial.println("Serializing Done, Press s to serialize and d to deserialize");
-    }
-    if(serializeLatch){
+    //if(deserializeLatch){//probe
+        JsonDocument doc;
+        MsgPacketSerialize(&doc,probeConfig,Prefix::PROBE_CONFIG,true);
+        //Serial.print('~');
+        serializeJson(doc,Serial);
+        //Serial.print('!');
+        Serial.println();
+        delay(2000);
+        // Serial.println("Serializing doc");
+        // ConfigurationManager::LoadConfig(probeConfig,PROBE_CONFIG_INDEX);
+        // Serial.println("Serializing Done, Press s to serialize and d to deserialize");
+    //}
+    //if(serializeLatch){//heater
+        doc.clear();
+        MsgPacketSerialize(&doc,config,Prefix::HEATER_CONFIG,true);
+        //Serial.print('~');
+        serializeJson(doc,Serial);
+        //Serial.print('!');
+        Serial.println();
         serializeLatch=false;
-        Serial.println("Serializing doc");
-        ConfigurationManager::SaveConfig(probeConfig,PROBE_CONFIG_INDEX);
-        Serial.println("Serializing Done, Press s to serialize and d to deserialize");
-    }
+        delay(2000);
+        // Serial.println("Serializing doc");
+        // ConfigurationManager::SaveConfig(probeConfig,PROBE_CONFIG_INDEX);
+        // Serial.println("Serializing Done, Press s to serialize and d to deserialize");
+    //}
 }
 
 void serialEvent(){
@@ -58,13 +75,26 @@ void serialEvent(){
     if(Serial.available()){
         char b = Serial.read();
         Serial.flush();  
-        if(b=='s'){
+        if(b=='h'){
             serializeLatch=true;
-        }else if(b=='d'){
+        }else if(b=='p'){
             deserializeLatch=true;
         }
     }
 }
+
+// void serialEvent(){
+//     //heaterTests.handleSerial_pid();
+//     if(Serial.available()){
+//         char b = Serial.read();
+//         Serial.flush();  
+//         if(b=='s'){
+//             serializeLatch=true;
+//         }else if(b=='d'){
+//             deserializeLatch=true;
+//         }
+//     }
+// }
 
 /*
 void serialEvent(){

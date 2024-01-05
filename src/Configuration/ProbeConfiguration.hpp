@@ -107,7 +107,28 @@ public:
         }
         (*doc)[F("ReadInterval")] = this->readInterval;
         (*doc).shrinkToFit();
+    }    
+    
+    void Serialize(JsonObject *packet,bool initialize) override{
+        if(initialize){
+            //to<JsonArray>() creates a new memory pointer
+            JsonArray probeJsonConfigs = (*packet)[F("ProbeConfigurations")].to<JsonArray>();
+            for(int i=0;i<PROBE_COUNT;i++){
+                auto probeConfig=probeJsonConfigs.add<JsonObject>();
+                this->probeConfigs[i].Serialize(&probeConfig,true);
+            }
+        }else{
+            //as<JsonArray>() points to existing memory block
+            JsonArray probeJsonConfigs = (*packet)[F("ProbeConfigurations")].as<JsonArray>();
+            for(int i=0;i<PROBE_COUNT;i++){
+                auto probeConfig=probeJsonConfigs[i].as<JsonObject>();
+                this->probeConfigs[i].Serialize(&probeConfig,false);
+            }
+        }
+        (*packet)[F("ReadInterval")] = this->readInterval;
     }
+
+
 
     void Deserialize(JsonDocument doc) override{
         auto probeJsonConfigs = doc[F("ProbeConfigurations")].as<JsonArray>();

@@ -135,4 +135,22 @@ public:
         }
         (*doc)["ReadInterval"] = this->readInterval;
     }
+
+    virtual void Serialize(JsonObject *packet,bool initialize){
+        if(initialize){
+            auto heaterJsonConfigs=(*packet)[F("HeaterConfigurations")].to<JsonArray>();
+            for(int i=0;i<HEATER_COUNT;i++){
+                auto heaterJsonConfig = heaterJsonConfigs.add<JsonObject>();
+                this->heaterConfigs[i].Serialize(&heaterJsonConfig,true);
+                
+            }
+        }else{
+            auto heaterJsonConfigs=(*packet)[F("HeaterConfigurations")].as<JsonArray>();
+            for(int i=0;i<HEATER_COUNT;i++){
+                auto heaterJsonConfig = heaterJsonConfigs[i].as<JsonObject>();
+                this->heaterConfigs[i].Serialize(&heaterJsonConfig,false);
+            }
+        }
+        (*packet)["ReadInterval"] = this->readInterval;
+    }
 };
