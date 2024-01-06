@@ -1,10 +1,6 @@
-#pragma once
+#include "PID_AutoTune.hpp"
 
-
-class PID_AutoTune{
-public:
-
-    PID_AutoTune(double *in,double *out,double sp,unsigned long period,int cyc=10){
+    PID_AutoTune::PID_AutoTune(double *in,double *out,double sp,unsigned long period,int cyc=10){
         this->input=in;
         this->outputValue=out;
         this->setPoint=sp;
@@ -12,13 +8,13 @@ public:
         this->cycles=cyc;
     }
 
-    void SetOutputRange(double _min,double _max){
+    void PID_AutoTune::SetOutputRange(double _min,double _max){
         this->maxOut=_max;
         this->minOut=_min;
     }
 
 
-    void StartTuning(){
+    void PID_AutoTune::StartTuning(){
         this->cycleCount=0;
         this->output=true;
         *this->outputValue=this->maxOut;
@@ -30,7 +26,7 @@ public:
         this->pAvg=this->iAvg=this->dAvg=0;
     }
 
-    bool Tune(){
+    bool PID_AutoTune::Tune(){
         auto now=micros();
         if(now-lastTime>=sampleTime){
             double in=*input;
@@ -113,36 +109,18 @@ public:
     //     return iAvg/(cycleCount-1);
     // }
     
-    double GetKp(){
+    double PID_AutoTune::GetKp(){
         return this->kp;
     }
 
-    double GetKd(){
+    double PID_AutoTune::GetKd(){
         return this->kd;
     }
 
-    double GetKi(){
+    double PID_AutoTune::GetKi(){
         return this->ki;
     }
 
-    bool Finished(){
+    bool PID_AutoTune::Finished(){
         return this->cycleCount>=this->cycles;
     }
-
-
-private:
-    double setPoint;
-    double minOut,maxOut;
-    double sampleTime;
-    int cycles=10;
-
-    int cycleCount;
-    bool output;
-    double *outputValue;
-    double *input;
-    double t1,t2,tHigh,tLow;
-    double max,min;
-    double pAvg,iAvg,dAvg;
-    double kp,ki,kd;
-    unsigned long lastTime;
-};

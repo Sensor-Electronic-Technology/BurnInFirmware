@@ -1,12 +1,8 @@
 #pragma once
 #include <ArduinoComponents.h>
-#include <ArduinoSTL.h>
 #include "BurnInTimer.hpp"
-#include "constants.h"
-#include "State.hpp"
+#include "../constants.h"
 
-using namespace components;
-using namespace std;
 
 class Controller:public Component{
 public:
@@ -19,14 +15,15 @@ public:
     void ChangeCurrent(CurrentValue current);
     void SendComs();
 
-    void invoke_action(ControllerAction action);
+    //void invoke_action(ControllerAction action);
     // void transition_state(Task task);
 
     
 
 private:
-    vector<BurnInTimer*> burnInTimers;
+    //vector<BurnInTimer*> burnInTimers;
 
     typedef void(Controller::*StateHandlers)(void);
     StateHandlers state_handler[6];
+    void privateLoop() override;
 };

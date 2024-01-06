@@ -1,6 +1,6 @@
 #pragma once
 #include <ArduinoJson.h>
-#include "Configuration.hpp"
+#include "../Configuration/Configuration.hpp"
 #include "../constants.h"
 
 class NtcConfig{
@@ -100,6 +100,10 @@ public:
     //virtual void Serialize(JsonObject*);
 };
 
+/**
+ * @brief Heater controller configuration
+ * 
+ */
 class HeaterControllerConfig:public ControllerConfiguration{
 public:
 	unsigned long readInterval=TEMP_INTERVAL;

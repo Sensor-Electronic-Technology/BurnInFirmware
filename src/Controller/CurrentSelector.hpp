@@ -1,6 +1,6 @@
 #pragma once
 #include <ArduinoComponents.h>
-#include "../Configuration/Configuration.hpp"
+#include "ControllerConfiguration.hpp"
 #include "../constants.h"
 
 using namespace components;

@@ -1,19 +1,16 @@
 #include <ArduinoSTL.h>
 #include <ArduinoJson.h>
 #include <SD.h>
-#include "src/Controller.hpp"
-#include "src/BurnInTimer.hpp"
-#include "src/Components_IO/includes_io.hpp"
-#include "src/SerialData.hpp"
-#include "src/Tests/SerialOutputTests.hpp"
-#include "src/Tests/SerialInputTests.hpp"
-#include "src/Tests/HeaterTests.hpp"
+#include "src/Controller/BurnInTimer.hpp"
+#include "src/Logging/SerialData.hpp"
+#include "src/Heaters/heaters_include.h"
+#include "src/Probes/probes_include.h"
 #include "src/Configuration/ConfigurationManager.hpp"
-#include "src/MessagePacket.hpp"
 #include <Array.h>
 
+
 //SerialOutputTests outputTests;
-SerialInputTests inputTests;
+//SerialInputTests inputTests;
 unsigned long lastWindowCheck=0;
 unsigned long windowSize=1000;
 
@@ -35,7 +32,7 @@ void setup(){
     }
     // MessagePacket<HeaterControllerConfig> msg;
     JsonDocument doc;
-    MsgPacketSerialize(&doc,probeConfig,Prefix::PROBE_CONFIG,true);
+    MsgPacketSerialize(&doc,probeConfig,ConfigType::PROBE_CONFIG,true);
     serializeJsonPretty(doc,Serial);
 
     Serial.println("Press s to serialize and d to deserialize");
@@ -45,7 +42,7 @@ void loop(){
     //heaterTests.loop_pid();
     //if(deserializeLatch){//probe
         JsonDocument doc;
-        MsgPacketSerialize(&doc,probeConfig,Prefix::PROBE_CONFIG,true);
+        MsgPacketSerialize(&doc,probeConfig,ConfigType::PROBE_CONFIG,true);
         //Serial.print('~');
         serializeJson(doc,Serial);
         //Serial.print('!');
@@ -57,7 +54,7 @@ void loop(){
     //}
     //if(serializeLatch){//heater
         doc.clear();
-        MsgPacketSerialize(&doc,config,Prefix::HEATER_CONFIG,true);
+        MsgPacketSerialize(&doc,config,ConfigType::HEATER_CONFIG,true);
         //Serial.print('~');
         serializeJson(doc,Serial);
         //Serial.print('!');

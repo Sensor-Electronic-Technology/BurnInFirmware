@@ -1,10 +1,9 @@
 #pragma once
-#include "HeaterConfiguration.hpp"
-#include "ProbeConfiguration.hpp"
 #include <ArduinoJson.h>
 #include <StreamUtils.h>
 #include <SD.h>
 #include <SPI.h>
+#include "Configuration.hpp"
 #include "../constants.h"
 
 
@@ -19,9 +18,9 @@ public:
     }
 
 
-    static  void LoadConfig(ControllerConfiguration& config,int fileNameIndex){
+    static  void LoadConfig(ControllerConfiguration& config,ConfigType configType){
         auto instance=ConfigurationManager::Instance();
-        auto fileName=json_filenames[fileNameIndex];
+        auto fileName=json_filenames[configType];
         instance->file=SD.open(fileName);
         if(!instance->file){
             Serial.print("Error Opening ");Serial.println(fileName);
@@ -40,9 +39,15 @@ public:
         instance->file.close();
     }
 
-    static void SaveConfig(ControllerConfiguration& config,int fileNameIndex){
+    /**
+     * @brief 
+     * 
+     * @param config Configuration of type ControllerConfiguration
+     * @param fileNameIndex While file name
+     */
+    static void SaveConfig(ControllerConfiguration& config,ConfigType configType){
         auto instance=ConfigurationManager::Instance();
-        auto fileName=json_filenames[fileNameIndex];
+        auto fileName=json_filenames[configType];
         SD.remove(fileName);//overwrite file
         instance->file=SD.open(fileName,FILE_WRITE);
         if(!instance->file){
@@ -58,50 +63,6 @@ public:
         instance->fileWriteBuffer.flush();
         instance->file.close();
     }
-
-  /*  static void LoadHeaterControllerConfig(HeaterControllerConfig& heaterCntlConfig){
-        auto instance=ConfigurationManager::Instance();
-        auto fileName=json_filenames[HEATER_CONFIG_INDEX];
-        Serial.print("Opening File: ");Serial.println(fileName);
-        File file=SD.open(fileName);
-        if(!file){
-            Serial.println("Error Opening HeaterConfigs.txt");
-            return;
-        }
-        instance->heaterDoc.clear();
-        auto error=deserializeJson(instance->heaterDoc,file);
-        if(error){
-            Serial.println("Error: Failed to deserialize document");
-            Serial.println(error.f_str());
-            file.close();
-            return;
-        }
-        serializeJsonPretty(instance->heaterDoc,Serial);
-        heaterCntlConfig.Deserialize(instance->heaterDoc);
-        Serial.print("Heater 1 Kp: "); Serial.println(heaterCntlConfig.heaterConfigs[0].pidConfig.kp);
-        file.close();
-    }
-
-    static void SaveHeaterControllerConfig(HeaterControllerConfig& heaterCntlConfig){
-        auto instance=ConfigurationManager::Instance();
-        auto fileName=json_filenames[HEATER_CONFIG_INDEX];
-        SD.remove(fileName);//overwrite file
-        instance->file=SD.open(fileName,FILE_WRITE);
-        WriteBufferingStream fileWriteBuffer{instance->file, 64};
-        if(!instance->file){
-            Serial.print("Error Opening ");Serial.println(fileName);
-            return;
-        }
-        instance->heaterDoc.clear();
-        heaterCntlConfig.Serialize(&instance->heaterDoc,true);
-        if(serializeJsonPretty(instance->heaterDoc,fileWriteBuffer)==0){
-            Serial.println("Error: Faild to write out configuration");
-        }
-        serializeJsonPretty(instance->heaterDoc,Serial);
-        fileWriteBuffer.flush();
-        instance->file.close();
-    }
-*/
 
 private:
     static ConfigurationManager* instance;

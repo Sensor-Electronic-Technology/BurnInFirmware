@@ -1,4 +1,5 @@
 #pragma once
+#include <Arduino.h>
 #include <ArduinoComponents.h>
 
 #define NTC1_A	1.159e-3f
@@ -153,7 +154,8 @@ const char* const message_table[] PROGMEM = {
 
 const char* const json_filenames[] PROGMEM = {
     "/hConfigs.txt",
-    "/pConfigs.txt"
+    "/pConfigs.txt",
+    "/sConfig.txt"
 };
 
 const char* const prefixes[] PROGMEM = {

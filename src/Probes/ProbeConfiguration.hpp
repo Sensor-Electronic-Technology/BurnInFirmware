@@ -1,5 +1,6 @@
 #pragma once
 #include <ArduinoJson.h>
+#include "../Configuration/Configuration.hpp"
 #include "../constants.h"
 
 

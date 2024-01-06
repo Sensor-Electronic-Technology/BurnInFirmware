@@ -1,6 +1,5 @@
 #pragma once
-#include "../Configuration/HeaterConfiguration.hpp"
-#include "../Components_IO/HeaterController.hpp"
+#include "../HeaterController.hpp"
 
 class HeaterTests{
 public:
