@@ -7,7 +7,6 @@
 #include "../Probes/probes_include.h"
 #include "../Communication/ComHandler.hpp"
 #include "../Logging/StationLogger.hpp"
-#include "Logging/StationLogging.hpp"
 
 
 #include "BurnInTimer.hpp"
