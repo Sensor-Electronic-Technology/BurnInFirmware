@@ -2,7 +2,6 @@
 #include <SD.h>
 #include <StreamUtils.h>
 #include <ArduinoJson.h>
-#include <Arduino.h>
 #include "../Logging/StationLogger.hpp"
 #include "../Heaters/HeaterConfiguration.hpp"
 #include "../Probes/ProbeConfiguration.hpp"

@@ -39,6 +39,7 @@ enum StationCommand:uint8_t{
 //typedef components::Function<void(int)> IntCallback;
 typedef components::Function<void(void)> RestartRequiredCallback;
 typedef components::Function<void(StationCommand)> CommandCallback;
+typedef void (*CommandHandlerCallback)(StationCommand);
 
 //Timer
 #define TIMER_PERIOD                   1

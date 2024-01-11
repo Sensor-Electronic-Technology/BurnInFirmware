@@ -1,14 +1,12 @@
 #pragma once
+#include <Arduino.h>
 #include <ArduinoComponents.h>
-#include "../Heaters/heaters_include.h"
-#include "../Probes/probes_include.h"
-#include "CurrentSelector.hpp"
 #include "../Heaters/heaters_include.h"
 #include "../Probes/probes_include.h"
 #include "../Communication/ComHandler.hpp"
 #include "../Logging/StationLogger.hpp"
-
-
+#include "State.hpp"
+#include "CurrentSelector.hpp"
 #include "BurnInTimer.hpp"
 #include "../constants.h"
 
@@ -17,6 +15,8 @@ using namespace components;
 class Controller:public Component{
 public:
     
+    Controller();
+
     //Init
     void LoadConfigurations();
     void SetupComponents();
@@ -37,46 +37,19 @@ public:
     void TuningRun();
 
     //other
-    void HandleCommand(StationCommand command){
-        switch(command){
-            case StationCommand::START:{
-                StationLogger::Log(LogLevel::INFO,true,false,"Start Command Recieved!");
-                break;
-            }
-            case StationCommand::PAUSE:{
-                StationLogger::Log(LogLevel::INFO,true,false,"Pause Command Recieved!");
-                break;
-            }
-            case StationCommand::UPDATE_CONFIG:{
-                StationLogger::Log(LogLevel::INFO,true,false,"Update Config Command Recieved!");
-                break;
-            }
-            case StationCommand::PROBE_TEST:{
-                StationLogger::Log(LogLevel::INFO,true,false,"Probe Test Command Recieved!");
-                break;
-            }
-            case StationCommand::SWITCH_CURRENT:{
-                StationLogger::Log(LogLevel::INFO,true,false,"Switch Current Command Recieved!");
-                break;
-            }
-            case StationCommand::TOGGLE_HEAT:{
-                StationLogger::Log(LogLevel::INFO,true,false,"Toggle Heat Command Recieved!");
-                break;
-            }
-        }
-    }
+    void HandleCommand(StationCommand command);
 
     void MapCallback(){
-        ComHandler::MapCommandCallback(this->_commandCallback);
+        
     }
 private:
     ProbeController*    probeControl;
     HeaterController*   heaterControl;
     BurnInTimer*        burnTimer;
     CurrentSelector*    currentSelector; 
-
     CommandCallback     _commandCallback=[](StationCommand){};
-    typedef void(Controller::*StateHandlers)(void);
-    StateHandlers state_handler[6];
+    Task task,nextTask;
+    //typedef void(Controller::*StateHandlers)(void);
+    //StateHandlers state_handler[6];
     void privateLoop() override;
 };

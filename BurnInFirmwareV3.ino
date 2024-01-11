@@ -1,27 +1,22 @@
 #include <ArduinoJson.h>
 #include <SD.h>
-//#include "src/Controller/BurnInTimer.hpp"
 #include "src/constants.h"
-#include "src/Communication/Serializable.hpp"
+#include "src/Communication/ComHandler.hpp"
+#include "src/Heaters/HeaterConfiguration.hpp"
 #include "src/Heaters/heaters_include.h"
 #include "src/Probes/probes_include.h"
 #include "src/Configuration/ConfigurationManager.hpp"
 #include "src/Communication/ComHandler.hpp"
 #include "src/Logging/StationLogger.hpp"
 #include <Array.h>
-#include <ArxContainer.h>
-
-#define ARDUINOJSON_DEFAULT_NESTING_LIMIT 50
-
-template< typename Tag, typename Tag::type M >
-  struct AccessMember{ 
-    friend typename Tag::type get( Tag ){ return M; }
-};
+#include "src/Controller/State.hpp"
 
 
 
 unsigned long lastCheck=0;
 unsigned long deadLine=5000;
+
+ProbeControllerConfig config;
 
 void testing(){
     if(!SD.begin(SS)){
