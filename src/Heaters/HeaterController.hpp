@@ -3,6 +3,7 @@
 #include <Array.h>
 #include "HeaterConfiguration.hpp"
 #include "Heater.hpp"
+#include "../Configuration/ConfigurationManager.hpp"
 #include "../constants.h"
 
 using namespace components;
@@ -26,6 +27,12 @@ public:
     void ReadTemperatures();
     Array<HeaterResult,HEATER_COUNT> GetResults();
     void Print();
+    void Printv2(){
+        Serial.println(filenames[0]);
+        Serial.println(filenames[1]);
+        Serial.println(filenames[2]);
+
+    }
 
 private:
     Array<Heater*,HEATER_COUNT> heaters;
@@ -33,6 +40,7 @@ private:
     Timer  readTimer,printTimer;
     HeaterState heaterState=HeaterState::Off;
     HeaterMode mode,nextMode;
+    HeaterControllerConfig configuration;
     unsigned long readInterval;
     bool isTuning;
 

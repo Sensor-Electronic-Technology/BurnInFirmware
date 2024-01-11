@@ -1,11 +1,13 @@
 #pragma once
-#include <ArduinoComponents.h>
+//#include <ArduinoComponents.h>
 #include "../constants.h"
+#include "ControllerConfiguration.hpp"
 
-using namespace components;
+
+//using namespace components;
 
 typedef struct TimerData{
-    bool            running,paused=false;
+    bool            running=false,paused=false;
     unsigned long   elapsed_secs=0;
     unsigned long   lastCheck=0;
     unsigned long   duration_secs=0;
@@ -16,19 +18,56 @@ typedef struct TimerData{
 class BurnInTimer{
 private:  
     TimerData td;
+    unsigned long durSec60mA;
+    unsigned long durSec120mA;
+    unsigned long durSec150mA;
 public:
-    void Start(unsigned long dur){
+
+    BurnInTimer(const BurnTimerConfig& config)
+        :durSec60mA(config.time60mASecs),
+        durSec120mA(config.time120mASecs),
+        durSec150mA(config.time150mASecs){
+
+    }
+
+    void Start(CurrentValue current){
         if(!this->td.running && !this->td.paused){
-            this->td.duration_secs=dur;
+            switch(current){
+                case CurrentValue::c060:{
+                    this->td.duration_secs=this->durSec60mA;
+                    break;
+                }
+                case CurrentValue::c120:{
+                    this->td.duration_secs=this->durSec120mA;
+                    break;
+                }
+                case CurrentValue::c150:{
+                    this->td.duration_secs=this->durSec150mA;
+                    break;
+                }
+            }
             this->td.elapsed_secs=0;
             this->td.running=true;
             this->td.paused=false;
         }
     }
    
-    void StartFrom(unsigned long dur,unsigned long elap){
+    void StartFrom(CurrentValue current,unsigned long elap){
         if(!this->td.running && !this->td.paused){
-            this->td.duration_secs=dur;
+            switch(current){
+                case CurrentValue::c060:{
+                    this->td.duration_secs=this->durSec60mA;
+                    break;
+                }
+                case CurrentValue::c120:{
+                    this->td.duration_secs=this->durSec120mA;
+                    break;
+                }
+                case CurrentValue::c150:{
+                    this->td.duration_secs=this->durSec150mA;
+                    break;
+                }
+            }
             this->td.elapsed_secs=elap;
             this->td.running=true;
             this->td.paused=false;
@@ -40,7 +79,15 @@ public:
         this->td.paused=false;
         this->td.lastCheck=0; 
         this->td.elapsed_secs=0;
-        this->td.lastCheck=millisTime();
+        this->td.duration_secs=0;
+    }
+
+    void Reset(){
+        this->td.running=false;
+        this->td.paused=false;
+        this->td.lastCheck=false;
+        this->td.elapsed_secs=0;
+        this->td.duration_secs=0;
     }
 
     void Pause(){
@@ -65,9 +112,9 @@ public:
     
     void Increment(){
         if(this->td.running && !this->td.paused){
-            auto millis=millisTime();
-            if(millisTime()-this->td.lastCheck>=(TIMER_PERIOD*TIMER_FACTOR)){
-                this->td.lastCheck=millis;
+            auto millis_t=millis();
+            if(millis_t-this->td.lastCheck>=(TIMER_PERIOD*TIMER_FACTOR)){
+                this->td.lastCheck=millis_t;
                 this->td.elapsed_secs++;
                 bool done=(this->td.elapsed_secs*TIMER_PERIOD)>=this->td.duration_secs;
                 this->td.running=!done;

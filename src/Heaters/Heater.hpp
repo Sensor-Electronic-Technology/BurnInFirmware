@@ -58,7 +58,6 @@ private:
 	HeaterState 		heaterState=HeaterState::Off;
 	PID  				*pid;
 	PID_AutoTune		*autoTuner;
-
 	HeaterResult		result;
 	double tempDeviation;
 	double tempSetPoint;

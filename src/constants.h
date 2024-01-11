@@ -1,6 +1,13 @@
 #pragma once
 #include <Arduino.h>
 #include <ArduinoComponents.h>
+#include <ArxContainer.h>
+
+#define read_msg_table(msg) ((const char *)pgm_read_ptr(&(message_table[msg])))
+#define read_log_prefix(pre) ((const char *)pgm_read_ptr(&(log_level_prefixes[pre])))
+#define read_packet_prefix(pre) ((const char *)pgm_read_ptr(&(prefixes[pre])))
+#define read_filename(pType) ((const char *)pgm_read_ptr(&(json_filenames[pType])))
+#define read_log_file() ((const char *)pgm_read_ptr(&(log_file)))
 
 #define NTC1_A	1.159e-3f
 #define NTC1_B  1.429e-4f
@@ -20,7 +27,18 @@ enum CurrentValue:int{
     c060=60
 };
 
+enum StationCommand:uint8_t{
+    START,
+    PAUSE,
+    TOGGLE_HEAT,
+    SWITCH_CURRENT,
+    PROBE_TEST,
+    UPDATE_CONFIG
+};
+
 //typedef components::Function<void(int)> IntCallback;
+typedef components::Function<void(void)> RestartRequiredCallback;
+typedef components::Function<void(StationCommand)> CommandCallback;
 
 //Timer
 #define TIMER_PERIOD                   1
@@ -81,7 +99,6 @@ enum CurrentValue:int{
 #define CURRENT_MIN                     0
 
 //PID Defaults
-
 #define KP_DEFAULT		                2
 #define KI_DEFAULT		                5
 #define KD_DEFAULT		                1
@@ -93,66 +110,69 @@ enum CurrentValue:int{
 #define PROBE_CONFIG_INDEX      1
 #define SYSTEM_CONFIG_INDEX     2
 
-
-//Message Indexes
-#define BurnInCompleteMsg       0
-#define NotInRangeMsg           1
-#define ResettingSystemMsg      2
-#define TestingProbeMsg         3
-#define TestCompleteMsg         4
-#define SettingTempToMsg        5
-#define SetTempToZeroMsg        6
-#define TestPausedMsg           7
-#define TestResumedMsg          8
-#define SetCurrentToMsg         9
-#define NoSwitchingMsg          10
-#define SystemSettingsRecMsg    11
-#define ErrorRecievedMsg        12
-
-#define FimwareInitMsg          13
-#define InternalMemMsg          14
-#define MemCheckFinishedMsg     15
-#define PrintMemMsg             16
-#define SettingIOMsg            17
-#define TakingMeasMsg           18
-#define IOCompleteMsg           19
-#define TimerInitMsg            20
-#define TimerCompleteMsg        21
-#define FirmwareCompleteMsg     22
-#define SystemSettingsRecMsg    23
-#define HEATER_MODE_TUNING      24
-#define HEATER_MODE_NORMAL      25
-
-const char* const message_table[] PROGMEM = {
-"[T]{Burn-In Complete.  Heaters Off}\n[T]{Reset before starting next Burn-In}", 
-"[T]{Temperatures are not in range}", 
-"[T]{Resetting Device}",
-"[T]{Testing Probe Contact - Probe on for 1000msec}", 
-"[T]{Testing Complete}", 
-"[T]{Setting Temperature to ",
-"[T]{Setting Temperature to 0}",
-"[T]{Device Paused}",
-"[T]{Device Resumed}",
-"[T]{Setting Current to ",
-"[T]{Switching Not Installed On This Station}",
-"[T]{Setting Recieved}",
-"[T]{Error Recieving Msg}",
-"[T]{Starting Firmware Initialization}",
-"[T]{Checking internal memory}",
-"[T]{Memory check finished}",
-"[T]{System State and System Settings:}",
-"[T]{Setting up IO}",
-"[T]{Taking initial measurements, please wait...}",
-"[T]{IO Setup Complete}",
-"[T]{Initializing Timers}",
-"[T]{Timer Initialization Complete}",
-"[T]{Firmware Initialization Complete}",
-"[T]{New System Settings Recieved:}",
-"[T]{Heater mode changed to Tuning}",
-"[T]{Heater mode changed to Normal}"
+enum PacketType:uint8_t{
+    HEATER_CONFIG=0,
+    PROBE_CONFIG=1,
+    SYSTEM_CONFIG=2,
+    MESSAGE=3,
+    DATA=4,
+    COMMAND=5
 };
 
-const char* const json_filenames[] PROGMEM = {
+enum LogLevel:uint8_t{
+    ERROR=0,
+    CRITICAL_ERROR=1,
+    WARNING=2,
+    INFO=3
+};
+
+enum SystemMessage:uint8_t{
+    BURNING_FINISHED=0,
+    TEMP_OUT_OF_RANGE=1,
+    SYSTEM_RESETTING=2,
+    STARTING_PROBE_TEST=3,
+    TEMP_SET_TO=4,
+    TEST_PAUSED=5,
+    TEST_RESUMED=6,
+    CURRENT_SET_TO=7,
+    SWITCH_DISABLED=8,
+    CONFIGS_RECIEVED=9,
+    CONFIGS_RECIEVED_ERROR=10,
+    FIRMWARE_INIT_MESSAGE=11,
+    LOADING_CONFIG_FILES=12,
+    LOADING_CONFIG_FILES_DONE=13,
+    CHECKING_RUNNING_TEST=14
+};
+
+const char* const message_table[] PROGMEM={
+    "Burn-In Complete.  Heaters Off}\nReset before starting next Burn-In",
+    "Temperatures not in range",
+    "Resetting Device",
+    "Probe Test Started",
+    "Setting Temperature to %d",
+    "Test Paused",
+    "Test Resumed",
+    "Setting Current to %d",
+    "Switching disabled on this station",
+    "Setting Recieved",
+    "Error recieving configuration",
+    "Starting Firmware Initialization",
+    "Loading configurations",
+    "Loading completed",
+    "Checking for running test"
+};
+
+const char* const log_file PROGMEM={"log.txt"};
+
+const char* const log_level_prefixes[] PROGMEM={
+    "ERR:",
+    "CRIT_ERR:",
+    "WARN:"
+    "INFO:"
+};
+
+
+const char* const filenames[] PROGMEM = {
     "/hConfigs.txt",
     "/pConfigs.txt",
     "/sConfig.txt"
@@ -161,6 +181,28 @@ const char* const json_filenames[] PROGMEM = {
 const char* const prefixes[] PROGMEM = {
     "CH",
     "CP",
-    "CS"
+    "CS",
+    "M",
+    "D"
 };
+
+
+/*const static arx::map<MessageType,const char*> msgMap {
+    {MessageType::BURNING_FINISHED,},
+    {MessageType::TEMP_OUT_OF_RANGE,},
+    {MessageType::SYSTEM_RESETTING,},
+    {MessageType::STARTING_PROBE_TEST,},
+    {MessageType::TEMP_SET_TO,},
+    {MessageType::TEST_PAUSED,},
+    {MessageType::TEST_RESUMED,},
+    {MessageType::CURRENT_SET_TO,},
+    {MessageType::SWITCH_DISABLED,},
+    {MessageType::CONFIGS_RECIEVED,},
+    {MessageType::CONFIGS_RECIEVED_ERROR,},
+    {MessageType::FIRMWARE_INIT_MESSAGE,},
+    {MessageType::LOADING_CONFIG_FILES,},
+    {MessageType::LOADING_CONFIG_FILES_DONE,},
+    {MessageType::CHECKING_RUNNING_TEST,}
+    
+};*/
 

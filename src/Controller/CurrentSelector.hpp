@@ -7,23 +7,11 @@ using namespace components;
 
 class CurrentSelector:public Component{
 public:
-
-    CurrentSelector(PinNumber out,PinNumber c1,PinNumber c2)
-        :Component(),
-        currentPin120(c1),
-        currentPin060(c2),
-        currentOutput(out),
-        setCurrent(DEFAULT_CURRENT){
-        this->currentOutput.low();
-        this->currentPin120.low();
-        this->currentPin060.low();
-    }
-
-    CurrentSelector(const CurrentSelectorConfig& config,bool switchEnabled=true,CurrentValue current=DEFAULT_CURRENT)
+    CurrentSelector(const CurrentSelectorConfig& config,CurrentValue current=DEFAULT_CURRENT)
             :Component(),currentPin120(config.pin120mA),
             currentPin060(config.pin60mA),
             currentOutput(config.currentPin),
-            enabled(switchEnabled),
+            switchEnabled(config.switchEnabled),
             setCurrent(current),
             configuration(config){
         this->currentOutput.low();
@@ -86,11 +74,10 @@ public:
     
 private:
     void privateLoop(){ }
-
     CurrentSelectorConfig configuration;
     DigitalOutput currentOutput;
     DigitalOutput currentPin120;
     DigitalOutput currentPin060;
     CurrentValue setCurrent;
-    bool enabled;
+    bool switchEnabled;
 };

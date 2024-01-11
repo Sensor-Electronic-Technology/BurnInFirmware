@@ -17,5 +17,10 @@
         "serstream": "cpp",
         "char_traits": "cpp",
         "string": "cpp"
-    }
+    },
+    "C_Cpp.default.includePath": [
+        "C:\\Users\\aelmendo\\Documents\\Arduino\\BurnInFirmwareV3\\src",
+        "${default}"
+    ]
+
 }

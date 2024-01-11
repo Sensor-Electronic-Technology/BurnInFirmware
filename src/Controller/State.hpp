@@ -1,14 +1,7 @@
 #pragma once
 #include "constants.h"
 
-enum ControllerAction{
-    START,
-    PAUSE,
-    TOGGLE_HEAT,
-    SWITCH_CURRENT,
-    PROBE_TEST,
-    UPDATE_CONFIG
-};
+
 
 enum ControllerState{
     RUNNING,

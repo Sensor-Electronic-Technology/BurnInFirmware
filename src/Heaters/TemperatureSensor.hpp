@@ -11,6 +11,7 @@ public:
 	TemperatureSensor(const NtcConfig& config);
 	double Read();
 	float GetTemperature();
+	int Pin(){return this->input.pinNumber();}
 	void UpdateConfig(const NtcConfig& config);
 
 private:

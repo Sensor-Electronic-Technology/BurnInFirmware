@@ -26,13 +26,6 @@ void Heater::Initialize(){
     this->output.low();
 }
 
-void Heater::UpdateConfiguratiuon(const HeaterConfig& config){
-    this->kp=config.pidConfig.kp;
-    this->kd=config.pidConfig.kd;
-    this->ki=config.pidConfig.ki;
-    this->WindowSize=config.pidConfig.windowSize;
-}
-
 void Heater::TurnOn(){
     this->heaterState=HeaterState::On;
     this->windowLastTime=millis();

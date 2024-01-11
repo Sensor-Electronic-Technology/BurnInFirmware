@@ -1,24 +1,23 @@
 #include "Controller.hpp"
 
-// void controller::handle_serial(){
-//     byte inByte1 = 0;
-//     word buff = 0;
-//     while (Serial.available()) {
-//         inByte1 = (byte)Serial.read();
-//         if (((char)inByte1 == 'S') && (!this->systemState.IsRunning())) {
-//             //this->StartTest();
-//         } else if ((char)inByte1 == 'R') {
-//             //this->Reset();
-//         } else if (((char)inByte1 == 'T') && (this->canTestCurrent())) {
-//             //this->TestProbe();
-//         } else if (((char)inByte1 == 'H') && (!this->systemState.IsRunning())) {
-//             //this->ToggleHeating();
-//         } else if (((char)inByte1 == 'P')  && (this->systemState.IsRunning())) {
-//             //this->PauseTest();
-//         } else if (((char)inByte1 == 'C') && (!this->systemState.IsRunning())) {
-//             //this->ToggleCurrent();
-//         } else if (((char)inByte1 == 'U') && (!this->systemState.IsRunning())) {
+void Controller::LoadConfigurations(){
+    HeaterControllerConfig heatersConfig;
+    ProbeControllerConfig  probesConfig;
+    ControllerConfig       controllerConfig;
 
-//         }
-//     }
-// }
+    ConfigurationManager::LoadConfig(&heatersConfig,PacketType::HEATER_CONFIG);
+    ConfigurationManager::LoadConfig(&probesConfig,PacketType::PROBE_CONFIG);
+    ConfigurationManager::LoadConfig(&controllerConfig,PacketType::SYSTEM_CONFIG);
+
+    this->heaterControl=new HeaterController(heatersConfig);
+    this->probeControl=new ProbeController(probesConfig);
+    this->burnTimer=new BurnInTimer(controllerConfig.burnTimerConfig);
+    this->currentSelector=new CurrentSelector(controllerConfig.currentSelectConfig);
+}
+
+void Controller::SetupComponents(){
+    //Send messages
+    this->heaterControl->Initialize();
+    this->probeControl->Initialize();
+    this->currentSelector->TurnOff();
+}

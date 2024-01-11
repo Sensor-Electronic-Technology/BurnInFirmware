@@ -1,6 +1,6 @@
 #pragma once
 #include <ArduinoJson.h>
-#include "../Configuration/Configuration.hpp"
+#include "../Communication/Serializable.hpp"
 #include "../constants.h"
 
 
@@ -33,7 +33,7 @@ public:
 	VoltageSensorConfig(int pin=0,double fweight=DEFAULT_FWEIGHT)
 		:Pin(pin),fWeight(fweight){}
 
-    void Deserialize(JsonObject configJson){
+    void Deserialize(JsonObject &configJson){
         this->Pin=configJson[F("Pin")];
         this->fWeight=configJson[F("fWeight")];
     }
@@ -54,7 +54,7 @@ public:
                 unsigned long readInterval=PROBE_READINTERVAL)
 		:voltageConfig(vConfig),currentConfig(cConfig){
 	}
-    void Deserialize(JsonObject probeJsonConfig) {
+    void Deserialize(JsonObject &probeJsonConfig) {
         JsonObject voltSenseConfig=probeJsonConfig[F("VoltageSensorConfig")].as<JsonObject>();
         JsonObject currentSenseConfig=probeJsonConfig[F("CurrentSensorConfig")].as<JsonObject>();
         this->voltageConfig.Deserialize(voltSenseConfig);
@@ -78,7 +78,7 @@ public:
     //virtual void Serialize(JsonObject*);
 };
 
-class ProbeControllerConfig:public ControllerConfiguration{
+class ProbeControllerConfig:public Serializable{
 public:
 	int readInterval=PROBE_READINTERVAL;
 	ProbeConfig	probeConfigs[PROBE_COUNT]={
@@ -90,7 +90,7 @@ public:
 		ProbeConfig(VoltageSensorConfig(PIN_PROBE6_VOLT),CurrentSensorConfig(PIN_PROBE6_CURRENT))
 	};
 
-    void Serialize(JsonDocument *doc,bool initialize) override{
+    virtual void Serialize(JsonDocument *doc,bool initialize) override{
         if(initialize){
             //to<JsonArray>() creates a new memory pointer
             JsonArray probeJsonConfigs = (*doc)[F("ProbeConfigurations")].to<JsonArray>();
@@ -110,7 +110,7 @@ public:
         (*doc).shrinkToFit();
     }    
     
-    void Serialize(JsonObject *packet,bool initialize) override{
+    virtual void Serialize(JsonObject *packet,bool initialize) override{
         if(initialize){
             //to<JsonArray>() creates a new memory pointer
             JsonArray probeJsonConfigs = (*packet)[F("ProbeConfigurations")].to<JsonArray>();
@@ -129,14 +129,21 @@ public:
         (*packet)[F("ReadInterval")] = this->readInterval;
     }
 
-
-
-    void Deserialize(JsonDocument doc) override{
+    virtual void Deserialize(JsonDocument &doc) override{
         auto probeJsonConfigs = doc[F("ProbeConfigurations")].as<JsonArray>();
         for(int i=0;i<PROBE_COUNT;i++){
-            auto probeConfig=probeJsonConfigs[i].to<JsonObject>();
-
+            auto probeConfig=probeJsonConfigs[i].as<JsonObject>();
+            this->probeConfigs[i].Deserialize(probeConfig);
         }
         this->readInterval=doc[F("ReadInterval")];
+    }
+
+    virtual void Deserialize(JsonObject &packet) override{
+        auto probeJsonConfigs = packet[F("ProbeConfigurations")].as<JsonArray>();
+        for(int i=0;i<PROBE_COUNT;i++){
+            auto probeConfig=probeJsonConfigs[i].as<JsonObject>();
+            this->probeConfigs[i].Deserialize(probeConfig);
+        }
+        this->readInterval=packet[F("ReadInterval")];
     }
 };

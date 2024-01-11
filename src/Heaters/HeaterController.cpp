@@ -1,7 +1,7 @@
 #include "HeaterController.hpp"
 
 HeaterController::HeaterController(const HeaterControllerConfig& config)
-:Component(),readInterval(config.readInterval){
+:Component(),readInterval(config.readInterval),configuration(config){
     for(int i=0;i<HEATER_COUNT;i++){
         Heater* heater=new Heater(config.heaterConfigs[i]);
         this->heaters.push_back(heater);
@@ -10,6 +10,8 @@ HeaterController::HeaterController(const HeaterControllerConfig& config)
         this->results.push_back(result);
     }
 }
+
+
 
 void HeaterController::Initialize(){
     for(auto heater:this->heaters){
