@@ -11,8 +11,6 @@ HeaterController::HeaterController(const HeaterControllerConfig& config)
     }
 }
 
-
-
 void HeaterController::Initialize(){
     for(auto heater:this->heaters){
         heater->Initialize();
@@ -33,16 +31,7 @@ void HeaterController::Initialize(){
 }
 
 void HeaterController::TransitionMode(){
-    switch(this->nextMode){
-        case HeaterMode::TUNING:{
-            this->TurnOff();
-            break;
-        }
-        case HeaterMode::NORMALOP:{
-            this->StopTuning();
-            break;
-        };
-    }
+
 }
 
 
@@ -63,7 +52,7 @@ void HeaterController::StopTuning(){
 void HeaterController::TunePid(){
     if(this->isTuning){
         for(auto heater:this->heaters){
-            heater->TunePidV2();
+            heater->RunAutoTune();
             this->isTuning&=(bool)(heater->IsTuning());
         }
         if(!this->isTuning){
@@ -112,4 +101,10 @@ void HeaterController::Print(){
     Serial.print("H[1]=");Serial.print(results[0].temperature);
     Serial.print(" , H[2]=");Serial.print(results[0].temperature);
     Serial.print(" , H[3]=");Serial.println(results[0].temperature);
+}
+
+void HeaterController::privateLoop(){
+    for(auto heater:heaters){
+        //heater->
+    }
 }

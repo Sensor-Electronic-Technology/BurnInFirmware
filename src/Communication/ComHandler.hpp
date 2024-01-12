@@ -5,7 +5,7 @@
 #include "../Logging/StationLogger.hpp"
 #include "../Heaters/HeaterConfiguration.hpp"
 #include "../Probes/ProbeConfiguration.hpp"
-#include "Serializable.hpp"
+#include "../Serializable.hpp"
 #include "../constants.h"
 #include "avr/pgmspace.h"
 

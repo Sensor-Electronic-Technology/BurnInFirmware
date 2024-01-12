@@ -4,16 +4,32 @@
 #include "ControllerConfiguration.hpp"
 
 
-//using namespace components;
+using namespace components;
 
-typedef struct TimerData{
+struct TimerData{
     bool            running=false,paused=false;
     unsigned long   elapsed_secs=0;
     unsigned long   lastCheck=0;
     unsigned long   duration_secs=0;
-}TimerData;
+    unsigned long   timeOnSecs=0;
 
+    void Serialize(JsonObject* timerJson){
+        (*timerJson)[F("Running")]=this->running;
+        (*timerJson)[F("Paused")]=this->paused;
+        (*timerJson)[F("ElapsedSecs")]=this->elapsed_secs;
+        (*timerJson)[F("DurationSecs")]=this->duration_secs;
+        (*timerJson)[F("TimeOnSecs")]=this->timeOnSecs;
+    }
 
+    void Deserialize(JsonObject timerJson){
+        this->running=timerJson[F("Running")];
+        this->paused=timerJson[F("Paused")];
+        this->elapsed_secs=timerJson[F("ElapsedSecs")];
+        this->duration_secs=timerJson[F("DurationSecs")];
+        this->timeOnSecs=timerJson[F("TimeOnSecs")];
+    }
+
+};
 
 class BurnInTimer{
 private:  
@@ -23,106 +39,45 @@ private:
     unsigned long durSec150mA;
 public:
 
-    BurnInTimer(const BurnTimerConfig& config)
-        :durSec60mA(config.time60mASecs),
-        durSec120mA(config.time120mASecs),
-        durSec150mA(config.time150mASecs){
+    BurnInTimer(const BurnTimerConfig& config);
 
-    }
-
-    void Start(CurrentValue current){
-        if(!this->td.running && !this->td.paused){
-            switch(current){
-                case CurrentValue::c060:{
-                    this->td.duration_secs=this->durSec60mA;
-                    break;
-                }
-                case CurrentValue::c120:{
-                    this->td.duration_secs=this->durSec120mA;
-                    break;
-                }
-                case CurrentValue::c150:{
-                    this->td.duration_secs=this->durSec150mA;
-                    break;
-                }
-            }
-            this->td.elapsed_secs=0;
-            this->td.running=true;
-            this->td.paused=false;
-        }
-    }
+    void Start(CurrentValue current);
    
-    void StartFrom(CurrentValue current,unsigned long elap){
-        if(!this->td.running && !this->td.paused){
-            switch(current){
-                case CurrentValue::c060:{
-                    this->td.duration_secs=this->durSec60mA;
-                    break;
-                }
-                case CurrentValue::c120:{
-                    this->td.duration_secs=this->durSec120mA;
-                    break;
-                }
-                case CurrentValue::c150:{
-                    this->td.duration_secs=this->durSec150mA;
-                    break;
-                }
-            }
-            this->td.elapsed_secs=elap;
-            this->td.running=true;
-            this->td.paused=false;
-        }
-    }
+    void StartFrom(CurrentValue current,unsigned long elap);
    
-    void Stop(){
-        this->td.running=false;
-        this->td.paused=false;
-        this->td.lastCheck=0; 
-        this->td.elapsed_secs=0;
-        this->td.duration_secs=0;
-    }
+    void Stop();
 
-    void Reset(){
-        this->td.running=false;
-        this->td.paused=false;
-        this->td.lastCheck=false;
-        this->td.elapsed_secs=0;
-        this->td.duration_secs=0;
-    }
+    void Reset();
 
-    void Pause(){
-        if(this->td.running && !this->td.paused){
-            this->td.paused=true;
-        }
-    }
+    void Pause();
 
-    void Continue(){
-        if(this->td.running && this->td.paused){
-            this->td.paused=false;
-        }
-    }
+    void Continue();
 
-    bool IsDone(){
-        return !this->td.running;
-    }
+    bool IsDone();
     
-    unsigned long GetElapsed(){
-        return this->td.elapsed_secs;
-    }
+    unsigned long GetElapsed();
     
-    void Increment(){
-        if(this->td.running && !this->td.paused){
-            auto millis_t=millis();
-            if(millis_t-this->td.lastCheck>=(TIMER_PERIOD*TIMER_FACTOR)){
-                this->td.lastCheck=millis_t;
-                this->td.elapsed_secs++;
-                bool done=(this->td.elapsed_secs*TIMER_PERIOD)>=this->td.duration_secs;
-                this->td.running=!done;
-            }
-        }
+    void Increment();
+
+    void Serialize(JsonObject* timerJson){
+        // (*timerJson)[F("Running")]=this->td.running;
+        // (*timerJson)[F("Paused")]=this->td.paused;
+        // (*timerJson)[F("ElapsedSecs")]=this->td.elapsed_secs;
+        // (*timerJson)[F("DurationSecs")]=this->td.duration_secs;
+        // (*timerJson)[F("TimeOnSecs")]=this->td.timeOnSecs;
+        this->td.Serialize(timerJson);
     }
 
-    BurnInTimer operator++(){
+    void Deserialize(JsonObject timerJson){
+        // this->td.running=timerJson[F("Running")];
+        // this->td.paused=timerJson[F("Paused")];
+        // this->td.elapsed_secs=timerJson[F("ElapsedSecs")];
+        // this->td.duration_secs=timerJson[F("DurationSecs")];
+        // this->td.timeOnSecs=timerJson[F("TimeOnSecs")];
+        this->td.Deserialize(timerJson);
+    }
+
+    BurnInTimer& operator++(){
         this->Increment();
         return *this;
     }

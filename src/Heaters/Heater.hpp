@@ -35,18 +35,20 @@ typedef struct TuneParameters{
 }TuneParameters;
 
 class Heater:public Component{
+	typedef void(Heater::*RunFunc)(void);
 public:
 	Heater(const HeaterConfig& config);
 	void Initialize();
 	void UpdateConfiguratiuon(const HeaterConfig& config);
+	void SwitchMode(HeaterMode nextMode);
 	void TurnOn();
 	void TurnOff();
 	void StartTuning();
 	void StopTuning();
-	void TunePidV2();
+	void RunAutoTune();
 	void PrintTuning(bool completed);
 	bool IsTuning();
-	void ProcessPid();
+	void Run();
 	void OutputAction(unsigned long now);
 	HeaterResult Read();
 	HeaterResult GetHeaterResult();
@@ -69,10 +71,9 @@ private:
 	bool isTuning=false;
 	bool relayState=false;
 	int id=0;
-	
-	void privateLoop() {  
-		this->ProcessPid(); 
-	}
+	HeaterMode heaterMode;
+	RunFunc	run[2];
+	virtual void privateLoop()override;
 };
 
 

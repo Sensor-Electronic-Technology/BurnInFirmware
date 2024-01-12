@@ -10,7 +10,8 @@ Heater::Heater(const HeaterConfig& config)
     ki(config.pidConfig.ki),
     tempDeviation(config.tempDeviation),
     WindowSize(config.pidConfig.windowSize),
-    heaterState(HeaterState::Off){
+    heaterState(HeaterState::Off),
+    heaterMode(HeaterMode::PID_RUN){
 
     this->tempSetPoint=DEFAULT_TEMPSP;
     this->pid=new PID(&this->temperature,&this->pidOutput,&this->tempSetPoint,
@@ -18,6 +19,8 @@ Heater::Heater(const HeaterConfig& config)
     this->pid->SetOutputRange(0,this->WindowSize,true);
     this->autoTuner=new PID_AutoTune(&this->temperature,&this->pidOutput,this->tempSetPoint,
         this->pid->GetSampleTime(),15);
+    this->run[HeaterMode::PID_RUN]=&Heater::Run;
+    this->run[HeaterMode::ATUNE_RUN]=&Heater::RunAutoTune;
     this->autoTuner->SetOutputRange(0,this->WindowSize);
     Serial.print("Sample Time=");Serial.print(this->pid->GetSampleTime());
 }
@@ -46,7 +49,27 @@ void Heater::StopTuning(){
     this->PrintTuning(false);
 }
 
-void Heater::TunePidV2(){
+void Heater::SwitchMode(HeaterMode nextMode){
+    if(this->heaterMode!=nextMode){
+        switch(this->heaterMode){
+            //Transition to Tuning
+            case HeaterMode::PID_RUN:{
+                this->TurnOff();
+                this->heaterMode=nextMode;
+                break;
+            }
+            //Transition to PID(Normal Operation)
+            case HeaterMode::ATUNE_RUN:{
+                this->StopTuning();
+                this->TurnOff();
+                this->heaterMode=nextMode;
+                break;
+            }
+        }
+    }
+}
+
+void Heater::RunAutoTune(){
     auto now=millis();
     this->Read();
     if(this->isTuning){
@@ -68,7 +91,7 @@ void Heater::TunePidV2(){
         this->OutputAction(now);
         if(this->autoTuner->Finished()){
             this->isTuning=false;
-            this->PrintTuning(true);
+            this->PrintTuning(true); //debugging
         }
     }
 }
@@ -84,7 +107,7 @@ bool Heater::IsTuning(){
     return this->isTuning;
 }
 
-void Heater::ProcessPid(){
+void Heater::Run(){
     this->Read();
     if(this->heaterState==HeaterState::On){
         auto now=millis();
@@ -135,4 +158,8 @@ HeaterResult Heater::GetHeaterResult(){
 
 void Heater::ChangeSetpoint(int setPoint) {
     this->tempSetPoint = setPoint;
+}
+
+void Heater::privateLoop(){
+    this->run[this->heaterMode];
 }

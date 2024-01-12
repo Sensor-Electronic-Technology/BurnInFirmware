@@ -8,16 +8,10 @@
 
 using namespace components;
 
-enum HeaterMode{
-	TUNING,
-	NORMALOP
-};
-
 class HeaterController:public Component{
 public:
     HeaterController(const HeaterControllerConfig& config);
     void Initialize();
-    void TransitionMode();
     void StartTuning();
     void StopTuning();
     void TunePid();
@@ -31,8 +25,11 @@ public:
         Serial.println(filenames[0]);
         Serial.println(filenames[1]);
         Serial.println(filenames[2]);
-
     }
+
+    void TransitionMode();
+    void TransitionNormToTune();
+    void TransitionTuneToNorm();
 
 private:
     Array<Heater*,HEATER_COUNT> heaters;
@@ -44,9 +41,5 @@ private:
     unsigned long readInterval;
     bool isTuning;
 
-    void privateLoop(){ 
-        if(this->nextMode!=this->mode){
-
-        }
-    }
+    virtual void privateLoop() override;
 };

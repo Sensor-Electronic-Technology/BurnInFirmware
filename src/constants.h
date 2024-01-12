@@ -33,7 +33,13 @@ enum StationCommand:uint8_t{
     TOGGLE_HEAT,
     SWITCH_CURRENT,
     PROBE_TEST,
-    UPDATE_CONFIG
+    UPDATE_CONFIG,
+    START_TUNE,
+};
+
+enum HeaterMode:uint8_t{
+    PID_RUN=0,
+	ATUNE_RUN=1
 };
 
 //typedef components::Function<void(int)> IntCallback;

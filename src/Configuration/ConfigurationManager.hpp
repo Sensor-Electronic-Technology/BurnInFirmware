@@ -4,7 +4,7 @@
 #include <ArduinoComponents.h>
 #include <SD.h>
 #include <SPI.h>
-#include "../Communication/Serializable.hpp"
+#include "../Serializable.hpp"
 #include "../Heaters/HeaterConfiguration.hpp"
 #include "../Probes/ProbeConfiguration.hpp"
 #include "../constants.h"

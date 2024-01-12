@@ -1,6 +1,6 @@
 #pragma once
 #include <ArduinoJson.h>
-#include "../Communication/Serializable.hpp"
+#include "../Serializable.hpp"
 #include "../constants.h"
 
 class NtcConfig{

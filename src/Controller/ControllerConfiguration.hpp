@@ -1,6 +1,6 @@
 #pragma once
 #include "../constants.h"
-#include "../Communication/Serializable.hpp"
+#include "../Serializable.hpp"
 
 struct CurrentSelectorConfig{
     int pin120mA=PIN_CURRENT_120mA;
