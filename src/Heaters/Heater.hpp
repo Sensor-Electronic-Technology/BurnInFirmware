@@ -29,18 +29,16 @@ typedef struct HeaterResult{
 
 }HeaterResult;
 
-typedef struct TuneParameters{
-	double kp=0,ki=0,kd=0;
-	unsigned long output=0;
-}TuneParameters;
+
 
 class Heater:public Component{
 	typedef void(Heater::*RunFunc)(void);
 public:
 	Heater(const HeaterConfig& config);
 	void Initialize();
-	void UpdateConfiguratiuon(const HeaterConfig& config);
+	void UpdatePid(HeaterTuneResult newPid);
 	void SwitchMode(HeaterMode nextMode);
+
 	void TurnOn();
 	void TurnOff();
 	void StartTuning();
@@ -48,11 +46,15 @@ public:
 	void RunAutoTune();
 	void PrintTuning(bool completed);
 	bool IsTuning();
+	void RunPid();
 	void Run();
 	void OutputAction(unsigned long now);
 	HeaterResult Read();
 	HeaterResult GetHeaterResult();
 	void ChangeSetpoint(int setPoint);
+	void MapTurningComplete(TuningCompleteCallback cbk){
+		this->tuningCompleteCb=cbk;	
+	}
 
 private:
 	TemperatureSensor 	ntc;
@@ -73,6 +75,7 @@ private:
 	int id=0;
 	HeaterMode heaterMode;
 	RunFunc	run[2];
+	TuningCompleteCallback tuningCompleteCb=[](HeaterTuneResult){};
 	virtual void privateLoop()override;
 };
 

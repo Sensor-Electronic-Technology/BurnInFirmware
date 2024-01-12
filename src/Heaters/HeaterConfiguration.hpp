@@ -3,6 +3,54 @@
 #include "../Serializable.hpp"
 #include "../constants.h"
 
+struct HeaterTuneResult{
+    int heaterNumber=-1;
+    bool complete=false;
+    double kp=0,ki=0,kd=0;
+    void clear(){
+        this->heaterNumber=-1;
+        this->complete=false;
+        this->kp=0;
+        this->ki=0;
+        this->kd=0;
+    }
+};
+
+struct AutoTuneResults:public Serializable{
+    HeaterTuneResult results[HEATER_COUNT];
+    void Clear(){
+        for(int i=0;i<HEATER_COUNT;i++){
+            this->results[i].clear();
+        }
+    }
+    virtual void Serialize(JsonObject *packet,bool initialize){
+        if(initialize){
+            JsonArray turnResultsJson=(*packet)[F("AutoTuneResults")].to<JsonArray>();
+            for(auto result:this->results){
+                JsonObject resultJson=turnResultsJson.add<JsonObject>();
+                resultJson[F("HeaterNumber")]=result.heaterNumber;
+                resultJson[F("kp")]=result.kp;
+                resultJson[F("ki")]=result.ki;
+                resultJson[F("kd")]=result.kd;
+            }
+        }else{
+            JsonArray turnResultsJson=(*packet)[F("AutoTuneResults")].as<JsonArray>();
+            for(int i=0;i<HEATER_COUNT;i++){
+                JsonObject resultJson=turnResultsJson[i].as<JsonObject>();
+                resultJson[F("HeaterNumber")]=results[i].heaterNumber;
+                resultJson[F("kp")]=results[i].kp;
+                resultJson[F("ki")]=results[i].ki;
+                resultJson[F("kd")]=results[i].kd;
+            }
+        }
+    }
+    virtual void Serialize(JsonDocument *doc,bool initialize);
+    virtual void Deserialize(JsonDocument &doc);
+    virtual void Deserialize(JsonObject &packet);
+};
+
+typedef components::Function<void(HeaterTuneResult)> TuningCompleteCallback;
+
 class NtcConfig{
 public:
 	double aCoeff,bCoeff,cCoeff;
@@ -70,7 +118,13 @@ public:
 		double tempDev=DEFAULT_TEMP_DEV)
 			:HeaterId(id),Pin(pin),pidConfig(pidConfig),ntcConfig(ntc_config),
 			tempDeviation(tempDev){	}
-            
+
+    void UpdatePid(HeaterTuneResult newPid){
+        this->pidConfig.kp=newPid.kp;
+        this->pidConfig.ki=newPid.ki;
+        this->pidConfig.kd=newPid.kd;
+    } 
+    
     void Deserialize(JsonObject heaterJson){
         JsonObject ntcConfigJson=heaterJson[F("NtcConfig")];
         JsonObject pidConfigJson=heaterJson[F("PidConfig")];
@@ -113,6 +167,10 @@ public:
 		HeaterConfig(NtcConfig(PIN_HEATER2_TEMP,NTC2_A,NTC2_B,NTC2_C),PidConfig(765.77,1345.82,604.67,DEFAULT_WINDOW),2,PIN_HEATER2_HEATER),
 		HeaterConfig(NtcConfig(PIN_HEATER3_TEMP,NTC3_A,NTC3_B,NTC3_C),PidConfig(179.95,2216.84,81.62,DEFAULT_WINDOW),3,PIN_HEATER3_HEATER)
 	};
+
+    void UpdateHeaterPid(HeaterTuneResult newPid){
+        this->heaterConfigs[newPid.heaterNumber-1].UpdatePid(newPid);
+    }
 
     virtual void Serialize(JsonDocument *doc,bool initialize) override{
         if(initialize){

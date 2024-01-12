@@ -1,63 +1,126 @@
 #include "HeaterController.hpp"
 
 HeaterController::HeaterController(const HeaterControllerConfig& config)
-:Component(),readInterval(config.readInterval),configuration(config){
+        :Component(),readInterval(config.readInterval),configuration(config){
+
+    this->tuningCompleteCbk=[&](HeaterTuneResult result){
+        this->TuningComplete(result);
+    };
+
     for(int i=0;i<HEATER_COUNT;i++){
         Heater* heater=new Heater(config.heaterConfigs[i]);
+        heater->MapTurningComplete(this->tuningCompleteCbk);
         this->heaters.push_back(heater);
         RegisterChild(heater);
         HeaterResult result;
         this->results.push_back(result);
     }
+
+    this->run[HeaterMode::PID_RUN]=&HeaterController::Run;
+    this->run[HeaterMode::ATUNE_RUN]=&HeaterController::RunAutoTune;
+
+    this->responseCbk=[&](Response response){
+        this->HandleResponse(response);
+    };
+    ComHandler::MapHeaterResponseCallback(this->responseCbk);
 }
 
 void HeaterController::Initialize(){
+    
     for(auto heater:this->heaters){
         heater->Initialize();
+        
     }
     for(int i=0;i<100;i++){
         this->ReadTemperatures();
     }
 
-    this->printTimer.onInterval([&]{
-        this->Print();
-    },2500);
+    // this->printTimer.onInterval([&]{
+    //     this->Print();
+    // },2500);
 
     this->readTimer.onInterval([&]{
         this->ReadTemperatures();
-    },1000);
+    },this->readInterval);
     RegisterChild(this->readTimer);
-    RegisterChild(this->printTimer);
+    //RegisterChild(this->printTimer);
 }
 
-void HeaterController::TransitionMode(){
-
+void HeaterController::HandleResponse(Response response){
+    if(response==Response::HEATER_SAVE){
+        //update and save configuration
+        //then request restart
+        for(int i=0;i<HEATER_COUNT;i++){
+            auto newPid=this->tuningResults.results[i];
+            this->configuration.UpdateHeaterPid(newPid);
+            this->heaters[newPid.heaterNumber-1]->UpdatePid(newPid);
+            ConfigurationManager::SaveConfig(&this->configuration,PacketType::HEATER_CONFIG);
+        }
+    }else if(response==Response::HEATER_CANCEL){
+        //clear tuning results
+        //wait for mode change
+        this->tuningResults.Clear();
+    }
 }
 
+void HeaterController::TuningComplete(HeaterTuneResult result){
+    if(result.heaterNumber<HEATER_COUNT && result.heaterNumber>-1){
+        this->tuningResults.results[result.heaterNumber-1]=result;
+        bool tuningComplete=true;
+        for(int i=0;i<HEATER_COUNT;i++){
+            tuningComplete&=this->tuningResults.results[i].complete;
+        }
+        if(tuningComplete){
+            //Send values
+            this->tuningCompleted=true;
+            ComHandler::SendRequest(PacketType::HEATER_REQUEST,"Tuning Completed. Save new PID parameters?",this->tuningResults);
+        }else{
+            if(result.complete){
+                StationLogger::Log(LogLevel::INFO,true,false,
+                        "Heater %d tuning complete. Please wait for other heaters to finish tuning \n New Values: kp: %f ki: %f kd: %f",
+                        result.heaterNumber,result.kp,result.ki,result.kd);
+            }
+        }
+    }
+}
+
+void HeaterController::ChangeMode(HeaterMode nextMode){
+    if(this->heaterMode!=nextMode){
+        for(auto heater:this->heaters){
+            heater->SwitchMode(nextMode);
+        }
+        this->isTuning=false;
+    }
+}
 
 void HeaterController::StartTuning(){
-    this->isTuning=true;
-    for(auto heater:this->heaters){
-        heater->StartTuning();
-    }
+   if(this->heaterMode==HeaterMode::ATUNE_RUN){
+        this->isTuning=true;
+        for(auto heater:this->heaters){
+            heater->StartTuning();
+        }
+   }
 }
 
 void HeaterController::StopTuning(){
-    this->isTuning=false;
+    if(this->heaterMode==HeaterMode::ATUNE_RUN){
+        this->isTuning=false;
+        for(auto heater:this->heaters){
+            heater->StopTuning();
+        }
+   }
+}
+
+void HeaterController::RunAutoTune(){
     for(auto heater:this->heaters){
-        heater->StopTuning();
+        heater->RunAutoTune();
+        this->isTuning&=(bool)(heater->IsTuning());
     }
 }
 
-void HeaterController::TunePid(){
-    if(this->isTuning){
-        for(auto heater:this->heaters){
-            heater->RunAutoTune();
-            this->isTuning&=(bool)(heater->IsTuning());
-        }
-        if(!this->isTuning){
-            Serial.println("Completed");
-        }
+void HeaterController::Run(){
+    for(auto heater:this->heaters){
+        heater->Run();
     }
 }
 
@@ -104,7 +167,5 @@ void HeaterController::Print(){
 }
 
 void HeaterController::privateLoop(){
-    for(auto heater:heaters){
-        //heater->
-    }
+    
 }

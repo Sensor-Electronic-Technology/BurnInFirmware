@@ -7,6 +7,7 @@
 #include "../Serializable.hpp"
 #include "../Heaters/HeaterConfiguration.hpp"
 #include "../Probes/ProbeConfiguration.hpp"
+#include "../Logging/StationLogger.hpp"
 #include "../constants.h"
 
 
@@ -34,7 +35,9 @@ public:
         auto fileName=filenames[configType];
         this->file=SD.open(fileName);
         if(!this->file){
-            Serial.print("Error Opening ");Serial.println(fileName);
+            StationLogger::Log(LogLevel::CRITICAL_ERROR,true,false,
+                "Configuration file failed to open.  System will switch to default setup \n Please contact administrator asap!",
+                read_packet_prefix(configType));
             return;
         }
         this->doc.clear();
@@ -42,10 +45,13 @@ public:
         if(error){
             Serial.println("Error: Failed to deserialize document");
             Serial.println(error.f_str());
+            StationLogger::Log(LogLevel::CRITICAL_ERROR,true,false,
+                "Failed to load configuration %s.  System will switch to default values. \n Please contact administrator asap!",
+                read_packet_prefix(configType));
             this->file.close();
             return;
         }
-        serializeJsonPretty(instance->doc,Serial);
+        //serializeJsonPretty(instance->doc,Serial);
         config->Deserialize(instance->doc);
         this->file.close();
     }
@@ -66,15 +72,21 @@ public:
         SD.remove(fileName);//overwrite file
         this->file=SD.open(fileName,FILE_WRITE);
         if(!this->file){
-            Serial.print("Error Opening ");Serial.println(fileName);
+            //Serial.print("Error Opening ");Serial.println(fileName);
+            StationLogger::Log(LogLevel::CRITICAL_ERROR,true,false,
+                    "Heater Configuration file failed to open.  Please save values and restart the system");
             return;
         }
         this->doc.clear();
         config->Serialize(&this->doc,true);
         if(serializeJsonPretty(this->doc,this->fileWriteBuffer)==0){
-            Serial.println("Error: Faild to write out configuration");
+            //Serial.println("Error: Faild to write out configuration");
+            StationLogger::Log(LogLevel::CRITICAL_ERROR,true,false,
+                    "Heater Configuration save failed. Changed will be lost on restart.\n Suggest manually enter changes");
         }
-        serializeJsonPretty(this->doc,Serial);
+        //TODO: test this
+        ComHandler::MsgPacketSerializer(*config,configType);
+        //serializeJsonPretty(this->doc,Serial);
         this->fileWriteBuffer.flush();
         this->file.close();
     }
@@ -85,11 +97,6 @@ private:
     File file;
     WriteBufferingStream fileWriteBuffer{file, 64};
 
-    HeaterControllerConfig heaterConfig;
-    ProbeControllerConfig  probeConfig;
-
-    // HeaterControlCallback _heaterControlCallback=[](HeaterControllerConfig){};
-    // ProbeControlCallback  _probeControlCallback=[](ProbeControllerConfig){};
-
-    //SD   sd;
+    // HeaterControllerConfig heaterConfig;
+    // ProbeControllerConfig  probeConfig;
 };

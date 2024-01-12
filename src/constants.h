@@ -34,7 +34,11 @@ enum StationCommand:uint8_t{
     SWITCH_CURRENT,
     PROBE_TEST,
     UPDATE_CONFIG,
+    CHANGE_MODE_ATUNE,
+    CHANGE_MODE_NORMAL,
     START_TUNE,
+    STOP_TUNE,
+    SAVE_ATUNE_RESULT
 };
 
 enum HeaterMode:uint8_t{
@@ -42,10 +46,60 @@ enum HeaterMode:uint8_t{
 	ATUNE_RUN=1
 };
 
+enum PacketType:uint8_t{
+    HEATER_CONFIG=0,
+    PROBE_CONFIG=1,
+    SYSTEM_CONFIG=2,
+    MESSAGE=3,
+    DATA=4,
+    COMMAND=5,
+    HEATER_REQUEST=6,  //Pc recieves AutoTuneValues and request save response
+    HEATER_RESPONSE=7, //Pc sends save response
+    TEST_REQUEST=8,   //Firmware sends continue test request
+    TEST_RESPONSE=9  //PC sends continue test request
+};
+
+enum Response{
+    HEATER_SAVE=0,
+    HEATER_CANCEL=1,
+    TEST_CONTINUE=2,
+    TEST_CANCEL=3
+};
+
+enum LogLevel:uint8_t{
+    ERROR=0,
+    CRITICAL_ERROR=1,
+    WARNING=2,
+    INFO=3
+};
+
+enum SystemMessage:uint8_t{
+    BURNING_FINISHED=0,
+    TEMP_OUT_OF_RANGE=1,
+    SYSTEM_RESETTING=2,
+    STARTING_PROBE_TEST=3,
+    TEMP_SET_TO=4,
+    TEST_PAUSED=5,
+    TEST_RESUMED=6,
+    CURRENT_SET_TO=7,
+    SWITCH_DISABLED=8,
+    CONFIGS_RECIEVED=9,
+    CONFIGS_RECIEVED_ERROR=10,
+    FIRMWARE_INIT_MESSAGE=11,
+    LOADING_CONFIG_FILES=12,
+    LOADING_CONFIG_FILES_DONE=13,
+    CHECKING_RUNNING_TEST=14
+};
+
+
+
 //typedef components::Function<void(int)> IntCallback;
 typedef components::Function<void(void)> RestartRequiredCallback;
 typedef components::Function<void(StationCommand)> CommandCallback;
+typedef components::Function<void(Response)> ResponseCallback;
+
 typedef void (*CommandHandlerCallback)(StationCommand);
+
 
 //Timer
 #define TIMER_PERIOD                   1
@@ -117,39 +171,7 @@ typedef void (*CommandHandlerCallback)(StationCommand);
 #define PROBE_CONFIG_INDEX      1
 #define SYSTEM_CONFIG_INDEX     2
 
-enum PacketType:uint8_t{
-    HEATER_CONFIG=0,
-    PROBE_CONFIG=1,
-    SYSTEM_CONFIG=2,
-    MESSAGE=3,
-    DATA=4,
-    COMMAND=5
-};
 
-enum LogLevel:uint8_t{
-    ERROR=0,
-    CRITICAL_ERROR=1,
-    WARNING=2,
-    INFO=3
-};
-
-enum SystemMessage:uint8_t{
-    BURNING_FINISHED=0,
-    TEMP_OUT_OF_RANGE=1,
-    SYSTEM_RESETTING=2,
-    STARTING_PROBE_TEST=3,
-    TEMP_SET_TO=4,
-    TEST_PAUSED=5,
-    TEST_RESUMED=6,
-    CURRENT_SET_TO=7,
-    SWITCH_DISABLED=8,
-    CONFIGS_RECIEVED=9,
-    CONFIGS_RECIEVED_ERROR=10,
-    FIRMWARE_INIT_MESSAGE=11,
-    LOADING_CONFIG_FILES=12,
-    LOADING_CONFIG_FILES_DONE=13,
-    CHECKING_RUNNING_TEST=14
-};
 
 const char* const message_table[] PROGMEM={
     "Burn-In Complete.  Heaters Off}\nReset before starting next Burn-In",
@@ -190,7 +212,12 @@ const char* const prefixes[] PROGMEM = {
     "CP",
     "CS",
     "M",
-    "D"
+    "D",
+    "COM",
+    "HREQ",
+    "HREC",
+    "TREQ",
+    "TREC"
 };
 
 

@@ -41,7 +41,7 @@ void setup(){
     Serial.begin(38400);
     while(!Serial){}
     ComHandler::SetSerial(&Serial);
-    StationLogger::SetSerial(&Serial);
+    StationLogger::InitSerial();
     StationLogger::Log(LogLevel::INFO,true,false,"Connected, send data");
     lastCheck=millis();
     String prefixStr;
@@ -63,7 +63,7 @@ void loop(){
 
 void serialEvent(){
     if(Serial.available()){
-        ComHandler::HandlerSerial();
+        ComHandler::HandleSerial();
     }   
 }
 

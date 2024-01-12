@@ -2,10 +2,11 @@
 #include <ArduinoJson.h>
 #include <StreamUtils.h>
 #include <SD.h>
+#include "../Communication/ComHandler.hpp"
 #include "../constants.h"
 
 
-#define MSG_BUFFER_SIZE      64
+#define MSG_BUFFER_SIZE      254
 #define FILE_BUFFER_SIZE     1024
 
 class StationLogger{
@@ -19,10 +20,9 @@ public:
 
     
 
-    static void SetSerial(Print* serial){
+    static void InitSerial(){
         auto instance=StationLogger::Instance();
         instance->msgBuffer.reserve(MSG_BUFFER_SIZE);
-        instance->serialLog=serial;
     }
 
     static void InitFile(){
@@ -52,7 +52,6 @@ public:
             instance->append_buffers("\r\n");
         }
         instance->print();
-    
     }
 
     static void Log(LogLevel level, bool printPrefix,bool newLine,const char* format,...){
@@ -110,25 +109,39 @@ public:
     }
 
     void append_buffers(const char* logLine){
-        if(instance->file){
+        if(this->file){
             instance->fileBuffer+=logLine;
         }
-        if(instance->serialLog!=nullptr){
-            instance->msgBuffer+=logLine;
+        if(this->serialEnabled){
+            auto addlen=strlen(logLine);
+            auto len=this->msgBuffer.length();
+            if(addlen<=MSG_BUFFER_SIZE-len){
+                this->msgBuffer+=logLine;
+            }
         }
+        
+        // if(instance->serialLog!=nullptr){
+        //     instance->msgBuffer+=logLine;
+        // }
     }
 
     void print(){
-        if(this->serialLog){
-            this->serialDoc.clear();
-            instance->serialDoc[F("Prefix")]=read_packet_prefix(PacketType::MESSAGE);
-            JsonObject packet=this->serialDoc[F("Packet")].to<JsonObject>();
-            packet["Message"]=this->msgBuffer.c_str();
-            serializeJson(this->serialDoc,Serial);
-            this->serialLog->println();
+        // if(this->serialLog){
+        //     this->serialDoc.clear();
+        //     instance->serialDoc[F("Prefix")]=read_packet_prefix(PacketType::MESSAGE);
+        //     JsonObject packet=this->serialDoc[F("Packet")].to<JsonObject>();
+        //     packet["Message"]=this->msgBuffer.c_str();
+        //     serializeJson(this->serialDoc,Serial);
+        //     this->serialLog->println();
+        //     auto len=this->msgBuffer.length();
+        //     this->msgBuffer.remove(0,len);
+        // }
+        if(serialEnabled){
+            ComHandler::SendMessage(this->msgBuffer.c_str());
             auto len=this->msgBuffer.length();
             this->msgBuffer.remove(0,len);
         }
+
         if(this->file){
             auto len=this->fileBuffer.length();
             this->file.write(this->fileBuffer.c_str(),len);
@@ -139,7 +152,8 @@ public:
 
 private:
     static StationLogger* instance;
-    Print* serialLog=nullptr;
+    //Print* serialLogger;
+    bool serialEnabled=true;
     File  file;
     JsonDocument serialDoc;
     String fileBuffer;
