@@ -1,7 +1,7 @@
 #pragma once
 #include <ArduinoComponents.h>
 #include "HeaterConfiguration.hpp"
-#include "../constants.h"
+#include "heater_constants.h"
 
 using namespace components;
 

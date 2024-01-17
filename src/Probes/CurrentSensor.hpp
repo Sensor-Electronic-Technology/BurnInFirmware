@@ -1,7 +1,7 @@
 #pragma once
 #include <ArduinoComponents.h>
 #include "ProbeConfiguration.hpp"
-#include "../constants.h"
+#include "probe_constants.h"
 
 using namespace components;
 

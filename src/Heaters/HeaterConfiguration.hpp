@@ -1,20 +1,9 @@
 #pragma once
 #include <ArduinoJson.h>
 #include "../Serializable.hpp"
-#include "../constants.h"
+#include "heater_constants.h"
 
-struct HeaterTuneResult{
-    int heaterNumber=-1;
-    bool complete=false;
-    double kp=0,ki=0,kd=0;
-    void clear(){
-        this->heaterNumber=-1;
-        this->complete=false;
-        this->kp=0;
-        this->ki=0;
-        this->kd=0;
-    }
-};
+
 
 struct AutoTuneResults:public Serializable{
     HeaterTuneResult results[HEATER_COUNT];
@@ -49,7 +38,7 @@ struct AutoTuneResults:public Serializable{
     virtual void Deserialize(JsonObject &packet);
 };
 
-typedef components::Function<void(HeaterTuneResult)> TuningCompleteCallback;
+
 
 class NtcConfig{
 public:

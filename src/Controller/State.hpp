@@ -1,81 +1,84 @@
 #pragma once
 #include "../constants.h"
 #include <LinkedList.h>
-namespace State{
 
+enum HeaterStates:uint8_t{
+	H_INIT=0,
+	H_TUNING=1,
+	H_IDLE=2,
+	COMPLETED=3,
+	H_ERROR=4
+};
 
+enum States:uint8_t{
+	N_INIT=0,
+	N_IDLE=1,
+	N_PROBE_TEST=2,
+	N_RUNNING=3,
+	N_PAUSED=4,
+	N_DONE=5,
+	N_ERROR=6
+};
 
-enum ModeState:uint8_t{
-	INIT=0,
-	HEATING=1,
-	RUNNING=2,
-	PAUSED=3,
-	COMPLETED=4,
-	IDLE=5,
-	STATEERROR=6
+enum CalStates:uint8_t{
+	CALINIT=0,
+	CALVOLTAGE=1,
+	CALCURRENT=2,
+	CALTEMP=3,
+	CALDONE=4
 };
 
 enum StationMode:uint8_t{
-	TUNE=0,
-	NORMAL=1 //Default
+	NORMAL=0, //Default
+	TUNE=1,
+	CAL=2
 };
 
-// struct Transition{
-// 	bool (*conditionCheck)();
-// 	uint8_t stateNumber;
-// 	Transition(bool(*cond)(),int stateNum){
-// 		this->conditionCheck=cond;
-// 		this->stateNumber=stateNum;
-// 	}
-// };
+union ModeState {
+	States n_state;
+	CalStates c_state;
+	HeaterStates h_states;
+};
 
-// class State{
-// public:
 
-// 	inline void addTransition(Transition* transition,State* state){
-// 		Transition trans()
-// 	}
-
-// private:
-// 	LinkedList<Transition*> transitions; 
-// };
-
-class Mode{
-public:
+struct Task{
 	StationMode mode;
-	bool continue_mode;
-	bool latched;
+	ModeState	state;
+	bool s_latched=false;
+	bool m_latched=false;
 
-	inline bool operator==(const Mode& rhs){
+	void clear(){
+		this->s_latched=false;
+		this->s_latched=false;
+	}
+
+	bool operator==(const Task& rhs){
 		return this->mode==rhs.mode;
 	}
 
-	inline bool operator!=(const Mode& rhs){
+	bool operator!=(const Task& rhs){
 		return this->mode!=rhs.mode;
 	}
 };
 
-class State{
-public:
-	ModeState state;
-	bool continue_state;
-	bool latched;
 
-	inline bool operator==(const State& rhs){
-		return this->state==rhs.state;
-	}
 
-	inline bool operator!=(const State& rhs){
-		return this->state!=rhs.state;
-	}
-};
 
-class Task{
-public:
-	Mode mode;
-	State state;
 
-};
+
+// struct Task{
+// 	StationMode mode;
+// 	ModeState state;
+
+// 	bool operator==(const Task& rhs){
+// 		return this->mode==rhs.mode;
+// 	}
+
+// 	bool operator!=(const Task& rhs){
+// 		return this->mode!=rhs.mode;
+// 	}
+
+// };
 
 // struct Transition{
 // 	bool(*conditonFunc)();
@@ -98,7 +101,7 @@ public:
 
 
 
-};
+
 
 
 

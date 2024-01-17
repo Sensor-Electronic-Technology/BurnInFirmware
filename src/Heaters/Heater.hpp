@@ -1,6 +1,6 @@
 #pragma once
 #include <ArduinoComponents.h>
-#include "../constants.h"
+#include "heater_constants.h"
 #include "TemperatureSensor.hpp"
 #include "HeaterConfiguration.hpp"
 #include "./PID/PID.hpp"

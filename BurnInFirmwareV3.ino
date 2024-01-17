@@ -1,11 +1,12 @@
 #include <ArduinoJson.h>
 #include <SD.h>
 #include "src/constants.h"
+#include "src/Heaters/heater_constants.h"
 #include "src/Communication/ComHandler.hpp"
 #include "src/Heaters/HeaterConfiguration.hpp"
 #include "src/Heaters/heaters_include.h"
 #include "src/Probes/probes_include.h"
-#include "src/Configuration/ConfigurationManager.hpp"
+#include "src/Files/FileManager.hpp"
 #include "src/Communication/ComHandler.hpp"
 #include "src/Logging/StationLogger.hpp"
 #include <Array.h>
@@ -25,7 +26,7 @@ void testing(){
     }
     StationLogger::InitFile();
     
-    StationLogger::Log(LogLevel::ERROR,true,true,SystemMessage::CHECKING_RUNNING_TEST);
+    //StationLogger::Log(LogLevel::ERROR,true,true,SystemMessage::CHECKING_RUNNING_TEST);
     delay(5000);
     Serial.println("Reading File");
     StationLogger::PrintFile();

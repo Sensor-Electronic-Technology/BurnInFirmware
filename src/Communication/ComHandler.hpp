@@ -8,7 +8,7 @@
 #include "../constants.h"
 #include "avr/pgmspace.h"
 
-#define ARDUINOJSON_DEFAULT_NESTING_LIMIT 50
+#define ARDUINOJSON_DEFAULT_NESTING_LIMIT       50
 
 class ComHandler{
 public:
@@ -77,7 +77,7 @@ public:
         //StationLogger::Log(LogLevel::INFO,true,false,"Input Prefix: %s",prefix);
         bool found=false;
         PacketType packetType;    
-        for(uint8_t i=0;i<8;i++){
+        for(uint8_t i=0;i<7;i++){
             const char* target=read_packet_prefix(i);
             if(strcmp(prefix,target)==0){
                 found=true;
@@ -108,17 +108,17 @@ public:
                 }
                 case PacketType::SYSTEM_CONFIG:{
                     auto packet=doc[F("Packet")].as<JsonObject>();
-                    //StationLogger::Log(LogLevel::INFO,true,false,"Is SystemConfig, Deserializing..");
+                    //instance->SendMessage("INFO:Is SystemConfig, Deserializing..");
                     HeaterControllerConfig config;
                     config.Deserialize(packet);
-                    //StationLogger::Log(LogLevel::INFO,true,false,"Sending back serialized using MsgPack method");
+                    //instance->SendMessage("INFO:Sending back serialized using MsgPack method");
                     this->InstanceMsgPacketSerializer(config,PacketType::PROBE_CONFIG);
                     break;
                 }
                 case PacketType::COMMAND:{
                     auto packet=doc[F("Packet")].as<JsonObject>();
-                    //StationLogger::Log(LogLevel::INFO,true,false,"Is SystemConfig, Deserializing..");
                     StationCommand command=(StationCommand)doc[F("Packet")][F("Command")];
+                    instance->_commandCallback(command);
                     break;
                 }
                 case PacketType::HEATER_RESPONSE:{
@@ -146,12 +146,12 @@ public:
         switch(response){
             case Response::HEATER_SAVE:
             case Response::HEATER_CANCEL:{
-                //this->heaterResponseCb(response);
+                this->heaterResponseCb(response);
                 break;
             }
             case Response::TEST_CONTINUE:
             case Response::TEST_CANCEL:{
-                //this->testResponseCb(response);
+                this->testResponseCb(response);
                 break;
             }
         }

@@ -6,6 +6,10 @@ HeaterController::HeaterController(const HeaterControllerConfig& config)
     this->tuningCompleteCbk=[&](HeaterTuneResult result){
         this->TuningComplete(result);
     };
+    this->responseCbk=[&](Response response){
+        this->HandleResponse(response);
+    };
+    ComHandler::MapHeaterResponseCallback(this->responseCbk);
 
     for(int i=0;i<HEATER_COUNT;i++){
         Heater* heater=new Heater(config.heaterConfigs[i]);
@@ -15,14 +19,8 @@ HeaterController::HeaterController(const HeaterControllerConfig& config)
         HeaterResult result;
         this->results.push_back(result);
     }
-
     this->run[HeaterMode::PID_RUN]=&HeaterController::Run;
     this->run[HeaterMode::ATUNE_RUN]=&HeaterController::RunAutoTune;
-
-    this->responseCbk=[&](Response response){
-        this->HandleResponse(response);
-    };
-    ComHandler::MapHeaterResponseCallback(this->responseCbk);
 }
 
 void HeaterController::Initialize(){
@@ -54,7 +52,7 @@ void HeaterController::HandleResponse(Response response){
             auto newPid=this->tuningResults.results[i];
             this->configuration.UpdateHeaterPid(newPid);
             this->heaters[newPid.heaterNumber-1]->UpdatePid(newPid);
-            ConfigurationManager::SaveConfig(&this->configuration,PacketType::HEATER_CONFIG);
+            FileManager::Save(&this->configuration,PacketType::HEATER_CONFIG);
         }
     }else if(response==Response::HEATER_CANCEL){
         //clear tuning results
@@ -94,21 +92,17 @@ void HeaterController::ChangeMode(HeaterMode nextMode){
 }
 
 void HeaterController::StartTuning(){
-   if(this->heaterMode==HeaterMode::ATUNE_RUN){
-        this->isTuning=true;
-        for(auto heater:this->heaters){
-            heater->StartTuning();
-        }
-   }
+    this->isTuning=true;
+    for(auto heater:this->heaters){
+        heater->StartTuning();
+    }
 }
 
 void HeaterController::StopTuning(){
-    if(this->heaterMode==HeaterMode::ATUNE_RUN){
-        this->isTuning=false;
-        for(auto heater:this->heaters){
-            heater->StopTuning();
-        }
-   }
+    this->isTuning=false;
+    for(auto heater:this->heaters){
+        heater->StopTuning();
+    }
 }
 
 void HeaterController::RunAutoTune(){

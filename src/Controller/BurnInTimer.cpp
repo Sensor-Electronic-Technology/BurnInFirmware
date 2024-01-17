@@ -4,97 +4,111 @@
         :durSec60mA(config.time60mASecs),
         durSec120mA(config.time120mASecs),
         durSec150mA(config.time150mASecs){
-
     }
 
     void BurnInTimer::Start(CurrentValue current){
-        if(!this->td.running && !this->td.paused){
+        if(!this->testTimer.running && !this->testTimer.paused){
             switch(current){
                 case CurrentValue::c060:{
-                    this->td.duration_secs=this->durSec60mA;
+                    this->testTimer.duration_secs=this->durSec60mA;
                     break;
                 }
                 case CurrentValue::c120:{
-                    this->td.duration_secs=this->durSec120mA;
+                    this->testTimer.duration_secs=this->durSec120mA;
                     break;
                 }
                 case CurrentValue::c150:{
-                    this->td.duration_secs=this->durSec150mA;
+                    this->testTimer.duration_secs=this->durSec150mA;
                     break;
                 }
             }
-            this->td.elapsed_secs=0;
-            this->td.running=true;
-            this->td.paused=false;
+            for(int i=0;i<PROBE_COUNT;i++){
+                this->testTimer.probeRunTimes[i]=0ul;
+            }
+            this->testTimer.elapsed_secs=0;
+            this->testTimer.running=true;
+            this->testTimer.paused=false;
         }
     }
    
     void BurnInTimer::StartFrom(CurrentValue current,unsigned long elap){
-        if(!this->td.running && !this->td.paused){
+        if(!this->testTimer.running && !this->testTimer.paused){
             switch(current){
                 case CurrentValue::c060:{
-                    this->td.duration_secs=this->durSec60mA;
+                    this->testTimer.duration_secs=this->durSec60mA;
                     break;
                 }
                 case CurrentValue::c120:{
-                    this->td.duration_secs=this->durSec120mA;
+                    this->testTimer.duration_secs=this->durSec120mA;
                     break;
                 }
                 case CurrentValue::c150:{
-                    this->td.duration_secs=this->durSec150mA;
+                    this->testTimer.duration_secs=this->durSec150mA;
                     break;
                 }
             }
-            this->td.elapsed_secs=elap;
-            this->td.running=true;
-            this->td.paused=false;
+            this->testTimer.elapsed_secs=elap;
+            this->testTimer.running=true;
+            this->testTimer.paused=false;
         }
     }
    
     void BurnInTimer::Stop(){
-        this->td.running=false;
-        this->td.paused=false;
-        this->td.lastCheck=0; 
-        this->td.elapsed_secs=0;
-        this->td.duration_secs=0;
+        this->testTimer.running=false;
+        this->testTimer.paused=false;
+        this->testTimer.lastCheck=0; 
+        this->testTimer.elapsed_secs=0;
+        this->testTimer.duration_secs=0;
     }
 
     void BurnInTimer::Reset(){
-        this->td.running=false;
-        this->td.paused=false;
-        this->td.lastCheck=false;
-        this->td.elapsed_secs=0;
-        this->td.duration_secs=0;
+        this->testTimer.running=false;
+        this->testTimer.paused=false;
+        this->testTimer.lastCheck=false;
+        this->testTimer.elapsed_secs=0;
+        this->testTimer.duration_secs=0;
+        for(int i=0;i<PROBE_COUNT;i++){
+            this->testTimer.probeRunTimes[i]=0ul;
+        }
     }
 
     void BurnInTimer::Pause(){
-        if(this->td.running && !this->td.paused){
-            this->td.paused=true;
+        if(this->testTimer.running && !this->testTimer.paused){
+            this->testTimer.paused=true;
         }
     }
 
     void BurnInTimer::Continue(){
-        if(this->td.running && this->td.paused){
-            this->td.paused=false;
+        if(this->testTimer.running && this->testTimer.paused){
+            this->testTimer.paused=false;
         }
     }
 
     bool BurnInTimer::IsDone(){
-        return !this->td.running;
+        return !this->testTimer.running;
+    }
+
+    bool BurnInTimer::IsPaused(){
+        return this->testTimer.running && this->testTimer.paused;
     }
     
     unsigned long BurnInTimer::GetElapsed(){
-        return this->td.elapsed_secs;
+        return this->testTimer.elapsed_secs;
     }
     
-    void BurnInTimer::Increment(){
-        if(this->td.running && !this->td.paused){
+    void BurnInTimer::Increment(bool probeOkay[PROBE_COUNT]){
+        if(this->testTimer.running && !this->testTimer.paused){
             auto millis_t=millis();
-            if(millis_t-this->td.lastCheck>=(TIMER_PERIOD*TIMER_FACTOR)){
-                this->td.lastCheck=millis_t;
-                this->td.elapsed_secs++;
-                bool done=(this->td.elapsed_secs*TIMER_PERIOD)>=this->td.duration_secs;
-                this->td.running=!done;
+            if(millis_t-this->testTimer.lastCheck>=(TIMER_PERIOD*TIMER_FACTOR)){
+                this->testTimer.lastCheck=millis_t;
+                for(int i=0;i<PROBE_COUNT;i++){
+                    if(probeOkay[i]){
+                        this->testTimer.probeRunTimes[i]++;
+                    }
+                }
+                this->testTimer.elapsed_secs++;
+                bool done=(this->testTimer.elapsed_secs*TIMER_PERIOD)>=this->testTimer.duration_secs;
+                this->testTimer.running=!done;
             }
         }
     }

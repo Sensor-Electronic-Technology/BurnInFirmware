@@ -1,43 +1,55 @@
 #pragma once
 //#include <ArduinoComponents.h>
 #include "../constants.h"
+#include "../Probes/probe_constants.h"
 #include "ControllerConfiguration.hpp"
-
-
 using namespace components;
 
 struct TimerData{
     bool            running=false,paused=false;
-    unsigned long   elapsed_secs=0;
-    unsigned long   lastCheck=0;
-    unsigned long   duration_secs=0;
-    unsigned long   timeOnSecs=0;
+    unsigned long   elapsed_secs=0ul;
+    unsigned long   probeRunTimes[PROBE_COUNT]={0ul,0ul,0ul,0ul,0ul,0ul};
+    unsigned long   lastCheck=0ul;
+    unsigned long   duration_secs=0ul;
+    //unsigned long   timeOnSecs=0;
 
-    void Serialize(JsonObject* timerJson){
+    void Serialize(JsonObject* timerJson,bool initialize){
+        JsonArray jsonPTimers;
         (*timerJson)[F("Running")]=this->running;
         (*timerJson)[F("Paused")]=this->paused;
         (*timerJson)[F("ElapsedSecs")]=this->elapsed_secs;
         (*timerJson)[F("DurationSecs")]=this->duration_secs;
-        (*timerJson)[F("TimeOnSecs")]=this->timeOnSecs;
+        if(initialize){
+            jsonPTimers=(*timerJson)[F("ProbeRuntimes")].to<JsonArray>();
+        }else{
+            jsonPTimers=(*timerJson)[F("ProbeRuntimes")].as<JsonArray>();
+        }
+        for(int i=0;i<PROBE_COUNT;i++){
+            jsonPTimers[i]=this->probeRunTimes[i];
+        }
     }
 
-    void Deserialize(JsonObject timerJson){
+    void Deserialize(JsonObject& timerJson){
         this->running=timerJson[F("Running")];
         this->paused=timerJson[F("Paused")];
         this->elapsed_secs=timerJson[F("ElapsedSecs")];
         this->duration_secs=timerJson[F("DurationSecs")];
-        this->timeOnSecs=timerJson[F("TimeOnSecs")];
+        //this->timeOnSecs=timerJson[F("TimeOnSecs")];
+        for(int i=0;i<PROBE_COUNT;i++){
+            this->probeRunTimes[i]=timerJson[F("ProbeRuntimes")][i];
+        }
     }
 
 };
 
-class BurnInTimer{
+class BurnInTimer:public Serializable{
 private:  
-    TimerData td;
+    //TimerData testTimer;
     unsigned long durSec60mA;
     unsigned long durSec120mA;
     unsigned long durSec150mA;
 public:
+    TimerData testTimer;
 
     BurnInTimer(const BurnTimerConfig& config);
 
@@ -54,31 +66,33 @@ public:
     void Continue();
 
     bool IsDone();
+
+    bool IsPaused();
+    
+    bool IsRunning(){
+        return this->testTimer.running || this->testTimer.paused;
+    }
     
     unsigned long GetElapsed();
     
-    void Increment();
+    void Increment(bool probeOkay[PROBE_COUNT]);
 
-    void Serialize(JsonObject* timerJson){
-        // (*timerJson)[F("Running")]=this->td.running;
-        // (*timerJson)[F("Paused")]=this->td.paused;
-        // (*timerJson)[F("ElapsedSecs")]=this->td.elapsed_secs;
-        // (*timerJson)[F("DurationSecs")]=this->td.duration_secs;
-        // (*timerJson)[F("TimeOnSecs")]=this->td.timeOnSecs;
-        this->td.Serialize(timerJson);
+    virtual void Serialize(JsonDocument* doc,bool initialize)override{
+        JsonObject jsonTimer;
+        jsonTimer=(initialize) ? (*doc)[F("BurnTimer")].to<JsonObject>():(*doc)[F("BurnTimer")].as<JsonObject>();
+        this->testTimer.Serialize(&jsonTimer,initialize);
     }
 
-    void Deserialize(JsonObject timerJson){
-        // this->td.running=timerJson[F("Running")];
-        // this->td.paused=timerJson[F("Paused")];
-        // this->td.elapsed_secs=timerJson[F("ElapsedSecs")];
-        // this->td.duration_secs=timerJson[F("DurationSecs")];
-        // this->td.timeOnSecs=timerJson[F("TimeOnSecs")];
-        this->td.Deserialize(timerJson);
+    virtual void Deserialize(JsonDocument& doc) override{
+        JsonObject timerJson=doc[F("BurnTimer")].as<JsonObject>();
+        this->testTimer.Deserialize(timerJson);
     }
 
-    BurnInTimer& operator++(){
-        this->Increment();
-        return *this;
-    }
+    virtual void Serialize(JsonObject* packet,bool initialize);
+    virtual void Deserialize(JsonObject& packet);
+
+    // BurnInTimer& operator++(){
+    //     this->Increment();
+    //     return *this;
+    // }
 };

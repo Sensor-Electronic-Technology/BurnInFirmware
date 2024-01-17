@@ -1,6 +1,10 @@
 #pragma once
 #include <ArduinoJson.h>
-#include "Serializable.hpp"
+#include <Array.h>
+#include "../Serializable.hpp"
+#include "../Heaters/heaters_include.h"
+#include "../Probes/probes_include.h"
+#include "../Controller/BurnInTimer.hpp"
 #include "../constants.h"
 
 
@@ -17,7 +21,31 @@ struct SerialDataOutput:public Serializable{
      long runTimeSecs=54234;
      long elapsedSecs=12345;
 
-     void Deserialize(const JsonDocument& doc) override{
+     void Set(Array<ProbeResult,PROBE_COUNT> probeResults,
+            const Array<HeaterResult,HEATER_COUNT>& heaterResults,
+            const BurnInTimer& burnTimer){
+        
+        for(int i=0;i<PROBE_COUNT;i++){
+            auto result=probeResults[i];
+            this->voltages[i]=result.voltage;
+            this->currents[i]=result.current;
+            this->probeRuntimes[i]=burnTimer.testTimer.probeRunTimes[i];
+        }
+
+        for(int i=0;i<HEATER_COUNT;i++){
+            auto result=heaterResults[i];
+            this->heaterStates[i]=result.state;
+            this->temperatures[i]=result.temperature;
+        }
+
+        this->running=burnTimer.testTimer.running;
+        this->paused=burnTimer.testTimer.paused;
+        this->runTimeSecs=burnTimer.testTimer.duration_secs;
+        this->elapsedSecs=burnTimer.testTimer.elapsed_secs;
+        
+     }
+
+     void Deserialize(JsonDocument& doc) override{
         JsonArray v_array=doc["Voltages"].as<JsonArray>();
         JsonArray c_array=doc["Currents"].as<JsonArray>();
         JsonArray t_array=doc["Temperatures"].as<JsonArray>();
@@ -40,7 +68,7 @@ struct SerialDataOutput:public Serializable{
         this->paused=doc["Paused"];
      }
 
-    void Deserialize(const JsonDocument& packet) override{
+    void Deserialize(JsonObject& packet) override{
         JsonArray v_array=packet["Voltages"].as<JsonArray>();
         JsonArray c_array=packet["Currents"].as<JsonArray>();
         JsonArray t_array=packet["Temperatures"].as<JsonArray>();

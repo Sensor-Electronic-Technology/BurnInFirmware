@@ -16,23 +16,23 @@ using namespace components;
 typedef Function<void(HeaterControllerConfig)> HeaterControlCallback;
 typedef Function<void(ProbeControllerConfig)>  ProbeControlCallback;
 
-class ConfigurationManager{
+class FileManager{
 public:
-    static ConfigurationManager* const Instance(){
+    static FileManager* const Instance(){
         if(instance==nullptr){
-            instance=new ConfigurationManager;
+            instance=new FileManager;
         }
 
         return instance;
     }
     
-    static void LoadConfig(Serializable* config,PacketType configType){
-        auto instance=ConfigurationManager::Instance();
+    static void Load(Serializable* config,PacketType configType){
+        auto instance=FileManager::Instance();
         instance->InstanceLoadConfig(config,configType);
     }
 
     void InstanceLoadConfig(Serializable* config,PacketType configType){
-        auto fileName=filenames[configType];
+        auto fileName=read_filename(configType);
         this->file=SD.open(fileName);
         if(!this->file){
             StationLogger::Log(LogLevel::CRITICAL_ERROR,true,false,
@@ -62,17 +62,16 @@ public:
      * @param config Configuration of type ControllerConfiguration
      * @param fileNameIndex While file name
      */
-    static void SaveConfig(Serializable* config,PacketType configType){
-        auto instance=ConfigurationManager::Instance();
+    static void Save(Serializable* config,PacketType configType){
+        auto instance=FileManager::Instance();
         instance->InstanceSaveConfig(config,configType);
     }
 
     void InstanceSaveConfig(Serializable* config,PacketType configType){
-        auto fileName=filenames[configType];
+        auto fileName=read_filename(configType);
         SD.remove(fileName);//overwrite file
         this->file=SD.open(fileName,FILE_WRITE);
         if(!this->file){
-            //Serial.print("Error Opening ");Serial.println(fileName);
             StationLogger::Log(LogLevel::CRITICAL_ERROR,true,false,
                     "Heater Configuration file failed to open.  Please save values and restart the system");
             return;
@@ -80,7 +79,6 @@ public:
         this->doc.clear();
         config->Serialize(&this->doc,true);
         if(serializeJsonPretty(this->doc,this->fileWriteBuffer)==0){
-            //Serial.println("Error: Faild to write out configuration");
             StationLogger::Log(LogLevel::CRITICAL_ERROR,true,false,
                     "Heater Configuration save failed. Changed will be lost on restart.\n Suggest manually enter changes");
         }
@@ -92,11 +90,9 @@ public:
     }
 
 private:
-    static ConfigurationManager* instance;
+    static FileManager* instance;
     JsonDocument doc;
     File file;
+    File stateFile;
     WriteBufferingStream fileWriteBuffer{file, 64};
-
-    // HeaterControllerConfig heaterConfig;
-    // ProbeControllerConfig  probeConfig;
 };

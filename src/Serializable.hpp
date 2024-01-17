@@ -36,7 +36,6 @@ public:
     virtual void Deserialize(JsonObject &packet)=0;
     virtual void Serialize(JsonDocument *doc,bool initialize)=0;
     virtual void Serialize(JsonObject *packet,bool initialize)=0;
-
 };
 
 

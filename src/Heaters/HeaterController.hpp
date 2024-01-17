@@ -3,17 +3,11 @@
 #include <Array.h>
 #include "HeaterConfiguration.hpp"
 #include "Heater.hpp"
-#include "../Configuration/ConfigurationManager.hpp"
+#include "../Files/FileManager.hpp"
 #include "../Logging/StationLogger.hpp"
-#include "../constants.h"
+#include "heater_constants.h"
 
 using namespace components;
-
-// struct TuningStatus{
-//     bool h1Complete;
-//     bool h2Complete;
-//     bool h3Complete;
-// };
 
 class HeaterController:public Component{
     typedef void(HeaterController::*RunMode)();
@@ -30,15 +24,24 @@ public:
     void ReadTemperatures();
     void HandleResponse(Response response);
     void TuningComplete(HeaterTuneResult result);
+    void ChangeMode(HeaterMode nextMode);
     Array<HeaterResult,HEATER_COUNT> GetResults();
     void Print();
     void Printv2(){
-        Serial.println(filenames[0]);
-        Serial.println(filenames[1]);
-        Serial.println(filenames[2]);
+        Serial.println(json_filenames[0]);
+        Serial.println(json_filenames[1]);
+        Serial.println(json_filenames[2]);
     }
 
-    void ChangeMode(HeaterMode nextMode);
+    inline HeaterMode GetMode(){
+        return this->heaterMode;
+    }
+
+    inline bool IsTuning(){
+        return this->isTuning;
+    }
+
+    
 
 private:
     Array<Heater*,HEATER_COUNT> heaters;
