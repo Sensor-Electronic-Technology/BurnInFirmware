@@ -34,16 +34,17 @@
 #define ADC_MAX                         1023
 
 enum StationCommand:uint8_t{
-    START,
-    PAUSE,
-    TOGGLE_HEAT,
-    SWITCH_CURRENT,
-    PROBE_TEST,
-    CHANGE_MODE_ATUNE,
-    CHANGE_MODE_NORMAL,
-    START_TUNE,
-    STOP_TUNE,
-    SAVE_ATUNE_RESULT
+    START=0,
+    PAUSE=1,
+    TOGGLE_HEAT=2,
+    CYCLE_CURRENT=3,
+    PROBE_TEST=4,
+    CHANGE_MODE_ATUNE=5,
+    CHANGE_MODE_NORMAL=6,
+    START_TUNE=7,
+    STOP_TUNE=8,
+    SAVE_ATUNE_RESULT=9,
+    RESET=10
 };
 
 enum PacketType:uint8_t{
@@ -58,6 +59,20 @@ enum PacketType:uint8_t{
     TEST_RESPONSE=8,  //PC sends continue test request
     HEATER_REQUEST=9,  //Pc recieves AutoTuneValues and request save response
     TEST_REQUEST=10,   //Firmware sends continue test request
+};
+
+const char* const prefixes[] PROGMEM = {
+    "CH",   //0
+    "CP",   //1
+    "CS",   //2
+    "ST",   //3
+    "M",    //4
+    "D",    //5
+    "COM",  //6
+    "HRES", //7
+    "TRES", //8
+    "HREQ", //9
+    "TREQ"  //10
 };
 
 enum Response{
@@ -123,16 +138,5 @@ const char* const json_filenames[] PROGMEM = {
     "/state.txt"
 };
 
-const char* const prefixes[] PROGMEM = {
-    "CH",
-    "CP",
-    "CS",
-    "M",
-    "D",
-    "COM",
-    "HREQ",
-    "HREC",
-    "TREQ",
-    "TREC"
-};
+
 

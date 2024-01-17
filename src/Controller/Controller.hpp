@@ -1,6 +1,7 @@
 #pragma once
 #include <Arduino.h>
 #include <ArduinoComponents.h>
+#include <avr/wdt.h>
 #include "../Serializable.hpp"
 #include "../Heaters/heaters_include.h"
 #include "../Probes/probes_include.h"
@@ -34,6 +35,7 @@ public:
     void CycleCurrent();
     void StopTest();
     void RunTestProbes();
+    void Reset();
 
     //Heater Actions
     void RunAutoTune();

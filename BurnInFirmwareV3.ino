@@ -50,8 +50,8 @@ void setup(){
         prefixStr+=read_packet_prefix(i);
         prefixStr+=",";
     }
-    StationLogger::Log(LogLevel::INFO,true,false,"Prefix List.. %s",prefixStr.c_str());
-    serialFlush();
+    //StationLogger::Log(LogLevel::INFO,true,false,"Prefix List.. %s",prefixStr.c_str());
+    //serialFlush();
     ComHandler::EnableSerialEvent();
 }
 

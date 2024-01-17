@@ -9,6 +9,8 @@
 #define MSG_BUFFER_SIZE      254
 #define FILE_BUFFER_SIZE     1024
 
+class ComHandler;
+
 class StationLogger{
 public:
     static StationLogger* const Instance(){
@@ -119,23 +121,9 @@ public:
                 this->msgBuffer+=logLine;
             }
         }
-        
-        // if(instance->serialLog!=nullptr){
-        //     instance->msgBuffer+=logLine;
-        // }
     }
 
     void print(){
-        // if(this->serialLog){
-        //     this->serialDoc.clear();
-        //     instance->serialDoc[F("Prefix")]=read_packet_prefix(PacketType::MESSAGE);
-        //     JsonObject packet=this->serialDoc[F("Packet")].to<JsonObject>();
-        //     packet["Message"]=this->msgBuffer.c_str();
-        //     serializeJson(this->serialDoc,Serial);
-        //     this->serialLog->println();
-        //     auto len=this->msgBuffer.length();
-        //     this->msgBuffer.remove(0,len);
-        // }
         if(serialEnabled){
             ComHandler::SendMessage(this->msgBuffer.c_str());
             auto len=this->msgBuffer.length();

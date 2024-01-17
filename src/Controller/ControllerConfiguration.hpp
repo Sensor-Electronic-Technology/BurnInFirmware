@@ -10,9 +10,9 @@ struct BurnTimerConfig{
 
 struct ControllerConfig:public Serializable{
     BurnTimerConfig         burnTimerConfig;
-    unsigned long           comInterval;
-    unsigned long           updateInterval;
-    unsigned long           logInterval;
+    unsigned long           comInterval=COM_INTERVAL;
+    unsigned long           updateInterval=UPDATE_INTERVAL;
+    unsigned long           logInterval=LOG_INTERVAL;
 
     virtual void Deserialize(JsonDocument &doc)override{
         JsonObject timeJson=doc[F("BurnTimerConfig")].as<JsonObject>();
