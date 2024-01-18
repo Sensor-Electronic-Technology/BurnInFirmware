@@ -5,8 +5,10 @@
 
 
 
-struct AutoTuneResults:public Serializable{
+class AutoTuneResults:public Serializable{
+public:
     HeaterTuneResult results[HEATER_COUNT];
+    
     void Clear(){
         for(int i=0;i<HEATER_COUNT;i++){
             this->results[i].clear();
@@ -33,9 +35,16 @@ struct AutoTuneResults:public Serializable{
             }
         }
     }
-    virtual void Serialize(JsonDocument *doc,bool initialize);
-    virtual void Deserialize(JsonDocument &doc);
-    virtual void Deserialize(JsonObject &packet);
+    virtual void Serialize(JsonDocument *doc,bool initialize)override{
+
+    }
+    virtual void Deserialize(JsonDocument &doc) override{
+
+    }
+    
+    virtual void Deserialize(JsonObject &packet)override{
+
+    }
 };
 
 
@@ -176,7 +185,7 @@ public:
                 this->heaterConfigs[i].Serialize(&heaterJsonConfig,false);
             }
         }
-        (*doc)["ReadInterval"] = this->readInterval;
+        (*doc)[F("ReadInterval")] = this->readInterval;
     }
 
     virtual void Serialize(JsonObject *packet,bool initialize){
@@ -194,24 +203,24 @@ public:
                 this->heaterConfigs[i].Serialize(&heaterJsonConfig,false);
             }
         }
-        (*packet)["ReadInterval"] = this->readInterval;
+        (*packet)[F("ReadInterval")] = this->readInterval;
     }
 
     virtual void Deserialize(JsonDocument &doc) override{
-        auto heaterJsonConfigs=doc["HeaterConfigurations"].as<JsonArray>();
+        auto heaterJsonConfigs=doc[F("HeaterConfigurations")].as<JsonArray>();
         for(int i=0;i<HEATER_COUNT;i++){
             JsonObject heaterJson=heaterJsonConfigs[i].as<JsonObject>();
             this->heaterConfigs[i].Deserialize(heaterJson);   
         }
-        this->readInterval = doc["ReadInterval"];
+        this->readInterval = doc[F("ReadInterval")];
     }
 
     virtual void Deserialize(JsonObject &packet) override{
-        auto heaterJsonConfigs=packet["HeaterConfigurations"].as<JsonArray>();
+        auto heaterJsonConfigs=packet[F("HeaterConfigurations")].as<JsonArray>();
         for(int i=0;i<HEATER_COUNT;i++){
             JsonObject heaterJson=heaterJsonConfigs[i].as<JsonObject>();
             this->heaterConfigs[i].Deserialize(heaterJson);   
         }
-        this->readInterval = packet["ReadInterval"];
+        this->readInterval = packet[F("ReadInterval")];
     }
 };

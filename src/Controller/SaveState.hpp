@@ -16,8 +16,8 @@ struct SaveState:public Serializable{
     }
 
     void Serialize(JsonDocument* doc,bool initialize){
-        (*doc)["SetCurrent"]=this->setCurrent;
-        (*doc)["SetTemperature"]=this->setTemperature;
+        (*doc)[F("SetCurrent")]=this->setCurrent;
+        (*doc)[F("SetTemperature")]=this->setTemperature;
         JsonObject jsonTime=(initialize) ? (*doc)[F("CurrentTime")].to<JsonObject>():(*doc)[F("CurrentTime")].as<JsonObject>();
         this->currentTimes.Serialize(&jsonTime,initialize);
     }
@@ -30,8 +30,8 @@ struct SaveState:public Serializable{
     }
 
     void Serialize(JsonObject* packet,bool initialize){
-        (*packet)["SetCurrent"]=this->setCurrent;
-        (*packet)["SetTemperature"]=this->setTemperature;
+        (*packet)[F("SetCurrent")]=this->setCurrent;
+        (*packet)[F("SetTemperature")]=this->setTemperature;
         JsonObject jsonTime=(initialize) ? (*packet)[F("CurrentTime")].to<JsonObject>():(*packet)[F("CurrentTime")].as<JsonObject>();
         this->currentTimes.Serialize(&jsonTime,initialize);
     }

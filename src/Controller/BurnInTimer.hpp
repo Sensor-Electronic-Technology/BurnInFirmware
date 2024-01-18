@@ -42,7 +42,7 @@ struct TimerData{
 
 };
 
-class BurnInTimer:public Serializable{
+class BurnInTimer{
 private:  
     //TimerData testTimer;
     unsigned long durSec60mA;
@@ -77,19 +77,19 @@ public:
     
     void Increment(bool probeOkay[PROBE_COUNT]);
 
-    virtual void Serialize(JsonDocument* doc,bool initialize)override{
+    void Serialize(JsonDocument* doc,bool initialize){
         JsonObject jsonTimer;
         jsonTimer=(initialize) ? (*doc)[F("BurnTimer")].to<JsonObject>():(*doc)[F("BurnTimer")].as<JsonObject>();
         this->testTimer.Serialize(&jsonTimer,initialize);
     }
 
-    virtual void Deserialize(JsonDocument& doc) override{
+    void Deserialize(JsonDocument& doc) {
         JsonObject timerJson=doc[F("BurnTimer")].as<JsonObject>();
         this->testTimer.Deserialize(timerJson);
     }
 
-    virtual void Serialize(JsonObject* packet,bool initialize);
-    virtual void Deserialize(JsonObject& packet);
+    void Serialize(JsonObject* packet,bool initialize);
+    void Deserialize(JsonObject& packet);
 
     // BurnInTimer& operator++(){
     //     this->Increment();

@@ -8,7 +8,8 @@
 #include "../constants.h"
 
 
-struct SerialDataOutput:public Serializable{
+class SerialDataOutput:public Serializable{
+public:
      double voltages[PROBE_COUNT]={0,0,0,0,0,0};
      double currents[PROBE_COUNT]={0,0,0,0,0,0};
      double temperatures[HEATER_COUNT]={0,0,0};
@@ -46,11 +47,11 @@ struct SerialDataOutput:public Serializable{
      }
 
      void Deserialize(JsonDocument& doc) override{
-        JsonArray v_array=doc["Voltages"].as<JsonArray>();
-        JsonArray c_array=doc["Currents"].as<JsonArray>();
-        JsonArray t_array=doc["Temperatures"].as<JsonArray>();
-        JsonArray rt_array=doc["ProbeRuntimes"].as<JsonArray>();
-        JsonArray h_array=doc["HeaterStates"].as<JsonArray>();
+        JsonArray v_array=doc[F("Voltages")].as<JsonArray>();
+        JsonArray c_array=doc[F("Currents")].as<JsonArray>();
+        JsonArray t_array=doc[F("Temperatures")].as<JsonArray>();
+        JsonArray rt_array=doc[F("ProbeRuntimes")].as<JsonArray>();
+        JsonArray h_array=doc[F("HeaterStates")].as<JsonArray>();
         for(int i=0;i<PROBE_COUNT;i++){
             this->voltages[i]=v_array[i];
             this->currents[i]=c_array[i];
@@ -60,20 +61,20 @@ struct SerialDataOutput:public Serializable{
                 this->heaterStates[i]=h_array[i];
             }
         }
-        this->currentSP=doc["CurrentSetPoint"];
-        this->temperatureSP=doc["TemperatureSetPoint"];
-        this->runTimeSecs=doc["RuntimeSeconds"];
-        this->elapsedSecs=doc["ElapsedSeconds"];
-        this->running=doc["Running"];
-        this->paused=doc["Paused"];
+        this->currentSP=doc[F("CurrentSetPoint")];
+        this->temperatureSP=doc[F("TemperatureSetPoint")];
+        this->runTimeSecs=doc[F("RuntimeSeconds")];
+        this->elapsedSecs=doc[F("ElapsedSeconds")];
+        this->running=doc[F("Running")];
+        this->paused=doc[F("Paused")];
      }
 
     void Deserialize(JsonObject& packet) override{
-        JsonArray v_array=packet["Voltages"].as<JsonArray>();
-        JsonArray c_array=packet["Currents"].as<JsonArray>();
-        JsonArray t_array=packet["Temperatures"].as<JsonArray>();
-        JsonArray rt_array=packet["ProbeRuntimes"].as<JsonArray>();
-        JsonArray h_array=packet["HeaterStates"].as<JsonArray>();
+        JsonArray v_array=packet[F("Voltages")].as<JsonArray>();
+        JsonArray c_array=packet[F("Currents")].as<JsonArray>();
+        JsonArray t_array=packet[F("Temperatures")].as<JsonArray>();
+        JsonArray rt_array=packet[F("ProbeRuntimes")].as<JsonArray>();
+        JsonArray h_array=packet[F("HeaterStates")].as<JsonArray>();
         for(int i=0;i<PROBE_COUNT;i++){
             this->voltages[i]=v_array[i];
             this->currents[i]=c_array[i];
@@ -83,12 +84,12 @@ struct SerialDataOutput:public Serializable{
                 this->heaterStates[i]=h_array[i];
             }
         }
-        this->currentSP=packet["CurrentSetPoint"];
-        this->temperatureSP=packet["TemperatureSetPoint"];
-        this->runTimeSecs=packet["RuntimeSeconds"];
-        this->elapsedSecs=packet["ElapsedSeconds"];
-        this->running=packet["Running"];
-        this->paused=packet["Paused"];
+        this->currentSP=packet[F("CurrentSetPoint")];
+        this->temperatureSP=packet[F("TemperatureSetPoint")];
+        this->runTimeSecs=packet[F("RuntimeSeconds")];
+        this->elapsedSecs=packet[F("ElapsedSeconds")];
+        this->running=packet[F("Running")];
+        this->paused=packet[F("Paused")];
      }
      
      void Serialize(JsonDocument* doc,bool initialize) override{
@@ -98,17 +99,17 @@ struct SerialDataOutput:public Serializable{
         JsonArray rt_array;
         JsonArray h_array;
         if(initialize){
-            v_array=(*doc)["Voltages"].to<JsonArray>();
-            c_array=(*doc)["Currents"].to<JsonArray>();
-            t_array=(*doc)["Temperatures"].to<JsonArray>();
-            rt_array=(*doc)["ProbeRuntimes"].to<JsonArray>();
-            h_array=(*doc)["HeaterStates"].to<JsonArray>();
+            v_array=(*doc)[F("Voltages")].to<JsonArray>();
+            c_array=(*doc)[F("Currents")].to<JsonArray>();
+            t_array=(*doc)[F("Temperatures")].to<JsonArray>();
+            rt_array=(*doc)[F("ProbeRuntimes")].to<JsonArray>();
+            h_array=(*doc)[F("HeaterStates")].to<JsonArray>();
         }else{
-            v_array=(*doc)["Voltages"].as<JsonArray>();
-            c_array=(*doc)["Currents"].as<JsonArray>();
-            t_array=(*doc)["Temperatures"].as<JsonArray>();
-            rt_array=(*doc)["ProbeRuntimes"].as<JsonArray>();
-            h_array=(*doc)["HeaterStates"].as<JsonArray>();
+            v_array=(*doc)[F("Voltages")].as<JsonArray>();
+            c_array=(*doc)[F("Currents")].as<JsonArray>();
+            t_array=(*doc)[F("Temperatures")].as<JsonArray>();
+            rt_array=(*doc)[F("ProbeRuntimes")].as<JsonArray>();
+            h_array=(*doc)[F("HeaterStates")].as<JsonArray>();
         }
         for(int i=0;i<PROBE_COUNT;i++){
             v_array[i]=this->voltages[i];
@@ -119,12 +120,12 @@ struct SerialDataOutput:public Serializable{
                 h_array[i]=this->heaterStates[i];
             }
         }
-        (*doc)["CurrentSetPoint"] = this->currentSP;
-        (*doc)["TemperatureSetPoint"] = this->temperatureSP;
-        (*doc)["RuntimeSeconds"] = this->runTimeSecs;
-        (*doc)["ElapsedSeconds"] = this->elapsedSecs;
-        (*doc)["Running"] = this->running;
-        (*doc)["Paused"] = this->paused;
+        (*doc)[F("CurrentSetPoint")] = this->currentSP;
+        (*doc)[F("TemperatureSetPoint")] = this->temperatureSP;
+        (*doc)[F("RuntimeSeconds")] = this->runTimeSecs;
+        (*doc)[F("ElapsedSeconds")] = this->elapsedSecs;
+        (*doc)[F("Running")] = this->running;
+        (*doc)[F("Paused")] = this->paused;
         //serializeJson(*doc, Serial);
      }
 
@@ -135,17 +136,17 @@ struct SerialDataOutput:public Serializable{
         JsonArray rt_array;
         JsonArray h_array;
         if(initialize){
-            v_array=(*packet)["Voltages"].to<JsonArray>();
-            c_array=(*packet)["Currents"].to<JsonArray>();
-            t_array=(*packet)["Temperatures"].to<JsonArray>();
-            rt_array=(*packet)["ProbeRuntimes"].to<JsonArray>();
-            h_array=(*packet)["HeaterStates"].to<JsonArray>();
+            v_array=(*packet)[F("Voltages")].to<JsonArray>();
+            c_array=(*packet)[F("Currents")].to<JsonArray>();
+            t_array=(*packet)[F("Temperatures")].to<JsonArray>();
+            rt_array=(*packet)[F("ProbeRuntimes")].to<JsonArray>();
+            h_array=(*packet)[F("HeaterStates")].to<JsonArray>();
         }else{
-            v_array=(*packet)["Voltages"].as<JsonArray>();
-            c_array=(*packet)["Currents"].as<JsonArray>();
-            t_array=(*packet)["Temperatures"].as<JsonArray>();
-            rt_array=(*packet)["ProbeRuntimes"].as<JsonArray>();
-            h_array=(*packet)["HeaterStates"].as<JsonArray>();
+            v_array=(*packet)[F("Voltages")].as<JsonArray>();
+            c_array=(*packet)[F("Currents")].as<JsonArray>();
+            t_array=(*packet)[F("Temperatures")].as<JsonArray>();
+            rt_array=(*packet)[F("ProbeRuntimes")].as<JsonArray>();
+            h_array=(*packet)[F("HeaterStates")].as<JsonArray>();
         }
         for(int i=0;i<PROBE_COUNT;i++){
             v_array[i]=this->voltages[i];
@@ -156,12 +157,12 @@ struct SerialDataOutput:public Serializable{
                 h_array[i]=this->heaterStates[i];
             }
         }
-        (*packet)["CurrentSetPoint"] = this->currentSP;
-        (*packet)["TemperatureSetPoint"] = this->temperatureSP;
-        (*packet)["RuntimeSeconds"] = this->runTimeSecs;
-        (*packet)["ElapsedSeconds"] = this->elapsedSecs;
-        (*packet)["Running"] = this->running;
-        (*packet)["Paused"] = this->paused;
+        (*packet)[F("CurrentSetPoint")] = this->currentSP;
+        (*packet)[F("TemperatureSetPoint")] = this->temperatureSP;
+        (*packet)[F("RuntimeSeconds")] = this->runTimeSecs;
+        (*packet)[F("ElapsedSeconds")] = this->elapsedSecs;
+        (*packet)[F("Running")] = this->running;
+        (*packet)[F("Paused")] = this->paused;
      }
 };
 

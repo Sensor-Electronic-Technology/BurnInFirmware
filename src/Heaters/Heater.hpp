@@ -47,7 +47,6 @@ public:
 	void PrintTuning(bool completed);
 	bool IsTuning();
 	void RunPid();
-	void Run();
 	void OutputAction(unsigned long now);
 	HeaterResult Read();
 	HeaterResult GetHeaterResult();

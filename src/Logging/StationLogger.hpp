@@ -20,8 +20,6 @@ public:
         return instance;
     }
 
-    
-
     static void InitSerial(){
         auto instance=StationLogger::Instance();
         instance->msgBuffer.reserve(MSG_BUFFER_SIZE);
@@ -33,7 +31,7 @@ public:
         auto filename=read_log_file();
         instance->file=SD.open(filename,FILE_WRITE);
         if(!instance->file){
-            instance->Log(LogLevel::ERROR,true,true,"Failed to open File, cannot log to SD card");
+            instance->Log(LogLevel::ERROR,true,true,F("Failed to open File, cannot log to SD card"));
         }
     }
 
@@ -98,11 +96,10 @@ public:
         if(instance->file){
             instance->file=SD.open(read_log_file());
             if(instance->file){
-                Serial.print("Opened");
+
                 while(instance->file.available()){
                     Serial.write(instance->file.read());
                 }
-                Serial.print("Done Reading");
                 instance->file.close();
                 instance->file=SD.open(read_log_file(),FILE_WRITE);
             }

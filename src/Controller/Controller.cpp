@@ -11,14 +11,19 @@ Controller::Controller():Component(){
 }
 
 void Controller::LoadConfigurations(){
-    StationLogger::Log(LogLevel::INFO,true,false,"--------Firmware Initialization Starting--------");
+    StationLogger::Log(LogLevel::INFO,true,false,F("--------Firmware Initialization Starting--------"));
     HeaterControllerConfig heatersConfig;
     ProbeControllerConfig  probesConfig;
     ControllerConfig       controllerConfig;
-    StationLogger::Log(LogLevel::INFO,true,false,"Loading configuration files...");
+    StationLogger::Log(LogLevel::INFO,true,false,F("Loading configuration files..."));
+
     FileManager::Load(&heatersConfig,PacketType::HEATER_CONFIG);
     FileManager::Load(&probesConfig,PacketType::PROBE_CONFIG);
     FileManager::Load(&controllerConfig,PacketType::SYSTEM_CONFIG);
+
+    ComHandler::MsgPacketSerializer(heatersConfig,PacketType::HEATER_CONFIG);
+    ComHandler::MsgPacketSerializer(probesConfig,PacketType::PROBE_CONFIG);
+    ComHandler::MsgPacketSerializer(controllerConfig,PacketType::SYSTEM_CONFIG);
     
     this->heaterControl=new HeaterController(heatersConfig);
     this->probeControl=new ProbeController(probesConfig);
@@ -27,31 +32,37 @@ void Controller::LoadConfigurations(){
     this->comInterval=controllerConfig.comInterval;
     this->updateInterval=controllerConfig.updateInterval;
     this->logInterval=controllerConfig.logInterval;
-    StationLogger::Log(LogLevel::INFO,true,false,"--------Configuration Files Loaded--------");
+    StationLogger::Log(LogLevel::INFO,true,false,F("--------Configuration Files Loaded--------"));
 }
 
 void Controller::SetupComponents(){
-    StationLogger::Log(LogLevel::INFO,true,false,"-------Initalizing Components-------");
+    StationLogger::Log(LogLevel::INFO,true,false,F("-------Initalizing Components-------"));
     //Send messages
     
     this->heaterControl->Initialize();
     this->probeControl->Initialize();
     this->probeControl->TurnOffSrc();
 
-    StationLogger::Log(LogLevel::INFO,true,false,"Reading intitial values...");
+    StationLogger::Log(LogLevel::INFO,true,false,F("Reading intitial values..."));
     this->probeResults=this->probeControl->GetProbeResults();
     this->heaterResults=this->heaterControl->GetResults();
 
-    StationLogger::Log(LogLevel::INFO,true,false,"Setting up timers...");
+    StationLogger::Log(LogLevel::INFO,true,false,F("Setting up timers..."));
     this->logTimer.onInterval([&](){
+        // if(this->burnTimer->IsRunning()){
+        //     FileManager::Save(&this->saveState,PacketType::SAVE_STATE);
+        // }
         if(this->burnTimer->IsRunning()){
-            FileManager::Save(&this->saveState,PacketType::SAVE_STATE);
+            StationLogger::Log(LogLevel::INFO,true,false,F("Elapsed: %d"),this->burnTimer->testTimer.elapsed_secs);
+        }else{
+            StationLogger::Log(LogLevel::INFO,true,false,F("Timer not running, press start to run timer"));
         }
-    },this->logInterval);
+        
+    },1000);
 
     this->comTimer.onInterval([&](){
         this->comData.Set(this->probeResults,this->heaterResults,*(this->burnTimer));
-        ComHandler::MsgPacketSerializer(this->comData,PacketType::DATA);
+        //ComHandler::MsgPacketSerializer(this->comData,PacketType::DATA);
     },this->comInterval);
 
     this->updateTimer.onInterval([&](){
@@ -59,54 +70,55 @@ void Controller::SetupComponents(){
         this->heaterResults=this->heaterControl->GetResults();
     },this->updateInterval);
 
-    StationLogger::Log(LogLevel::INFO,true,false,"Registering Components...");
-    RegisterChild(this->heaterControl);
-    RegisterChild(this->probeControl);
+    StationLogger::Log(LogLevel::INFO,true,false,F("Registering Components..."));
+    //RegisterChild(this->heaterControl);
+    //RegisterChild(this->probeControl);
     RegisterChild(this->logTimer);
-    RegisterChild(this->comTimer);
-    RegisterChild(this->updateTimer);
-    StationLogger::Log(LogLevel::INFO,true,false,"-------Initalization Complete-------");
+    //RegisterChild(this->comTimer);
+    //RegisterChild(this->updateTimer);
+    StationLogger::Log(LogLevel::INFO,true,false,F("-------Initalization Complete-------"));
 }
 
 void Controller::HandleCommand(StationCommand command){
     switch(command){
         case StationCommand::START:{
+            StationLogger::Log(LogLevel::INFO,true,false,F("Start Command Recieved"));
+
             if(!this->burnTimer->IsRunning()){
+                this->burnTimer->Start(CurrentValue::c150);
+                StationLogger::Log(LogLevel::INFO,true,false,F("BurnTimer started"));
+            }else{
                 if(this->burnTimer->IsPaused()){
                     this->burnTimer->Continue();
-                    StationLogger::Log(LogLevel::INFO,true,false,"BurnTimer continuing");
+                    StationLogger::Log(LogLevel::INFO,true,false,F("BurnTimer continuing"));
                 }else{
-                    this->burnTimer->Start(CurrentValue::c150);
-                    StationLogger::Log(LogLevel::INFO,true,false,"BurnTimer started");
+                    StationLogger::Log(LogLevel::INFO,true,false,F("Station is running and not paused"));
                 }
-            }else{
-                StationLogger::Log(LogLevel::INFO,true,false,"Failed to start. BurnTimer already running");
             }
-            
             break;
         }
         case StationCommand::PAUSE:{
-            
+            StationLogger::Log(LogLevel::INFO,true,false,F("Pause Command Recieved"));
             if(!this->burnTimer->IsPaused()){
                 this->burnTimer->Pause();
-                StationLogger::Log(LogLevel::INFO,true,false,"BurnTimer Paused");
+                StationLogger::Log(LogLevel::INFO,true,false,F("BurnTimer Paused"));
                 // this->nextTask=this->task;
                 // this->nextTask.state.n_state=States::N_PAUSED;
             }else{
-                StationLogger::Log(LogLevel::INFO,true,false,"BurnTimer already paused,send Start command to continue");
+                StationLogger::Log(LogLevel::INFO,true,false,F("BurnTimer already paused,send Start command to continue"));
             }
             break;
         }
         case StationCommand::PROBE_TEST:{
-            StationLogger::Log(LogLevel::INFO,true,false,"Probe Test Command Recieved!");
+            StationLogger::Log(LogLevel::INFO,true,false,F("Probe Test Command Recieved!"));
             break;
         }
         case StationCommand::CYCLE_CURRENT:{
-            StationLogger::Log(LogLevel::INFO,true,false,"Switch Current Command Recieved!");
+            StationLogger::Log(LogLevel::INFO,true,false,F("Switch Current Command Recieved!"));
             break;
         }
         case StationCommand::TOGGLE_HEAT:{
-            StationLogger::Log(LogLevel::INFO,true,false,"Toggle Heat Command Recieved!");
+            StationLogger::Log(LogLevel::INFO,true,false,F("Toggle Heat Command Recieved!"));
             break;
         }
         case StationCommand::CHANGE_MODE_ATUNE:{
@@ -147,12 +159,12 @@ void Controller::HandleCommand(StationCommand command){
             break;
         }
         case StationCommand::RESET:{
-            StationLogger::Log(LogLevel::WARNING,true,false,"Controller Resetting, please wait...");
+            StationLogger::Log(LogLevel::WARNING,true,false,F("Controller Resetting, please wait..."));
             this->Reset();
             break;
         }
         default:{
-            StationLogger::Log(LogLevel::CRITICAL_ERROR,true,false,"Invalid Command Recieved");
+            StationLogger::Log(LogLevel::CRITICAL_ERROR,true,false,F("Invalid Command Recieved"));
             break;
         }
     }
@@ -172,21 +184,18 @@ void Controller::HandleCommand(StationCommand command){
     }
 }
 
+void Controller::privateLoop(){
+    if(this->burnTimer->IsRunning()){
+        bool checks[PROBE_COUNT]={true};
+        this->burnTimer->Increment(checks);
+        
+    }
+}
+
 void Controller::Reset(){
     wdt_disable();
 	wdt_enable(WDTO_15MS);
 	while(true){;}
-}
-
-
-bool Controller::CanTransitionTo(StationMode mode){
-    if(this->task.mode!=mode){
-        // switch(this->task.mode){
-        //     case
-        // }
-    }
-    return false;
-
 }
 
 void Controller::CycleCurrent(){
@@ -197,14 +206,19 @@ void Controller::TurnOnCurrent(){
     this->probeControl->TurnOnSrc();
 }
 
-
-
 bool* Controller::CheckCurrents(){
     bool checks[PROBE_COUNT]={false};
     for(int i=0;i<PROBE_COUNT;i++){
         checks[i]=this->probeResults[i].okay;
     }
     return checks;
+}
+
+void Controller::TuningRun(){
+
+}
+void Controller::CalRun(){
+    
 }
 
 

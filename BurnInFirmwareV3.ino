@@ -11,28 +11,17 @@
 #include "src/Logging/StationLogger.hpp"
 #include <Array.h>
 #include "src/Controller/State.hpp"
-
-
+#include "src/Controller/Controller.hpp"
+#include "src/free_memory.h"
+#include "src/Tools/eeprom_wear_level.hpp"
 
 unsigned long lastCheck=0;
-unsigned long deadLine=5000;
+unsigned long deadLine=3000;
 
-ProbeControllerConfig config;
+eeprom_wear_level wl(StationHardwareId,255,1,20);
 
-void testing(){
-    if(!SD.begin(SS)){
-        StationLogger::Log(LogLevel::CRITICAL_ERROR,true,true,"Failed to open SD card. Configurations cannot be read");
-        while(true){ }
-    }
-    StationLogger::InitFile();
-    
-    //StationLogger::Log(LogLevel::ERROR,true,true,SystemMessage::CHECKING_RUNNING_TEST);
-    delay(5000);
-    Serial.println("Reading File");
-    StationLogger::PrintFile();
-    Serial.println("Finished");    
-    
-}
+Controller controller;
+String id;
 
 int count=0;
 JsonDocument doc;
@@ -41,25 +30,32 @@ bool serialEventReady=false;
 void setup(){
     Serial.begin(38400);
     while(!Serial){}
+    delay(2000);
+    // StationHardwareId="S01";
+    //wl.put(id);
+    wl.get(id);
+    
     ComHandler::SetSerial(&Serial);
     StationLogger::InitSerial();
-    StationLogger::Log(LogLevel::INFO,true,false,"Connected, send data");
-    lastCheck=millis();
-    String prefixStr;
-    for(int i=0;i<5;i++){
-        prefixStr+=read_packet_prefix(i);
-        prefixStr+=",";
+    if(!SD.begin(SS)){
+        StationLogger::Log(LogLevel::CRITICAL_ERROR,true,true,F("Failed to open SD card. Configurations cannot be read"));
+        while(true){ }
     }
-    //StationLogger::Log(LogLevel::INFO,true,false,"Prefix List.. %s",prefixStr.c_str());
-    //serialFlush();
+    StationLogger::Log(LogLevel::INFO,true,true,F("SD Opened"));
+    StationLogger::Log(LogLevel::INFO,true,false,F("Connected, send data"));
+    lastCheck=millis();
+    controller.LoadConfigurations();
+    controller.SetupComponents();
     ComHandler::EnableSerialEvent();
+    StationLogger::Log(LogLevel::INFO,true,false,F("StationId: %s"),id.c_str());
 }
 
 void loop(){
     if(millis()-lastCheck>=deadLine){
-        StationLogger::Log(LogLevel::INFO,true,false,"Sending.. %d",count++);
+        StationLogger::Log(LogLevel::INFO,true,false,F("Free Memory: %d"),FreeSRAM());
         lastCheck=millis();
     }
+    controller.loop();
 }
 
 void serialEvent(){

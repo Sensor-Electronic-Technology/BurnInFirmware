@@ -81,7 +81,7 @@ public:
             instance->serializerDoc.clear();
             auto error=deserializeJson(instance->serialEventDoc,*instance->serial);
             if(error){
-                //StationLogger::Log(LogLevel::CRITICAL_ERROR,true,false,"Deserialization Failed.. Reason: \n %s",error.c_str());
+                //StationLogger::Log(LogLevel::CRITICAL_ERROR,true,false,F("Deserialization Failed.. Reason: \n %s",error.c_str());
                 instance->serialEventEnabled=true;
                 return;
             }
@@ -108,7 +108,6 @@ public:
 
 private:
     static ComHandler* instance;
-    JsonDocument msgDoc;
     JsonDocument serialEventDoc;
     JsonDocument serializerDoc;
     Stream* serial=nullptr;

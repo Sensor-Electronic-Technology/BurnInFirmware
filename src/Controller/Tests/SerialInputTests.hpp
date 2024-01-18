@@ -20,7 +20,7 @@ public:
         if(millis()-lastCheck>ComPeriod){
             lastCheck=millis();
             for(int i=0;i<6;i++){
-                Serial.print("[");Serial.print(i);Serial.print("]=");
+                Serial.print("[F(");Serial.print(i);Serial.print(")]=");
                 Serial.print(input.probeRuntimes[i]);
             }
             Serial.println();

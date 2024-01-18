@@ -3,6 +3,8 @@
 #include <ArduinoComponents.h>
 #include <ArxContainer.h>
 
+inline const char *StationHardwareId;
+
 #define read_msg_table(msg) ((const char *)pgm_read_ptr(&(message_table[msg])))
 #define read_log_prefix(pre) ((const char *)pgm_read_ptr(&(log_level_prefixes[pre])))
 #define read_packet_prefix(pre) ((const char *)pgm_read_ptr(&(prefixes[pre])))

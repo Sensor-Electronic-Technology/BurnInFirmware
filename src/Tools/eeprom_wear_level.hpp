@@ -1,5 +1,4 @@
 #pragma once
-#include <ArduinoSTL.h>
 #include <EEPROM.h>
 
 #define WRITE_UPPER     254
@@ -53,7 +52,7 @@ public:
 /**
  * Get data if previous data exists
 */
-    template<class T> int get(T& data){
+    template<typename T> int get(T& data){
         //return 0 if not previous data exists
         if(!this->blockAddr)
             return 0;
@@ -69,7 +68,7 @@ public:
 /**
  *  Writes data to eeprom.  Moves to new block if write limit is hit
 */
-    template<class T> void put(const T& data){
+    template<typename T> void put(const T& data){
         //if blockAddr==0 then is first write.  set to startAddr
         if(!this->blockAddr){
             this->blockAddr=this->startAddr;

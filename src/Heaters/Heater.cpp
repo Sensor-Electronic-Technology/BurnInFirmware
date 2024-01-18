@@ -17,7 +17,7 @@ Heater::Heater(const HeaterConfig& config)
     this->kp,this->ki,this->kd);
     this->pid->SetOutputRange(0,this->WindowSize,true);
     this->autoTuner=new PID_AutoTune(&this->temperature,&this->pidOutput,this->tempSetPoint,this->pid->GetSampleTime(),15);
-    this->run[HeaterMode::PID_RUN]=&Heater::Run;
+    this->run[HeaterMode::PID_RUN]=&Heater::RunPid;
     this->run[HeaterMode::ATUNE_RUN]=&Heater::RunAutoTune;
     this->autoTuner->SetOutputRange(0,this->WindowSize);
     Serial.print("Sample Time=");Serial.print(this->pid->GetSampleTime());
@@ -72,7 +72,7 @@ void Heater::SwitchMode(HeaterMode nextMode){
 }
 
 void Heater::PrintTuning(bool completed){
-    Serial.print("H");Serial.print("[");Serial.print(this->id);Serial.print("]: ");
+    Serial.print("H");Serial.print("[F(");Serial.print(this->id);Serial.print(")]: ");
     Serial.print("kp=");Serial.print(this->autoTuner->GetKp());
     Serial.print(" , ki=");Serial.print(this->autoTuner->GetKd());
     Serial.print(" , kd=");Serial.print(this->autoTuner->GetKi());
@@ -103,14 +103,14 @@ void Heater::RunAutoTune(){
             if(!this->relayState){
                 this->relayState=true;
                 this->output.high();
-                //Serial.print("H");Serial.print("[");Serial.print(this->id);Serial.print("]: ");
+                //Serial.print("H");Serial.print("[F(");Serial.print(this->id);Serial.print(")]: ");
                 //Serial.print("Output high");Serial.print(" Pid Out: ");Serial.println(pidOutput);
             }
         }else{
             if(this->relayState){
                 this->relayState=false;
                 this->output.low();
-                //Serial.print("H");Serial.print("[");Serial.print(this->id);Serial.print("]: ");
+                //Serial.print("H");Serial.print("[F(");Serial.print(this->id);Serial.print(")]: ");
                 //Serial.print("Output Low");Serial.print(" Pid Out: ");Serial.println(pidOutput);
             }
         }

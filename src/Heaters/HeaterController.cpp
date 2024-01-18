@@ -71,7 +71,7 @@ void HeaterController::TuningComplete(HeaterTuneResult result){
         if(tuningComplete){
             //Send values
             this->tuningCompleted=true;
-            ComHandler::SendRequest(PacketType::HEATER_REQUEST,"Tuning Completed. Save new PID parameters?",this->tuningResults);
+            //ComHandler::SendRequest(PacketType::HEATER_REQUEST,F("Tuning Completed. Save new PID parameters?",this->tuningResults);
         }else{
             if(result.complete){
                 StationLogger::Log(LogLevel::INFO,true,false,
@@ -114,7 +114,7 @@ void HeaterController::RunAutoTune(){
 
 void HeaterController::Run(){
     for(auto heater:this->heaters){
-        heater->Run();
+        heater->RunPid();
     }
 }
 

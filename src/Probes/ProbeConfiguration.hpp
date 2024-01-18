@@ -17,8 +17,8 @@ struct CurrentSelectorConfig{
         this->SetCurrent=(CurrentValue)configJson[F("SetCurrent")];
         this->switchEnabled=configJson[F("SwitchEnabled")];
     }
-    void Serialize(JsonObject *configJson){
-        (*configJson)[F("CurrentPin")]=this->pin120mA;
+    void Serialize(JsonObject* configJson){
+        (*configJson)[F("CurrentPin")]=this->currentPin;
         (*configJson)[F("Pin120mA")]=this->pin120mA;
         (*configJson)[F("Pin60mA")]=this->pin60mA;
         (*configJson)[F("SetCurrent")]=this->SetCurrent;
@@ -104,6 +104,7 @@ public:
     CurrentValue probeTestCurrent;
     double probeCurrentPercent;
     CurrentSelectorConfig   currentSelectConfig;
+    
 	ProbeConfig	probeConfigs[PROBE_COUNT]={
 		ProbeConfig(VoltageSensorConfig(PIN_PROBE1_VOLT),CurrentSensorConfig(PIN_PROBE1_CURRENT)),
 		ProbeConfig(VoltageSensorConfig(PIN_PROBE2_VOLT),CurrentSensorConfig(PIN_PROBE2_CURRENT)),
@@ -136,7 +137,7 @@ public:
         (*doc)[F("ReadInterval")] = this->readInterval;
         (*doc)[F("CurrentPercent")]=this->probeCurrentPercent;
         (*doc)[F("ProbeTestCurrent")]=this->probeTestCurrent;
-        (*doc).shrinkToFit();
+        //(*doc).shrinkToFit();
     }    
     
     virtual void Serialize(JsonObject *packet,bool initialize) override{
