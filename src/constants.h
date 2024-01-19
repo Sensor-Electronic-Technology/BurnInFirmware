@@ -1,9 +1,28 @@
 #pragma once
 #include <Arduino.h>
+#include <EEPROM.h>
 #include <ArduinoComponents.h>
 #include <ArxContainer.h>
 
-inline const char *StationHardwareId;
+template <class T> int EEPROM_write(int addr, const T& value) {
+    const byte* p = (const byte*)(const void*)&value;
+    int newAddr;
+    for (newAddr = 0; newAddr < sizeof(value); newAddr++) {
+        EEPROM.write(addr++, *p++);
+    }
+    return newAddr;
+}//End write any value/type
+
+template <class T> int EEPROM_read(int addr, T& value) {
+    byte* p = (byte*)(void*)&value;
+    int newAddr;
+    for (newAddr = 0; newAddr < sizeof(value); newAddr++)
+        *p++ = EEPROM.read(addr++);
+    return newAddr;
+}//End read any value/type
+
+inline char StationId[4];
+#define ID_ADDR     10
 
 #define read_msg_table(msg) ((const char *)pgm_read_ptr(&(message_table[msg])))
 #define read_log_prefix(pre) ((const char *)pgm_read_ptr(&(log_level_prefixes[pre])))
@@ -61,6 +80,8 @@ enum PacketType:uint8_t{
     TEST_RESPONSE=8,  //PC sends continue test request
     HEATER_REQUEST=9,  //Pc recieves AutoTuneValues and request save response
     TEST_REQUEST=10,   //Firmware sends continue test request
+    ID_RECEIVE=11,        //Send Id to PC
+    ID_REQUEST=12      //Set new Id
 };
 
 const char* const prefixes[] PROGMEM = {
@@ -74,7 +95,9 @@ const char* const prefixes[] PROGMEM = {
     "HRES", //7
     "TRES", //8
     "HREQ", //9
-    "TREQ"  //10
+    "TREQ", //10
+    "IDREC",  //11
+    "IDREQ"   //12
 };
 
 enum Response{

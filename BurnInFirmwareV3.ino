@@ -18,10 +18,9 @@
 unsigned long lastCheck=0;
 unsigned long deadLine=3000;
 
-eeprom_wear_level wl(StationHardwareId,255,1,20);
 
 Controller controller;
-String id;
+
 
 int count=0;
 JsonDocument doc;
@@ -31,9 +30,7 @@ void setup(){
     Serial.begin(38400);
     while(!Serial){}
     delay(2000);
-    // StationHardwareId="S01";
-    //wl.put(id);
-    wl.get(id);
+    EEPROM_read(ID_ADDR,StationId);
     
     ComHandler::SetSerial(&Serial);
     StationLogger::InitSerial();
@@ -47,7 +44,8 @@ void setup(){
     controller.LoadConfigurations();
     controller.SetupComponents();
     ComHandler::EnableSerialEvent();
-    StationLogger::Log(LogLevel::INFO,true,false,F("StationId: %s"),id.c_str());
+    //String sid=id;
+    StationLogger::Log(LogLevel::INFO,true,false,F("StationId: %s"),StationId);
 }
 
 void loop(){

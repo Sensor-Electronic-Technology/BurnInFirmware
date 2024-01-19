@@ -37,7 +37,8 @@ public:
     template <typename T> 
     void InstanceSendRequest(PacketType packetType,const char* request,const T& data);
     void InstanceSendMessage(const char* message);
-
+    void SendId();
+    void ReceiveId();
 
     static void EnableSerialEvent(){
         auto instance=ComHandler::Instance();

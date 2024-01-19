@@ -36,6 +36,7 @@ public:
     void StopTest();
     void RunTestProbes();
     void Reset();
+    //void SetStationId();
 
     //Heater Actions
     void RunAutoTune();
@@ -67,7 +68,8 @@ private:
     unsigned long       logInterval=LOG_INTERVAL;
     SaveState           saveState;
     Timer               comTimer,updateTimer,logTimer;
-    SerialDataOutput     comData;
+    SerialDataOutput    comData;
+    //const char*         
 
     //typedef void(Controller::*ModeRun)(void);
     //ModeRun mode_run[3];

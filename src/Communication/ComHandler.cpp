@@ -5,22 +5,23 @@
 ComHandler* ComHandler::instance=nullptr;
 
 void ComHandler::MsgPacketDeserialize() {
-    const char* prefix= instance->serialEventDoc[F("Prefix")].as<const char*>();
+    const char* prefix=this->serialEventDoc[F("Prefix")].as<const char*>();
     //StationLogger::Log(LogLevel::INFO,true,false,F("Input Prefix: %s",prefix);
     bool found=false;
     PacketType packetType;    
-    for(uint8_t i=0;i<9;i++){
+    for(uint8_t i=0;i<13;i++){
         const char* target=read_packet_prefix(i);
         if(strcmp(prefix,target)==0){
             found=true;
             packetType=(PacketType)i;
+            StationLogger::Log(LogLevel::INFO,true,false,F("Packet found.  Packet: %d %s"),i,prefix);
             break;
         }
     }
     if(found){
         switch(packetType){
             case PacketType::PROBE_CONFIG:{
-                auto packet=instance->serialEventDoc[F("Packet")].as<JsonObject>();
+                auto packet=this->serialEventDoc[F("Packet")].as<JsonObject>();
                 ProbeControllerConfig config;
                 config.Deserialize(packet);
                 FileManager::Save(&config,packetType);
@@ -28,7 +29,7 @@ void ComHandler::MsgPacketDeserialize() {
                 break;
             }
             case PacketType::HEATER_CONFIG:{
-                auto packet=instance->serialEventDoc[F("Packet")].as<JsonObject>();
+                auto packet=this->serialEventDoc[F("Packet")].as<JsonObject>();
                 HeaterControllerConfig config;
                 config.Deserialize(packet);
                 FileManager::Save(&config,packetType);
@@ -36,7 +37,7 @@ void ComHandler::MsgPacketDeserialize() {
                 break;
             }
             case PacketType::SYSTEM_CONFIG:{
-                auto packet=instance->serialEventDoc[F("Packet")].as<JsonObject>();
+                auto packet=this->serialEventDoc[F("Packet")].as<JsonObject>();
                 ControllerConfig config;
                 config.Deserialize(packet);
                 FileManager::Save(&config,packetType);
@@ -44,16 +45,24 @@ void ComHandler::MsgPacketDeserialize() {
                 break;
             }
             case PacketType::COMMAND:{
-                auto packet=instance->serialEventDoc[F("Packet")].as<JsonObject>();
+                auto packet=this->serialEventDoc[F("Packet")].as<JsonObject>();
                 StationCommand command=(StationCommand)instance->serialEventDoc[F("Packet")];
-                
                 instance->_commandCallback(command);
                 break;
             }
             case PacketType::HEATER_RESPONSE:{
+                break;
             }
             case PacketType::TEST_RESPONSE:{
-                this->ResponseDeserializer(instance->serialEventDoc);
+                //this->ResponseDeserializer(this->serialEventDoc);
+                break;
+            }
+            case PacketType::ID_REQUEST:{
+                this->SendId();
+                break;
+            }
+            case PacketType::ID_RECEIVE:{
+                this->ReceiveId();
                 break;
             }
             default:{
@@ -65,6 +74,22 @@ void ComHandler::MsgPacketDeserialize() {
         StationLogger::Log(LogLevel::ERROR,true,false,F("Prefix not found.."));
     }
     this->serialEventDoc.clear();
+}
+
+void ComHandler::SendId(){
+    EEPROM_read(ID_ADDR,StationId);
+    this->serializerDoc.clear();
+    this->serializerDoc[F("Prefix")]=read_packet_prefix(PacketType::MESSAGE);
+    this->serializerDoc[F("Packet")]=StationId;
+    serializeJson(this->serializerDoc,*instance->serial);
+    this->serial->println();
+    this->serializerDoc.clear();
+}
+
+void ComHandler::ReceiveId(){
+    auto id=this->serialEventDoc[F("Packet")].as<const char*>();
+    sprintf(StationId,id);
+    EEPROM_write(ID_ADDR,StationId);
 }
 
 void ComHandler::ResponseDeserializer(JsonDocument& doc){
@@ -109,26 +134,24 @@ void ComHandler::InstanceMsgPacketSerializer(const T& data,PacketType packetType
 
 template <typename T> 
 void ComHandler::InstanceSendRequest(PacketType packetType,const char* request,const T& data) {
-    auto instance=ComHandler::Instance();
     Derived_from<T,Serializable>();
-    instance->serializerDoc.clear();
-    instance->serializerDoc[F("Prefix")]=read_packet_prefix(packetType);
-    instance->serializerDoc[F("RequestText")]=request;
-    auto packet=instance->serializerDoc[F("Packet")].to<JsonObject>();
+    this->serializerDoc.clear();
+    this->serializerDoc[F("Prefix")]=read_packet_prefix(packetType);
+    this->serializerDoc[F("RequestText")]=request;
+    auto packet=this->serializerDoc[F("Packet")].to<JsonObject>();
     data.Serialize(&packet,true);
-    serializeJson(instance->serializerDoc,*instance->serial);
-    instance->serial->println();
+    serializeJson(this->serializerDoc,*instance->serial);
+    this->serial->println();
     this->serializerDoc.clear();
 }
 
 void ComHandler::InstanceSendMessage(const char* message){
-    auto instance=ComHandler::Instance();
-    instance->serializerDoc.clear();
-    instance->serializerDoc[F("Prefix")]=read_packet_prefix(PacketType::MESSAGE);
-    auto packetJson=instance->serializerDoc[F("Packet")].to<JsonObject>();
+    this->serializerDoc.clear();
+    this->serializerDoc[F("Prefix")]=read_packet_prefix(PacketType::MESSAGE);
+    auto packetJson=this->serializerDoc[F("Packet")].to<JsonObject>();
     packetJson[F("Message")]=message;
-    serializeJson(instance->serializerDoc,*instance->serial);
-    instance->serial->println();
+    serializeJson(this->serializerDoc,*instance->serial);
+    this->serial->println();
     this->serializerDoc.clear();
 }
 
