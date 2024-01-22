@@ -25,7 +25,6 @@ void ComHandler::MsgPacketDeserialize() {
                 ProbeControllerConfig config;
                 config.Deserialize(packet);
                 FileManager::Save(&config,packetType);
-                this->InstanceMsgPacketSerializer(config,packetType);
                 break;
             }
             case PacketType::HEATER_CONFIG:{
@@ -33,21 +32,21 @@ void ComHandler::MsgPacketDeserialize() {
                 HeaterControllerConfig config;
                 config.Deserialize(packet);
                 FileManager::Save(&config,packetType);
-                this->InstanceMsgPacketSerializer(config,packetType);
                 break;
             }
             case PacketType::SYSTEM_CONFIG:{
                 auto packet=this->serialEventDoc[F("Packet")].as<JsonObject>();
+                serializeJson(this->serialEventDoc,*this->serial);
                 ControllerConfig config;
                 config.Deserialize(packet);
                 FileManager::Save(&config,packetType);
-                this->InstanceMsgPacketSerializer(config,packetType);
+                //this->InstanceMsgPacketSerializer(config,packetType);
                 break;
             }
             case PacketType::COMMAND:{
                 auto packet=this->serialEventDoc[F("Packet")].as<JsonObject>();
-                StationCommand command=(StationCommand)instance->serialEventDoc[F("Packet")];
-                instance->_commandCallback(command);
+                StationCommand command=(StationCommand)this->serialEventDoc[F("Packet")];
+                this->_commandCallback(command);
                 break;
             }
             case PacketType::HEATER_RESPONSE:{
@@ -81,7 +80,7 @@ void ComHandler::SendId(){
     this->serializerDoc.clear();
     this->serializerDoc[F("Prefix")]=read_packet_prefix(PacketType::MESSAGE);
     this->serializerDoc[F("Packet")]=StationId;
-    serializeJson(this->serializerDoc,*instance->serial);
+    serializeJson(this->serializerDoc,*this->serial);
     this->serial->println();
     this->serializerDoc.clear();
 }
@@ -125,7 +124,6 @@ void ComHandler::InstanceMsgPacketSerializer(const T& data,PacketType packetType
     this->serializerDoc.clear();
     this->serializerDoc[F("Prefix")]=read_packet_prefix(packetType);
     JsonObject packet=this->serializerDoc[F("Packet")].to<JsonObject>();
-    
     data.Serialize(&packet,true);
     serializeJson(this->serializerDoc,*this->serial);
     this->serial->println();
@@ -140,7 +138,7 @@ void ComHandler::InstanceSendRequest(PacketType packetType,const char* request,c
     this->serializerDoc[F("RequestText")]=request;
     auto packet=this->serializerDoc[F("Packet")].to<JsonObject>();
     data.Serialize(&packet,true);
-    serializeJson(this->serializerDoc,*instance->serial);
+    serializeJson(this->serializerDoc,*this->serial);
     this->serial->println();
     this->serializerDoc.clear();
 }
@@ -150,7 +148,7 @@ void ComHandler::InstanceSendMessage(const char* message){
     this->serializerDoc[F("Prefix")]=read_packet_prefix(PacketType::MESSAGE);
     auto packetJson=this->serializerDoc[F("Packet")].to<JsonObject>();
     packetJson[F("Message")]=message;
-    serializeJson(this->serializerDoc,*instance->serial);
+    serializeJson(this->serializerDoc,*this->serial);
     this->serial->println();
     this->serializerDoc.clear();
 }

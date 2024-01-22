@@ -50,9 +50,24 @@ void FileManager::InstanceSaveConfig(Serializable* config,PacketType configType)
         this->file.close();
         
     }
-    //TODO: test this
-    //ComHandler::MsgPacketSerializer(*config,configType);
-    StationLogger::Log(LogLevel::INFO,true,false,F("Configuration file should be saved"));
+    switch(configType){
+        case PacketType::HEATER_CONFIG:{
+            StationLogger::Log(LogLevel::INFO,true,false,F("Heater configuration saved"));
+            break;
+        }
+        case PacketType::PROBE_CONFIG:{
+            StationLogger::Log(LogLevel::INFO,true,false,F("Probe configuration saved"));
+            break;
+        }
+        case PacketType::SYSTEM_CONFIG:{
+            StationLogger::Log(LogLevel::INFO,true,false,F("Station configuration saved"));
+            break;
+        }
+        default:{
+            StationLogger::Log(LogLevel::INFO,true,false,"File Saved");
+            break;
+        }
+    }
     this->fileWriteBuffer.flush();
     this->file.close();
     this->doc.clear();

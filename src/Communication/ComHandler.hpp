@@ -20,26 +20,6 @@ public:
         return instance;
     }
 
-    void MsgPacketDeserialize();
-    void ResponseDeserializer(JsonDocument& doc);
-    /**
-     * Serializes objects derived from ControllerConfiguration.
-     * 
-     * @tparam T Type derived from Controller Configuration
-     * @param doc json document to be configured
-     * @param data data derived from ControllerConfiguration to be serialized
-     * @param packetType packet type for prefix PGP array
-     * @param initialze delares whether the function needs to initialize the json objects
-     * @return void
-     */
-    template <typename T> 
-    void InstanceMsgPacketSerializer(const T& data,PacketType packetType);
-    template <typename T> 
-    void InstanceSendRequest(PacketType packetType,const char* request,const T& data);
-    void InstanceSendMessage(const char* message);
-    void SendId();
-    void ReceiveId();
-
     static void EnableSerialEvent(){
         auto instance=ComHandler::Instance();
         if(instance->serial!=nullptr){
@@ -93,7 +73,14 @@ public:
 
     template<typename T> static void MsgPacketSerializer(const T& data,PacketType packetType){
         auto instance=ComHandler::Instance();
-        instance->InstanceMsgPacketSerializer(data,packetType);
+        Derived_from<T,Serializable>();
+        instance->serializerDoc.clear();
+        instance->serializerDoc[F("Prefix")]=read_packet_prefix(packetType);
+        JsonObject packet=instance->serializerDoc[F("Packet")].to<JsonObject>();
+        data.Serialize(&packet,true);
+        serializeJson(instance->serializerDoc,*instance->serial);
+        instance->serial->println();
+        instance->serialEventDoc.clear();
     }
 
     template <typename T> 
@@ -106,6 +93,27 @@ public:
         auto instance=ComHandler::Instance();
         instance->InstanceSendMessage(message);
     }
+
+private:
+    void MsgPacketDeserialize();
+    void ResponseDeserializer(JsonDocument& doc);
+    /**
+     * Serializes objects derived from ControllerConfiguration.
+     * 
+     * @tparam T Type derived from Controller Configuration
+     * @param doc json document to be configured
+     * @param data data derived from ControllerConfiguration to be serialized
+     * @param packetType packet type for prefix PGP array
+     * @param initialze delares whether the function needs to initialize the json objects
+     * @return void
+     */
+    template <typename T> 
+    void InstanceMsgPacketSerializer(const T& data,PacketType packetType);
+    template <typename T> 
+    void InstanceSendRequest(PacketType packetType,const char* request,const T& data);
+    void InstanceSendMessage(const char* message);
+    void SendId();
+    void ReceiveId();
 
 private:
     static ComHandler* instance;
