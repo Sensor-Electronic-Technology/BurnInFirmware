@@ -22,7 +22,7 @@ public:
      long runTimeSecs=54234;
      long elapsedSecs=12345;
 
-     void Set(Array<ProbeResult,PROBE_COUNT> probeResults,
+     void Set(const Array<ProbeResult,PROBE_COUNT>& probeResults,
             const Array<HeaterResult,HEATER_COUNT>& heaterResults,
             const BurnInTimer& burnTimer){
         
@@ -42,8 +42,7 @@ public:
         this->running=burnTimer.testTimer.running;
         this->paused=burnTimer.testTimer.paused;
         this->runTimeSecs=burnTimer.testTimer.duration_secs;
-        this->elapsedSecs=burnTimer.testTimer.elapsed_secs;
-        
+        this->elapsedSecs=burnTimer.testTimer.elapsed_secs;  
      }
 
      void Deserialize(JsonDocument& doc) override{
@@ -164,16 +163,6 @@ public:
         (*packet)[F("Running")] = this->running;
         (*packet)[F("Paused")] = this->paused;
      }
-};
-
-
-class SerialComManager{
-private: 
-    StaticJsonDocument<384> outputDoc;
-public:
-    void CreateJsonDocuments(){
-
-    }
 };
 
 

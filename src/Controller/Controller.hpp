@@ -25,6 +25,7 @@ public:
     //Init
     void LoadConfigurations();
     void SetupComponents();
+    void CheckSavedState();
 
     //Test Actions
     void TurnOnCurrent();
@@ -37,6 +38,7 @@ public:
     void RunTestProbes();
     void Reset();
     //void SetStationId();
+    void UpdateSerialData();
 
     //Heater Actions
     void RunAutoTune();
@@ -69,8 +71,9 @@ private:
     SaveState           saveState;
     Timer               comTimer,updateTimer,logTimer;
     SerialDataOutput    comData;
-    //const char*         
 
+    bool lockStartTest=false;
+    //const char*         
     //typedef void(Controller::*ModeRun)(void);
     //ModeRun mode_run[3];
     void privateLoop() override;

@@ -108,11 +108,14 @@ public:
     }
 
     void append_buffers(const char* logLine){
+        auto addlen=strlen(logLine);
         if(this->file){
-            instance->fileBuffer+=logLine;
+            auto len=this->fileBuffer.length();
+            if(addlen<=MSG_BUFFER_SIZE-len){
+                this->fileBuffer+=logLine;
+            }
         }
         if(this->serialEnabled){
-            auto addlen=strlen(logLine);
             auto len=this->msgBuffer.length();
             if(addlen<=MSG_BUFFER_SIZE-len){
                 this->msgBuffer+=logLine;

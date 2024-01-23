@@ -29,7 +29,7 @@ bool serialEventReady=false;
 void setup(){
     Serial.begin(38400);
     EEPROM_read(ID_ADDR,StationId);
-    
+    randomSeed(analogRead(0));
     ComHandler::SetSerial(&Serial);
     StationLogger::InitSerial();
     if(!SD.begin(SS)){

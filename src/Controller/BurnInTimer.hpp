@@ -3,6 +3,7 @@
 #include "../constants.h"
 #include "../Probes/probe_constants.h"
 #include "ControllerConfiguration.hpp"
+
 using namespace components;
 
 struct TimerData{
@@ -55,7 +56,7 @@ public:
 
     void Start(CurrentValue current);
    
-    void StartFrom(CurrentValue current,unsigned long elap);
+    void StartFrom(const TimerData& savedState);
    
     void Stop();
 
@@ -90,9 +91,4 @@ public:
 
     void Serialize(JsonObject* packet,bool initialize);
     void Deserialize(JsonObject& packet);
-
-    // BurnInTimer& operator++(){
-    //     this->Increment();
-    //     return *this;
-    // }
 };

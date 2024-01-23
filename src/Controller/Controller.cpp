@@ -1,4 +1,5 @@
 #include "Controller.hpp"
+#include "../free_memory.h"
 
 Controller::Controller():Component(){
     //ComHandler::MapCommandCallback(this->_commandCallback);
@@ -21,9 +22,9 @@ void Controller::LoadConfigurations(){
     FileManager::Load(&probesConfig,PacketType::PROBE_CONFIG);
     FileManager::Load(&controllerConfig,PacketType::SYSTEM_CONFIG);
 
-    ComHandler::MsgPacketSerializer(heatersConfig,PacketType::HEATER_CONFIG);
-    ComHandler::MsgPacketSerializer(probesConfig,PacketType::PROBE_CONFIG);
-    ComHandler::MsgPacketSerializer(controllerConfig,PacketType::SYSTEM_CONFIG);
+    // ComHandler::MsgPacketSerializer(heatersConfig,PacketType::HEATER_CONFIG);
+    // ComHandler::MsgPacketSerializer(probesConfig,PacketType::PROBE_CONFIG);
+    // ComHandler::MsgPacketSerializer(controllerConfig,PacketType::SYSTEM_CONFIG);
     
     this->heaterControl=new HeaterController(heatersConfig);
     this->probeControl=new ProbeController(probesConfig);
@@ -38,7 +39,7 @@ void Controller::LoadConfigurations(){
 void Controller::SetupComponents(){
     StationLogger::Log(LogLevel::INFO,true,false,F("-------Initalizing Components-------"));
     //Send messages
-    
+
     this->heaterControl->Initialize();
     this->probeControl->Initialize();
     this->probeControl->TurnOffSrc();
@@ -49,15 +50,13 @@ void Controller::SetupComponents(){
 
     StationLogger::Log(LogLevel::INFO,true,false,F("Setting up timers..."));
     this->logTimer.onInterval([&](){
-        // if(this->burnTimer->IsRunning()){
-        //     FileManager::Save(&this->saveState,PacketType::SAVE_STATE);
-        // }
         if(this->burnTimer->IsRunning()){
-            StationLogger::Log(LogLevel::INFO,true,false,F("Elapsed: %d"),this->burnTimer->testTimer.elapsed_secs);
-        }else{
-            StationLogger::Log(LogLevel::INFO,true,false,F("Timer not running, press start to run timer"));
+            this->saveState.Set(CurrentValue::c150,85,this->burnTimer->testTimer);
+            FileManager::Save(&this->saveState,PacketType::SAVE_STATE);
         }
-        
+        this->UpdateSerialData();
+        this->comData.Set(this->probeResults,this->heaterResults,*(this->burnTimer));
+        ComHandler::MsgPacketSerializer(this->comData,PacketType::DATA);
     },1000);
 
     this->comTimer.onInterval([&](){
@@ -76,7 +75,50 @@ void Controller::SetupComponents(){
     RegisterChild(this->logTimer);
     //RegisterChild(this->comTimer);
     //RegisterChild(this->updateTimer);
+    StationLogger::Log(LogLevel::INFO,true,false,F("Checking for saved state"));
+    StationLogger::Log(LogLevel::INFO,true,false,F("Free Memory: %d"),FreeSRAM());
+    this->CheckSavedState();
     StationLogger::Log(LogLevel::INFO,true,false,F("-------Initalization Complete-------"));
+    
+}
+
+void Controller::CheckSavedState(){
+    // FileManager::Load(&this->saveState,PacketType::SAVE_STATE);
+    // if(this->saveState.currentTimes.running){
+    //     this->burnTimer->StartFrom(this->saveState.currentTimes);
+    // }
+    FileResult result=FileManager::LoadState(&this->saveState);
+    switch(result){
+        case FileResult::LOADED:{
+            StationLogger::Log(LogLevel::INFO,true,false,F("Saved State Found! Continuing Test"));
+            this->burnTimer->StartFrom(this->saveState.currentTimes);
+            // this->heaterControl->TurnOn();
+            // this->TurnOnCurrent();
+            break;
+        }
+        case FileResult::DOES_NOT_EXIST:{
+            StationLogger::Log(LogLevel::INFO,true,false,F("No Saved State found, continuing normal operation"));
+            this->lockStartTest=false;
+            break;
+        }
+        case FileResult::DESERIALIZE_FAILED:
+        case FileResult::FAILED_TO_OPEN:{
+            this->lockStartTest=true;
+            break;
+        }
+    }
+}
+
+void Controller::UpdateSerialData(){
+    for(int i=0;i<PROBE_COUNT;i++){
+        this->probeResults[i].current=random(148,151);
+        this->probeResults[i].voltage=random(60,65);
+    }
+    for(int i=0;i<HEATER_COUNT;i++){
+        this->heaterResults[i].temperature=random(82,85);
+        this->heaterResults[i].tempOkay=true;
+        this->heaterResults[i].state=(bool)random(0,1);
+    }
 }
 
 void Controller::HandleCommand(StationCommand command){
@@ -159,6 +201,12 @@ void Controller::HandleCommand(StationCommand command){
             break;
         }
         case StationCommand::RESET:{
+            StationLogger::Log(LogLevel::WARNING,true,false,F("Deleting saved state"));
+            if(FileManager::ClearState()){
+                StationLogger::Log(LogLevel::INFO,true,false,F("Saved State Deleted"));
+            }else{
+                StationLogger::Log(LogLevel::WARNING,true,false,F("Failed to clear saved state"));
+            }
             StationLogger::Log(LogLevel::WARNING,true,false,F("Controller Resetting, please wait..."));
             this->Reset();
             break;

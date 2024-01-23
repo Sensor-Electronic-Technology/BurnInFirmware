@@ -14,7 +14,6 @@ void ComHandler::MsgPacketDeserialize() {
         if(strcmp(prefix,target)==0){
             found=true;
             packetType=(PacketType)i;
-            StationLogger::Log(LogLevel::INFO,true,false,F("Packet found.  Packet: %d %s"),i,prefix);
             break;
         }
     }
@@ -44,6 +43,7 @@ void ComHandler::MsgPacketDeserialize() {
                 break;
             }
             case PacketType::COMMAND:{
+                //StationLogger::Log(LogLevel::INFO,true,false,F("Packet found.  Packet: %s"),prefix);
                 auto packet=this->serialEventDoc[F("Packet")].as<JsonObject>();
                 StationCommand command=(StationCommand)this->serialEventDoc[F("Packet")];
                 this->_commandCallback(command);
@@ -57,15 +57,17 @@ void ComHandler::MsgPacketDeserialize() {
                 break;
             }
             case PacketType::ID_REQUEST:{
+                //StationLogger::Log(LogLevel::INFO,true,false,F("Packet found.  Packet: %s"),prefix);
                 this->SendId();
                 break;
             }
             case PacketType::ID_RECEIVE:{
+                //StationLogger::Log(LogLevel::INFO,true,false,F("Packet found.  Packet:  %s"),prefix);
                 this->ReceiveId();
                 break;
             }
             default:{
-                StationLogger::Log(LogLevel::INFO,true,false,F("Invalid prefix.. Prefix: %s"),prefix);
+                StationLogger::Log(LogLevel::ERROR,true,false,F("Invalid prefix.. Prefix: %s"),prefix);
                 break;
             }
         }
@@ -78,7 +80,7 @@ void ComHandler::MsgPacketDeserialize() {
 void ComHandler::SendId(){
     EEPROM_read(ID_ADDR,StationId);
     this->serializerDoc.clear();
-    this->serializerDoc[F("Prefix")]=read_packet_prefix(PacketType::MESSAGE);
+    this->serializerDoc[F("Prefix")]=read_packet_prefix(PacketType::ID_REQUEST);
     this->serializerDoc[F("Packet")]=StationId;
     serializeJson(this->serializerDoc,*this->serial);
     this->serial->println();

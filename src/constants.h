@@ -100,6 +100,13 @@ const char* const prefixes[] PROGMEM = {
     "IDREQ"   //12
 };
 
+const char* const json_filenames[] PROGMEM = {
+    "/hConfigs.txt",  //0
+    "/pConfigs.txt",  //1
+    "/sConfig.txt",   //2
+    "/state.txt"      //3
+};
+
 enum Response{
     HEATER_SAVE=0,
     HEATER_CANCEL=1,
@@ -112,6 +119,13 @@ enum LogLevel:uint8_t{
     CRITICAL_ERROR=1,
     WARNING=2,
     INFO=3
+};
+
+const char* const log_level_prefixes[] PROGMEM={
+    "ERR:",      //0
+    "CRIT_ERR:", //1
+    "WARN:"      //2
+    "INFO:"      //3
 };
 
 
@@ -148,20 +162,10 @@ const char* const message_table[] PROGMEM={
 
 const char* const log_file PROGMEM={"log.txt"};
 
-const char* const log_level_prefixes[] PROGMEM={
-    "ERR:",
-    "CRIT_ERR:",
-    "WARN:"
-    "INFO:"
-};
 
 
-const char* const json_filenames[] PROGMEM = {
-    "/hConfigs.txt",
-    "/pConfigs.txt",
-    "/sConfig.txt",
-    "/state.txt"
-};
+
+
 
 
 

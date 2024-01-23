@@ -9,29 +9,57 @@ void FileManager::InstanceInitialize(){
 }
 
 void FileManager::InstanceLoadConfig(Serializable* config,PacketType configType){
-        auto fileName=read_filename(configType);
-        this->file=SD.open(fileName);
-        if(!this->file){
-            StationLogger::Log(LogLevel::CRITICAL_ERROR,true,false,
-                F("Configuration file failed to open.  System will switch to default setup \n Please contact administrator asap!"),
-                read_packet_prefix(configType));
-            return;
-        }
-        StationLogger::Log(LogLevel::INFO,true,false,F("File opened, deserializing"));
-        this->doc.clear();
-        auto error=deserializeJson(this->doc,this->file);
-        if(error){
-            StationLogger::Log(LogLevel::CRITICAL_ERROR,true,false,
-                F("Failed to load configuration %s.  System will switch to default values. \n Please contact administrator asap!"),
-                read_packet_prefix(configType));
-            this->file.close();
-            return;
-        }
-        //serializeJsonPretty(instance->doc,Serial);
-        config->Deserialize(instance->doc);
-        this->file.close();
-        this->doc.clear();
+    auto fileName=read_filename(configType);
+    this->file=SD.open(fileName);
+    if(!this->file){
+        StationLogger::Log(LogLevel::CRITICAL_ERROR,true,false,
+            F("Configuration file failed to open.  System will switch to default setup \n Please contact administrator asap!"),
+            read_packet_prefix(configType));
+        return;
     }
+    StationLogger::Log(LogLevel::INFO,true,false,F("File opened, deserializing"));
+    this->doc.clear();
+    auto error=deserializeJson(this->doc,this->file);
+    if(error){
+        StationLogger::Log(LogLevel::CRITICAL_ERROR,true,false,
+            F("Failed to load configuration %s.  System will switch to default values. \n Please contact administrator asap!"),
+            read_packet_prefix(configType));
+        this->file.close();
+        return;
+    }
+    //serializeJsonPretty(instance->doc,Serial);
+    config->Deserialize(instance->doc);
+    this->file.close();
+    this->doc.clear();
+}
+
+FileResult FileManager::InstanceLoadState(Serializable* sysState){
+    auto fileName=read_filename(PacketType::SAVE_STATE);
+    StationLogger::Log(LogLevel::INFO,true,false,F("Checking if file exists"));
+    if(!SD.exists(fileName)){
+        return FileResult::DOES_NOT_EXIST;
+    }
+    StationLogger::Log(LogLevel::INFO,true,false,F("File Exists, Opening"));
+    this->file=SD.open(fileName);
+    if(!this->file){
+        StationLogger::Log(LogLevel::CRITICAL_ERROR,true,false,
+            F("Configuration file failed to open. System will not start until user manually starts test"));
+        return FileResult::FAILED_TO_OPEN;
+    }
+    StationLogger::Log(LogLevel::INFO,true,false,F("File opened, deserializing"));
+    this->doc.clear();
+    auto error=deserializeJson(this->doc,this->file);
+    if(error){
+        StationLogger::Log(LogLevel::CRITICAL_ERROR,true,false,
+            F("State Deserialization Failed. Tests will not start until manually started."));
+        this->file.close();
+        return FileResult::DESERIALIZE_FAILED;
+    }
+    sysState->Deserialize(instance->doc);
+    this->file.close();
+    this->doc.clear();
+    return FileResult::LOADED;
+}
 
 void FileManager::InstanceSaveConfig(Serializable* config,PacketType configType){
     auto fileName=read_filename(configType);
@@ -64,7 +92,7 @@ void FileManager::InstanceSaveConfig(Serializable* config,PacketType configType)
             break;
         }
         default:{
-            StationLogger::Log(LogLevel::INFO,true,false,"File Saved");
+            StationLogger::Log(LogLevel::INFO,true,false,F("File Saved"));
             break;
         }
     }

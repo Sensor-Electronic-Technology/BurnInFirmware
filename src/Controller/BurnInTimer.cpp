@@ -31,26 +31,27 @@
         }
     }
    
-    void BurnInTimer::StartFrom(CurrentValue current,unsigned long elap){
-        if(!this->testTimer.running && !this->testTimer.paused){
-            switch(current){
-                case CurrentValue::c060:{
-                    this->testTimer.duration_secs=this->durSec60mA;
-                    break;
-                }
-                case CurrentValue::c120:{
-                    this->testTimer.duration_secs=this->durSec120mA;
-                    break;
-                }
-                case CurrentValue::c150:{
-                    this->testTimer.duration_secs=this->durSec150mA;
-                    break;
-                }
-            }
-            this->testTimer.elapsed_secs=elap;
-            this->testTimer.running=true;
-            this->testTimer.paused=false;
-        }
+    void BurnInTimer::StartFrom(const TimerData& savedTimerState){
+        this->testTimer=savedTimerState;
+        // if(!this->testTimer.running && !this->testTimer.paused){
+        //     switch(current){
+        //         case CurrentValue::c060:{
+        //             this->testTimer.duration_secs=this->durSec60mA;
+        //             break;
+        //         }
+        //         case CurrentValue::c120:{
+        //             this->testTimer.duration_secs=this->durSec120mA;
+        //             break;
+        //         }
+        //         case CurrentValue::c150:{
+        //             this->testTimer.duration_secs=this->durSec150mA;
+        //             break;
+        //         }
+        //     }
+        //     this->testTimer.elapsed_secs=elap;
+        //     this->testTimer.running=true;
+        //     this->testTimer.paused=false;
+        // }
     }
    
     void BurnInTimer::Stop(){
