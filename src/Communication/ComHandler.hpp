@@ -24,6 +24,7 @@ public:
         auto instance=ComHandler::Instance();
         if(instance->serial!=nullptr){
             instance->serialEventEnabled=true;
+            instance->SendVersion();
             //instance->serial->flush();
         }
     }
@@ -114,6 +115,8 @@ private:
     void InstanceSendMessage(const char* message);
     void SendId();
     void ReceiveId();
+    void SendVersion();
+    void ReceiveVersion();
 
 private:
     static ComHandler* instance;

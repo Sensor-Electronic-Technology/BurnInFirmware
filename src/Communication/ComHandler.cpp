@@ -6,10 +6,9 @@ ComHandler* ComHandler::instance=nullptr;
 
 void ComHandler::MsgPacketDeserialize() {
     const char* prefix=this->serialEventDoc[F("Prefix")].as<const char*>();
-    //StationLogger::Log(LogLevel::INFO,true,false,F("Input Prefix: %s",prefix);
     bool found=false;
     PacketType packetType;    
-    for(uint8_t i=0;i<13;i++){
+    for(uint8_t i=0;i<15;i++){
         const char* target=read_packet_prefix(i);
         if(strcmp(prefix,target)==0){
             found=true;
@@ -66,6 +65,15 @@ void ComHandler::MsgPacketDeserialize() {
                 this->ReceiveId();
                 break;
             }
+
+            case PacketType::VER_REQUEST:{
+                this->SendVersion();
+                break;
+            }
+            case PacketType::VER_RECIEVE:{
+                this->ReceiveVersion();
+                break;
+            }
             default:{
                 StationLogger::Log(LogLevel::ERROR,true,false,F("Invalid prefix.. Prefix: %s"),prefix);
                 break;
@@ -91,6 +99,22 @@ void ComHandler::ReceiveId(){
     auto id=this->serialEventDoc[F("Packet")].as<const char*>();
     sprintf(StationId,id);
     EEPROM_write(ID_ADDR,StationId);
+}
+
+void ComHandler::SendVersion(){
+    EEPROM_read(VER_ADDR,FirmwareVersion);
+    this->serializerDoc.clear();
+    this->serializerDoc[F("Prefix")]=read_packet_prefix(PacketType::VER_REQUEST);
+    this->serializerDoc[F("Packet")]=FirmwareVersion;
+    serializeJson(this->serializerDoc,*this->serial);
+    this->serial->println();
+    this->serializerDoc.clear();
+}
+
+void ComHandler::ReceiveVersion(){
+    auto version=this->serialEventDoc[F("Packet")].as<const char*>();
+    sprintf(FirmwareVersion,version);
+    EEPROM_write(VER_ADDR,FirmwareVersion);
 }
 
 void ComHandler::ResponseDeserializer(JsonDocument& doc){

@@ -29,6 +29,8 @@ bool serialEventReady=false;
 void setup(){
     Serial.begin(38400);
     EEPROM_read(ID_ADDR,StationId);
+    //EEPROM_write(VER_ADDR,"V1.0");
+    EEPROM_read(VER_ADDR,FirmwareVersion);
     randomSeed(analogRead(0));
     ComHandler::SetSerial(&Serial);
     StationLogger::InitSerial();

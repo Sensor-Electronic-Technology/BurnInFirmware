@@ -22,7 +22,9 @@ template <class T> int EEPROM_read(int addr, T& value) {
 }//End read any value/type
 
 inline char StationId[4];
+inline char FirmwareVersion[4];
 #define ID_ADDR     10
+#define VER_ADDR    64
 
 #define read_msg_table(msg) ((const char *)pgm_read_ptr(&(message_table[msg])))
 #define read_log_prefix(pre) ((const char *)pgm_read_ptr(&(log_level_prefixes[pre])))
@@ -80,8 +82,11 @@ enum PacketType:uint8_t{
     TEST_RESPONSE=8,  //PC sends continue test request
     HEATER_REQUEST=9,  //Pc recieves AutoTuneValues and request save response
     TEST_REQUEST=10,   //Firmware sends continue test request
-    ID_RECEIVE=11,        //Send Id to PC
-    ID_REQUEST=12      //Set new Id
+    ID_RECEIVE=11,     //Send Id to PC
+    ID_REQUEST=12,     //Set new Id
+    VER_RECIEVE=13,
+    VER_REQUEST=14,
+    READY=15
 };
 
 const char* const prefixes[] PROGMEM = {
@@ -97,7 +102,10 @@ const char* const prefixes[] PROGMEM = {
     "HREQ", //9
     "TREQ", //10
     "IDREC",  //11
-    "IDREQ"   //12
+    "IDREQ",   //12
+    "VERREC", //13
+    "VERREQ",  //14
+    "RDY",     //15
 };
 
 const char* const json_filenames[] PROGMEM = {

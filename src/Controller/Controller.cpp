@@ -52,7 +52,7 @@ void Controller::SetupComponents(){
     this->logTimer.onInterval([&](){
         if(this->burnTimer->IsRunning()){
             this->saveState.Set(CurrentValue::c150,85,this->burnTimer->testTimer);
-            FileManager::Save(&this->saveState,PacketType::SAVE_STATE);
+            //FileManager::Save(&this->saveState,PacketType::SAVE_STATE);
         }
         this->UpdateSerialData();
         this->comData.Set(this->probeResults,this->heaterResults,*(this->burnTimer));
