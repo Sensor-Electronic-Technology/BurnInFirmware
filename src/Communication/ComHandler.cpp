@@ -101,7 +101,7 @@ void ComHandler::ReceiveId(){
     EEPROM_write(ID_ADDR,StationId);
 }
 
-void ComHandler::SendVersion(){
+void ComHandler::SendVersionInstance(){
     EEPROM_read(VER_ADDR,FirmwareVersion);
     this->serializerDoc.clear();
     this->serializerDoc[F("Prefix")]=read_packet_prefix(PacketType::VER_REQUEST);
@@ -172,6 +172,16 @@ void ComHandler::InstanceSendRequest(PacketType packetType,const char* request,c
 void ComHandler::InstanceSendMessage(const char* message){
     this->serializerDoc.clear();
     this->serializerDoc[F("Prefix")]=read_packet_prefix(PacketType::MESSAGE);
+    auto packetJson=this->serializerDoc[F("Packet")].to<JsonObject>();
+    packetJson[F("Message")]=message;
+    serializeJson(this->serializerDoc,*this->serial);
+    this->serial->println();
+    this->serializerDoc.clear();
+}
+
+void ComHandler::InstanceSendInitMessage(const char* message){
+    this->serializerDoc.clear();
+    this->serializerDoc[F("Prefix")]=read_packet_prefix(PacketType::INIT);
     auto packetJson=this->serializerDoc[F("Packet")].to<JsonObject>();
     packetJson[F("Message")]=message;
     serializeJson(this->serializerDoc,*this->serial);

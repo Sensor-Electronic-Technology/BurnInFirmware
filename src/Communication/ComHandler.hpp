@@ -56,6 +56,11 @@ public:
         instance->testResponseCb=cbk;
     }
 
+    static void SendVersion(){
+        auto instance=ComHandler::Instance();
+        instance->SendVersionInstance();
+    }
+
     static void HandleSerial(){
         auto instance=ComHandler::Instance();
         if(instance->serialEventEnabled && instance->serial!=nullptr){
@@ -95,6 +100,11 @@ public:
         instance->InstanceSendMessage(message);
     }
 
+    static void SendInitMessage(const char* message){
+        auto instance=ComHandler::Instance();
+        instance->InstanceSendInitMessage(message);
+    }
+
 private:
     void MsgPacketDeserialize();
     void ResponseDeserializer(JsonDocument& doc);
@@ -115,8 +125,9 @@ private:
     void InstanceSendMessage(const char* message);
     void SendId();
     void ReceiveId();
-    void SendVersion();
+    void SendVersionInstance();
     void ReceiveVersion();
+    void InstanceSendInitMessage(const char* message);
 
 private:
     static ComHandler* instance;

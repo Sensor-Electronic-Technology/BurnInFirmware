@@ -68,8 +68,9 @@ private:
     unsigned long       comInterval=COM_INTERVAL;
     unsigned long       updateInterval=UPDATE_INTERVAL;
     unsigned long       logInterval=LOG_INTERVAL;
+    unsigned long       versionInterval=VER_CHECK_INTERVAL;
     SaveState           saveState;
-    Timer               comTimer,updateTimer,logTimer;
+    Timer               comTimer,updateTimer,logTimer,versionTimer;
     SerialDataOutput    comData;
 
     bool lockStartTest=false;

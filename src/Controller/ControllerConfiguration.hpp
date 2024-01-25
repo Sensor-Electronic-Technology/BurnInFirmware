@@ -13,6 +13,7 @@ struct ControllerConfig:public Serializable{
     unsigned long           comInterval=COM_INTERVAL;
     unsigned long           updateInterval=UPDATE_INTERVAL;
     unsigned long           logInterval=LOG_INTERVAL;
+    unsigned long           versionInterval=VER_CHECK_INTERVAL;
 
     virtual void Deserialize(JsonDocument &doc)override{
         JsonObject timeJson=doc[F("BurnTimerConfig")].as<JsonObject>();
@@ -22,6 +23,7 @@ struct ControllerConfig:public Serializable{
         this->comInterval=doc[F("ComInterval")];
         this->updateInterval=doc[F("UpdateInterval")];
         this->logInterval=doc[F("LogInterval")];
+        this->versionInterval=doc[F("VersionInterval")];
     }
     
     virtual void Deserialize(JsonObject &packet)override{
@@ -32,6 +34,7 @@ struct ControllerConfig:public Serializable{
         this->comInterval=packet[F("ComInterval")];
         this->updateInterval=packet[F("UpdateInterval")];
         this->logInterval=packet[F("LogInterval")];
+        this->versionInterval=packet[F("VersionInterval")];
 
     }
     virtual void Serialize(JsonDocument *doc,bool initialize)override{
@@ -49,6 +52,7 @@ struct ControllerConfig:public Serializable{
         (*doc)[F("ComInterval")]=this->comInterval;
         (*doc)[F("UpdateInterval")]=this->updateInterval;
         (*doc)[F("LogInterval")]=this->logInterval;
+        (*doc)[F("VersionInterval")]=this->versionInterval;
     }
 
     virtual void Serialize(JsonObject *packet,bool initialize)override{
@@ -65,6 +69,7 @@ struct ControllerConfig:public Serializable{
         (*packet)[F("ComInterval")]=this->comInterval;
         (*packet)[F("UpdateInterval")]=this->updateInterval;
         (*packet)[F("LogInterval")]=this->logInterval;
+        (*packet)[F("VersionInterval")]=this->versionInterval;
     }
 };
 

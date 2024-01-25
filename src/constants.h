@@ -48,7 +48,8 @@ inline char FirmwareVersion[4];
 
 #define TEMP_INTERVAL                   100ul   
 #define COM_INTERVAL                    1000ul  //1sec
-#define LOG_INTERVAL                    60000ul //1min
+#define LOG_INTERVAL                    300000ul //5min
+#define VER_CHECK_INTERVAL              3600000ul //1hr
 #define UPDATE_INTERVAL                 500ul  //500ms
 #define DEFAULT_CURRENT                 CurrentValue::c150
 #define DEFAULT_FWEIGHT                 0.1
@@ -86,7 +87,7 @@ enum PacketType:uint8_t{
     ID_REQUEST=12,     //Set new Id
     VER_RECIEVE=13,
     VER_REQUEST=14,
-    READY=15
+    INIT=15
 };
 
 const char* const prefixes[] PROGMEM = {
@@ -105,7 +106,7 @@ const char* const prefixes[] PROGMEM = {
     "IDREQ",   //12
     "VERREC", //13
     "VERREQ",  //14
-    "RDY",     //15
+    "INIT",     //15
 };
 
 const char* const json_filenames[] PROGMEM = {

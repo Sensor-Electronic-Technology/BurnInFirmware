@@ -12,11 +12,11 @@ Controller::Controller():Component(){
 }
 
 void Controller::LoadConfigurations(){
-    StationLogger::Log(LogLevel::INFO,true,false,F("--------Firmware Initialization Starting--------"));
+    StationLogger::LogInit(LogLevel::INFO,true,F("--------Firmware Initialization Starting--------"));
     HeaterControllerConfig heatersConfig;
     ProbeControllerConfig  probesConfig;
     ControllerConfig       controllerConfig;
-    StationLogger::Log(LogLevel::INFO,true,false,F("Loading configuration files..."));
+    StationLogger::LogInit(LogLevel::INFO,true,F("Loading configuration files..."));
 
     FileManager::Load(&heatersConfig,PacketType::HEATER_CONFIG);
     FileManager::Load(&probesConfig,PacketType::PROBE_CONFIG);
@@ -33,22 +33,23 @@ void Controller::LoadConfigurations(){
     this->comInterval=controllerConfig.comInterval;
     this->updateInterval=controllerConfig.updateInterval;
     this->logInterval=controllerConfig.logInterval;
-    StationLogger::Log(LogLevel::INFO,true,false,F("--------Configuration Files Loaded--------"));
+    this->versionInterval=controllerConfig.versionInterval;
+    StationLogger::LogInit(LogLevel::INFO,true,F("--------Configuration Files Loaded--------"));
 }
 
 void Controller::SetupComponents(){
-    StationLogger::Log(LogLevel::INFO,true,false,F("-------Initalizing Components-------"));
+    StationLogger::LogInit(LogLevel::INFO,true,F("-------Initalizing Components-------"));
     //Send messages
 
     this->heaterControl->Initialize();
     this->probeControl->Initialize();
     this->probeControl->TurnOffSrc();
 
-    StationLogger::Log(LogLevel::INFO,true,false,F("Reading intitial values..."));
+    StationLogger::LogInit(LogLevel::INFO,true,F("Reading intitial values..."));
     this->probeResults=this->probeControl->GetProbeResults();
     this->heaterResults=this->heaterControl->GetResults();
 
-    StationLogger::Log(LogLevel::INFO,true,false,F("Setting up timers..."));
+    StationLogger::LogInit(LogLevel::INFO,true,F("Setting up timers..."));
     this->logTimer.onInterval([&](){
         if(this->burnTimer->IsRunning()){
             this->saveState.Set(CurrentValue::c150,85,this->burnTimer->testTimer);
@@ -69,16 +70,20 @@ void Controller::SetupComponents(){
         this->heaterResults=this->heaterControl->GetResults();
     },this->updateInterval);
 
-    StationLogger::Log(LogLevel::INFO,true,false,F("Registering Components..."));
+    this->versionTimer.onInterval([&](){
+        ComHandler::SendVersion();
+    },this->versionInterval);
+
+    StationLogger::LogInit(LogLevel::INFO,true,F("Registering Components..."));
     //RegisterChild(this->heaterControl);
     //RegisterChild(this->probeControl);
     RegisterChild(this->logTimer);
     //RegisterChild(this->comTimer);
     //RegisterChild(this->updateTimer);
-    StationLogger::Log(LogLevel::INFO,true,false,F("Checking for saved state"));
-    StationLogger::Log(LogLevel::INFO,true,false,F("Free Memory: %d"),FreeSRAM());
+    StationLogger::LogInit(LogLevel::INFO,true,F("Checking for saved state"));
+    StationLogger::LogInit(LogLevel::INFO,true,F("Free Memory: %d"),FreeSRAM());
     this->CheckSavedState();
-    StationLogger::Log(LogLevel::INFO,true,false,F("-------Initalization Complete-------"));
+    StationLogger::LogInit(LogLevel::INFO,true,F("-------Initalization Complete-------"));
     
 }
 

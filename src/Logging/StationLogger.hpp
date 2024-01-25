@@ -35,6 +35,22 @@ public:
         }
     }
 
+    static void LogInit(LogLevel level,bool printPrefix,const __FlashStringHelper* format,...){
+        auto instance=StationLogger::Instance();
+        char buffer[128];
+        if(printPrefix){
+            auto prefix=read_log_prefix(level);
+            instance->append_buffers(prefix);
+        }
+        PGM_P pointer=reinterpret_cast<PGM_P>(format);
+        va_list(args);
+        va_start(args,format);
+        vsnprintf_P(buffer,sizeof(buffer),pointer,args);
+        va_end(args);
+        instance->append_buffers(buffer);
+        instance->print(true);
+    }
+
     static void Log(LogLevel level,bool printPrefix,bool newLine,const __FlashStringHelper* format,...){
         auto instance=StationLogger::Instance();
         char buffer[128];
@@ -51,7 +67,7 @@ public:
         if(newLine){
             instance->append_buffers("\r\n");
         }
-        instance->print();
+        instance->print(false);
     }
 
     static void Log(LogLevel level, bool printPrefix,bool newLine,const char* format,...){
@@ -69,7 +85,7 @@ public:
         if(newLine){
             instance->append_buffers("\r\n");
         }
-        instance->print();
+        instance->print(false);
     }
 
     static void Log(LogLevel level,bool printPrefix,bool newLine,SystemMessage message,...){
@@ -88,7 +104,7 @@ public:
         if(newLine){
             instance->append_buffers("\r\n");
         }
-        instance->print();
+        instance->print(false);
     }
 
     static void PrintFile(){
@@ -115,20 +131,25 @@ public:
                 this->fileBuffer+=logLine;
             }
         }
-        if(this->serialEnabled){
-            auto len=this->msgBuffer.length();
-            if(addlen<=MSG_BUFFER_SIZE-len){
-                this->msgBuffer+=logLine;
-            }
-        }
+        //unneccary += is overload in WString
+        //if not enough memory is allocated
+        //it discards, remove when you
+        //get a chance
+        //auto len=this->msgBuffer.length();
+        //if(addlen<=MSG_BUFFER_SIZE-len){
+        this->msgBuffer+=logLine;
+        //}
     }
 
-    void print(){
-        if(serialEnabled){
+    void print(bool init){
+        if(init){
+            ComHandler::SendInitMessage(this->msgBuffer.c_str());
+        }else{
             ComHandler::SendMessage(this->msgBuffer.c_str());
-            auto len=this->msgBuffer.length();
-            this->msgBuffer.remove(0,len);
         }
+        
+        auto len=this->msgBuffer.length();
+        this->msgBuffer.remove(0,len);
 
         if(this->file){
             auto len=this->fileBuffer.length();
@@ -141,7 +162,6 @@ public:
 private:
     static StationLogger* instance;
     //Print* serialLogger;
-    bool serialEnabled=true;
     File  file;
     JsonDocument serialDoc;
     String fileBuffer;

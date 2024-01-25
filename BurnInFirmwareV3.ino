@@ -38,14 +38,14 @@ void setup(){
         StationLogger::Log(LogLevel::CRITICAL_ERROR,true,true,F("Failed to open SD card. Configurations cannot be read"));
         while(true){ }
     }
-    StationLogger::Log(LogLevel::INFO,true,true,F("SD Opened"));
-    StationLogger::Log(LogLevel::INFO,true,false,F("Connected, send data"));
+    StationLogger::LogInit(LogLevel::INFO,true,F("SD Opened"));
+    StationLogger::LogInit(LogLevel::INFO,true,F("Connected, send data"));
     lastCheck=millis();
     controller.LoadConfigurations();
     controller.SetupComponents();
     ComHandler::EnableSerialEvent();
     //String sid=id;
-    StationLogger::Log(LogLevel::INFO,true,false,F("StationId: %s"),StationId);
+    StationLogger::LogInit(LogLevel::INFO,true,F("StationId: %s"),StationId);
 }
 
 void loop(){
