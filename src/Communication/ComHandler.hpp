@@ -29,6 +29,11 @@ public:
         }
     }
 
+    static void SendOutVersion(){
+        auto instance=ComHandler::Instance();
+        instance->SendVersion();
+    }
+
     static void DisabledSerialEvent(){
         auto instance=ComHandler::Instance();
         if(instance->serial!=nullptr){
@@ -54,11 +59,6 @@ public:
     static void MapTestResponseCallback(ResponseCallback cbk){
         auto instance=ComHandler::Instance();
         instance->testResponseCb=cbk;
-    }
-
-    static void SendVersion(){
-        auto instance=ComHandler::Instance();
-        instance->SendVersionInstance();
     }
 
     static void HandleSerial(){
@@ -125,7 +125,7 @@ private:
     void InstanceSendMessage(const char* message);
     void SendId();
     void ReceiveId();
-    void SendVersionInstance();
+    void SendVersion();
     void ReceiveVersion();
     void InstanceSendInitMessage(const char* message);
 

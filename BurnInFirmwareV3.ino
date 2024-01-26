@@ -28,9 +28,8 @@ bool serialEventReady=false;
 
 void setup(){
     Serial.begin(38400);
+    //EEPROM_write(VER_ADDR,"V1.0.0");
     EEPROM_read(ID_ADDR,StationId);
-    //EEPROM_write(VER_ADDR,"V1.0");
-    EEPROM_read(VER_ADDR,FirmwareVersion);
     randomSeed(analogRead(0));
     ComHandler::SetSerial(&Serial);
     StationLogger::InitSerial();
@@ -50,8 +49,12 @@ void setup(){
 
 void loop(){
     // if(millis()-lastCheck>=deadLine){
-    //     StationLogger::Log(LogLevel::INFO,true,false,F("Free Memory: %d"),FreeSRAM());
-    //     lastCheck=millis();
+    //     // StationLogger::Log(LogLevel::INFO,true,false,F("Free Memory: %d"),FreeSRAM());
+    //    // EEPROM_read(VER_ADDR,FirmwareVersion);
+    //     //StationLogger::Log(LogLevel::INFO,true,false,F("Version: %s"),FirmwareVersion);
+    //     ComHandler::SendOutVersion();
+    //      lastCheck=millis();
+
     // }
     controller.loop();
 }

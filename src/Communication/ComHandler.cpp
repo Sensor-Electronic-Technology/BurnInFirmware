@@ -42,7 +42,6 @@ void ComHandler::MsgPacketDeserialize() {
                 break;
             }
             case PacketType::COMMAND:{
-                //StationLogger::Log(LogLevel::INFO,true,false,F("Packet found.  Packet: %s"),prefix);
                 auto packet=this->serialEventDoc[F("Packet")].as<JsonObject>();
                 StationCommand command=(StationCommand)this->serialEventDoc[F("Packet")];
                 this->_commandCallback(command);
@@ -52,20 +51,16 @@ void ComHandler::MsgPacketDeserialize() {
                 break;
             }
             case PacketType::TEST_RESPONSE:{
-                //this->ResponseDeserializer(this->serialEventDoc);
                 break;
             }
             case PacketType::ID_REQUEST:{
-                //StationLogger::Log(LogLevel::INFO,true,false,F("Packet found.  Packet: %s"),prefix);
                 this->SendId();
                 break;
             }
             case PacketType::ID_RECEIVE:{
-                //StationLogger::Log(LogLevel::INFO,true,false,F("Packet found.  Packet:  %s"),prefix);
                 this->ReceiveId();
                 break;
             }
-
             case PacketType::VER_REQUEST:{
                 this->SendVersion();
                 break;
@@ -101,7 +96,7 @@ void ComHandler::ReceiveId(){
     EEPROM_write(ID_ADDR,StationId);
 }
 
-void ComHandler::SendVersionInstance(){
+void ComHandler::SendVersion(){
     EEPROM_read(VER_ADDR,FirmwareVersion);
     this->serializerDoc.clear();
     this->serializerDoc[F("Prefix")]=read_packet_prefix(PacketType::VER_REQUEST);

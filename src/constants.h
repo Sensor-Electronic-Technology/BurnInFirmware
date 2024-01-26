@@ -22,7 +22,7 @@ template <class T> int EEPROM_read(int addr, T& value) {
 }//End read any value/type
 
 inline char StationId[4];
-inline char FirmwareVersion[4];
+inline char FirmwareVersion[8];
 #define ID_ADDR     10
 #define VER_ADDR    64
 

@@ -70,10 +70,6 @@ void Controller::SetupComponents(){
         this->heaterResults=this->heaterControl->GetResults();
     },this->updateInterval);
 
-    this->versionTimer.onInterval([&](){
-        ComHandler::SendVersion();
-    },this->versionInterval);
-
     StationLogger::LogInit(LogLevel::INFO,true,F("Registering Components..."));
     //RegisterChild(this->heaterControl);
     //RegisterChild(this->probeControl);
