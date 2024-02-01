@@ -61,6 +61,15 @@ public:
         instance->testResponseCb=cbk;
     }
 
+    static void SendStartResponse(bool success,const __FlashStringHelper* msg){
+        auto instance=ComHandler::Instance();
+        char buffer[255];
+        PGM_P msgMem=reinterpret_cast<PGM_P>(msg);
+        strcpy_P(buffer,msgMem);
+        instance->InstanceSendStartResponse(success,buffer);
+        
+    }
+
     static void HandleSerial(){
         auto instance=ComHandler::Instance();
         if(instance->serialEventEnabled && instance->serial!=nullptr){
@@ -77,7 +86,8 @@ public:
         }
     }
 
-    template<typename T> static void MsgPacketSerializer(const T& data,PacketType packetType){
+    template<typename T> 
+    static void MsgPacketSerializer(const T& data,PacketType packetType){
         auto instance=ComHandler::Instance();
         Derived_from<T,Serializable>();
         instance->serializerDoc.clear();
@@ -128,6 +138,7 @@ private:
     void SendVersion();
     void ReceiveVersion();
     void InstanceSendInitMessage(const char* message);
+    void InstanceSendStartResponse(bool success,const char* message);
 
 private:
     static ComHandler* instance;

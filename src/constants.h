@@ -87,7 +87,8 @@ enum PacketType:uint8_t{
     ID_REQUEST=12,     //Set new Id
     VER_RECIEVE=13,
     VER_REQUEST=14,
-    INIT=15
+    INIT=15,
+    TEST_START_STATUS=16
 };
 
 const char* const prefixes[] PROGMEM = {
@@ -107,6 +108,7 @@ const char* const prefixes[] PROGMEM = {
     "VERREC", //13
     "VERREQ",  //14
     "INIT",     //15
+    "TSTAT"     //16
 };
 
 const char* const json_filenames[] PROGMEM = {

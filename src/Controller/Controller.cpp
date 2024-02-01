@@ -126,16 +126,17 @@ void Controller::HandleCommand(StationCommand command){
     switch(command){
         case StationCommand::START:{
             StationLogger::Log(LogLevel::INFO,true,false,F("Start Command Recieved"));
-
             if(!this->burnTimer->IsRunning()){
                 this->burnTimer->Start(CurrentValue::c150);
-                StationLogger::Log(LogLevel::INFO,true,false,F("BurnTimer started"));
+                ComHandler::SendStartResponse(true,F("Test started"));
+                //StationLogger::Log(LogLevel::INFO,true,false,F("BurnTimer started"));
             }else{
                 if(this->burnTimer->IsPaused()){
                     this->burnTimer->Continue();
                     StationLogger::Log(LogLevel::INFO,true,false,F("BurnTimer continuing"));
                 }else{
-                    StationLogger::Log(LogLevel::INFO,true,false,F("Station is running and not paused"));
+                    ComHandler::SendStartResponse(false,F("Failed to start test, another test is already running"));
+                    //StationLogger::Log(LogLevel::INFO,true,false,F("Station is running and not paused"));
                 }
             }
             break;
