@@ -83,8 +83,8 @@ enum PacketType:uint8_t{
     TEST_RESPONSE=8,  //PC sends continue test request
     HEATER_REQUEST=9,  //Pc recieves AutoTuneValues and request save response
     TEST_REQUEST=10,   //Firmware sends continue test request
-    ID_RECEIVE=11,     //Send Id to PC
-    ID_REQUEST=12,     //Set new Id
+    ID_RECEIVE=11,     //Set station id
+    ID_REQUEST=12,     //Request station id-Send to PC
     VER_RECIEVE=13,
     VER_REQUEST=14,
     INIT=15,

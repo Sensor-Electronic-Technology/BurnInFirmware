@@ -9,13 +9,22 @@
 #include "../Communication/SerialData.hpp"
 #include "../Logging/StationLogger.hpp"
 #include "../Files/FileManager.hpp"
-#include "State.hpp"
 #include "SaveState.hpp"
+#include "StationState.hpp"
 #include "BurnInTimer.hpp"
 #include "../constants.h"
 
 using namespace components;
 
+enum StateTriggers{
+    START_TEST,
+    PAUSE_TEST,
+    CONTINUE_TEST,
+    SW_TUNE,
+    SW_NORM,
+    ACCECPT_TUNE,
+    REJECT_TUNE    
+};
 
 
 class Controller:public Component{
@@ -27,14 +36,31 @@ public:
     void SetupComponents();
     void CheckSavedState();
 
+    //Transition Checks 
+    bool CanTransitionTo(StationMode mode);
+
+    //other
+    void HandleCommand(StationCommand command);
+
+private:
+    void BuildStateMachine(void);
+    void BuildTransitions(void);
+    void BuildTimedTransitions(void);
+    void BuildStates(void);
+
+    //Modes
+    void NormalRun();
+    void TuningRun();
+    void CalRun();
+
     //Test Actions
     void TurnOnCurrent();
     bool* CheckCurrents();
 
+
     //actions
     void StartTest();
     void CycleCurrent();
-    void StopTest();
     void RunTestProbes();
     void Reset();
     //void SetStationId();
@@ -43,17 +69,6 @@ public:
     //Heater Actions
     void RunAutoTune();
     void ToggelHeaters();
-
-    //Modes
-    void NormalRun();
-    void TuningRun();
-    void CalRun();
-
-    //Transition Checks 
-    bool CanTransitionTo(StationMode mode);
-
-    //other
-    void HandleCommand(StationCommand command);
 
 private:
     ProbeController*    probeControl;
@@ -72,7 +87,6 @@ private:
     SaveState           saveState;
     Timer               comTimer,updateTimer,logTimer,versionTimer;
     SerialDataOutput    comData;
-
     bool lockStartTest=false;
     //const char*         
     //typedef void(Controller::*ModeRun)(void);

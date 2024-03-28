@@ -10,7 +10,7 @@ enum HeaterStates:uint8_t{
 	H_ERROR=4
 };
 
-enum States:uint8_t{
+enum Station_States:uint8_t{
 	N_INIT=0,
 	N_IDLE=1,
 	N_PROBE_TEST=2,
@@ -35,7 +35,7 @@ enum StationMode:uint8_t{
 };
 
 union ModeState {
-	States n_state;
+	Station_States n_state;
 	CalStates c_state;
 	HeaterStates h_states;
 };

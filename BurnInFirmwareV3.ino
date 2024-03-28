@@ -1,5 +1,6 @@
 #include <ArduinoJson.h>
 #include <SD.h>
+#include <Array.h>
 #include "src/constants.h"
 #include "src/Heaters/heater_constants.h"
 #include "src/Communication/ComHandler.hpp"
@@ -9,11 +10,11 @@
 #include "src/Files/FileManager.hpp"
 #include "src/Communication/ComHandler.hpp"
 #include "src/Logging/StationLogger.hpp"
-#include <Array.h>
-#include "src/Controller/State.hpp"
+#include "src/Controller/StationState.hpp"
 #include "src/Controller/Controller.hpp"
 #include "src/free_memory.h"
-#include "src/Tools/eeprom_wear_level.hpp"
+
+
 
 unsigned long lastCheck=0;
 unsigned long deadLine=3000;
