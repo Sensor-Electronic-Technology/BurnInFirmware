@@ -9,16 +9,17 @@
 #define TRANSITION_COUNT 4
 
 enum StateId{
-    IDLE=0,
-    RUNNING=1,
-    PAUSED=2
+    TEST_IDLE=0,
+    TEST_RUNNING=1,
+    TEST_PAUSED=2
 };
 
 enum StateTrigger{
-    START=0,
-    PAUSE=1,
-    CONTINUE=2,
-    RESET=3
+    STRESS_TEST_START=0,
+    STRESS_TEST_PAUSE=1,
+    STRESS_TEST_CONTINUE=2,
+    STRESS_TEST_DONE=3,
+    TEST_RESET=4
 };
 
 enum TransitionId{
@@ -33,9 +34,22 @@ enum TransitionId{
 class TestController:public Component{
 public:
     void Run(bool *probesOkay);
-    void StartTest(CurrentValue currentValue);
+    void StartTest();
+    void SetCurrent(CurrentValue current){
+        this->stressCurrent=current;
+        this->currentSet=true;
+    }
+    bool CanStart(){
+        return this->burn_timer.IsDone() && this->currentSet;
+    }   
     void PauseTest();
+    bool CanPause(){
+        return this->fsm.getState()->getStateId()==StateId::TEST_RUNNING;
+    }
     void ContinueTest();
+    bool CanContinue(){
+        return this->fsm.getState()->getStateId()==StateId::TEST_PAUSED;
+    }
 
 
 
@@ -59,21 +73,22 @@ private:
     void privateLoop() override;
 
 private:
-    BurnInTimer     timer;
-    SimpleFSM       fsm;
+    BurnInTimer                             burn_timer;
+    CurrentValue                            stressCurrent;
+    bool                                    currentSet=false;    
+    SimpleFSM<StateId,TransitionId>         fsm;
     State<StateId> states[STATE_COUNT]={
-        State<StateId>(StateId::IDLE,[&](){this->IdleEnter();},[&](){this->Idle();},[&](){this->IdleExit();}),
-        State<StateId>(StateId::RUNNING,[&](){this->RunningEnter();},[&](){this->Running();},[&](){this->RunningExit();}),
-        State<StateId>(StateId::PAUSED,[&](){this->PausedEnter();},[&](){this->Paused();},[&](){this->PausedExit();}),
+        State<StateId>(StateId::TEST_IDLE,[&](){this->IdleEnter();},[&](){this->Idle();},[&](){this->IdleExit();}),
+        State<StateId>(StateId::TEST_RUNNING,[&](){this->RunningEnter();},[&](){this->Running();},[&](){this->RunningExit();}),
+        State<StateId>(StateId::TEST_PAUSED,[&](){this->PausedEnter();},[&](){this->Paused();},[&](){this->PausedExit();}),
     };
 
-    Transition transitions[TRANSITION_COUNT]={
-        Transition(&states[StateId::IDLE],&states[StateId::RUNNING],StateTrigger::START),
-        Transition(&states[StateId::RUNNING],&states[StateId::PAUSED],StateTrigger::PAUSE),
-        Transition(&states[StateId::PAUSED],&states[StateId::RUNNING],StateTrigger::CONTINUE),
-        Transition(&states[StateId::PAUSED],&states[StateId::IDLE],StateTrigger::RESET)
-        
+    Transition<StateId,TransitionId> transitions[TRANSITION_COUNT]={
+        Transition<StateId,TransitionId>(&states[StateId::TEST_IDLE],&states[StateId::TEST_RUNNING],StateTrigger::STRESS_TEST_START,TransitionId::IDLE_TO_RUNNING,[&](){return this->CanStart();}),
+        Transition<StateId,TransitionId>(&states[StateId::TEST_RUNNING],&states[StateId::TEST_PAUSED],StateTrigger::STRESS_TEST_PAUSE,TransitionId::RUNNING_TO_PAUSED,[&](){return true;}),
+        Transition<StateId,TransitionId>(&states[StateId::TEST_PAUSED],&states[StateId::TEST_RUNNING],StateTrigger::STRESS_TEST_CONTINUE,TransitionId::PAUSED_TO_RUNNING,[&](){return true;},
+        Transition<StateId,TransitionId>(&states[StateId::TEST_RUNNING],&states[StateId::TEST_IDLE],StateTrigger::STRESS_TEST_DONE,TransitionId::PAUSED_TO_RUNNING,[&](){return true;},
+        Transition<StateId,TransitionId>(&states[StateId::TEST_PAUSED],&states[StateId::TEST_IDLE],StateTrigger::TEST_RESET,TransitionId::PAUSED_TO_IDLE,[&](){return true;})
     };
-
 };
 

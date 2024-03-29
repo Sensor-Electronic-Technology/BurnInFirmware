@@ -15,16 +15,17 @@
 // typedef bool (*GuardCondition)();
 
 /////////////////////////////////////////////////////////////////
-template <typename T>
+template <typename SID>
 class State {
+  template<typename,typename>
   friend class SimpleFSM;
 
  public:
   State();
-  State(T stateId, CallbackFunction on_enter, CallbackFunction on_state = [](){_NOP();}, CallbackFunction on_exit = [](){_NOP();}, bool is_final = false);
+  State(SID stateId, CallbackFunction on_enter, CallbackFunction on_state = [](){_NOP();}, CallbackFunction on_exit = [](){_NOP();}, bool is_final = false);
 
-  void setup(T stateId, CallbackFunction on_enter, CallbackFunction on_state = [](){_NOP();}, CallbackFunction on_exit = [](){_NOP();}, bool is_final = false);
-  void setStateId(T stateId);
+  void setup(SID stateId, CallbackFunction on_enter, CallbackFunction on_state = [](){_NOP();}, CallbackFunction on_exit = [](){_NOP();}, bool is_final = false);
+  void setStateId(SID stateId);
   void setOnEnterHandler(CallbackFunction f);
   void setOnStateHandler(CallbackFunction f);
   void setOnExitHandler(CallbackFunction f);
@@ -32,13 +33,13 @@ class State {
 
   int getID() const;
   bool isFinal() const;
-  T getStateId() const;
+  SID getStateId() const;
 
  protected:
   int id;
   static int _next_id;
 
-  T state_id;
+  SID state_id;
   CallbackFunction on_enter = [](){_NOP();};
   CallbackFunction on_state = [](){_NOP();};
   CallbackFunction on_exit = [](){_NOP();};

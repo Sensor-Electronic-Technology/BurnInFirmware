@@ -1,7 +1,7 @@
 #include "TestController.hpp"
 
-void TestController::StartTest(CurrentValue currentValue){
-    this->fsm.trigger(StateTrigger::START);
+void TestController::StartTest(){
+    this->fsm.trigger(StateTrigger::STRESS_TEST_START);
 }
 
 void TestController::PauseTest(){
@@ -22,11 +22,8 @@ void TestController::Run(bool *probesOkay){
 
 }
 
-void TestController::privateLoop(){
-    //this->timer.Update();
-}
-
 void TestController::IdleEnter(){
+    this->burn_timer.Reset();
     // this->timer.Reset();
     // this->timer.SetTime(this->config.burnTimerConfig.time60mASecs);
     // this->timer.Start();
@@ -38,28 +35,25 @@ void TestController::Idle(){
     // }
 }
 
-void TestController::IdleExit(){
-    //this->timer.Stop();
-}
 
 void TestController::RunningEnter(){
-    // this->timer.Reset();
-    // this->timer.SetTime(this->config.burnTimerConfig.time120mASecs);
-    // this->timer.Start();
+    this->burn_timer.Start();
 }
 
 void TestController::Running(){
-    // if(this->timer.IsDone()){
-    //     this->fsm.TransitionTo("Idle");
-    // }
+    if(this->burn_timer.IsDone()){
+        this->fsm.trigger(StateTrigger::STRESS);
+    }
 }
 
 void TestController::RunningExit(){
-    this->timer.Stop();
+    // this->timer.Start();
+
+    // this->timer.Stop();
 }
 
 void TestController::PausedEnter(){
-    this->timer.Stop();
+    // this->timer.Stop();
 }
 
 void TestController::Paused(){
@@ -67,7 +61,11 @@ void TestController::Paused(){
 }
 
 void TestController::PausedExit(){
-    this->timer.Start();
+    // this->timer.Start();
+}
+
+void TestController::privateLoop(){
+    //this->timer.Update();
 }
 
 

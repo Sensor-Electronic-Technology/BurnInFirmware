@@ -6,9 +6,6 @@
 
 /////////////////////////////////////////////////////////////////
 
-#if defined(ARDUINO_ARCH_ESP32) || defined(ESP8266)
-#include <functional>
-#endif
 #include "Arduino.h"
 #include "State.h"
 #include "Handlers.h"
@@ -25,11 +22,11 @@ template<typename SID,typename TID>
 class SimpleFSM {
  public:
   SimpleFSM();
-  SimpleFSM(State* initial_state);
+  SimpleFSM(State<SID>* initial_state);
   ~SimpleFSM();
 
-  void add(Transition<TID> t[], int size);
-  void add(TimedTransition<TID> t[], int size);
+  void add(Transition<SID,TID> t[], int size);
+  void add(TimedTransition<SID,TID> t[], int size);
 
   void setInitialState(State<SID>* state);
   void setFinishedHandler(CallbackFunction f);
@@ -52,8 +49,8 @@ class SimpleFSM {
  protected:
   int num_timed = 0;
   int num_standard = 0;
-  Transition* transitions = NULL;
-  TimedTransition* timed = NULL;
+  Transition<SID,TID>* transitions = NULL;
+  TimedTransition<SID,TID>* timed = NULL;
 
   bool is_initialized = false;
   bool is_finished = false;
@@ -63,19 +60,19 @@ class SimpleFSM {
   State<SID>* inital_state = NULL;
   State<SID>* current_state = NULL;
   State<SID>* prev_state = NULL;
-  CallbackFunction on_transition_cb = [](){};
-  CallbackFunction finished_cb = [](){};
+  CallbackFunction on_transition_cb = [](){_NOP();};
+  CallbackFunction finished_cb = [](){_NOP();};
 
-  String dot_definition = "";
+  //String dot_definition = "";
 
-  bool _isDuplicate(const TimedTransition<TID& transition, const TimedTransition<TID>* transitionArray, int arraySize) const;
-  bool _isDuplicate(const Transition<TID>& transition, const Transition<TID>* transitionArray, int arraySize) const;
+  bool _isDuplicate(const TimedTransition<SID,TID>& transition, const TimedTransition<SID,TID>* transitionArray, int arraySize) const;
+  bool _isDuplicate(const Transition<SID,TID>& transition, const Transition<SID,TID>* transitionArray, int arraySize) const;
 
   bool _isTimeForRun(unsigned long now, int interval);
   void _handleTimedEvents(unsigned long now);
   
   bool _initFSM();
-  bool _transitionTo(AbstractTransition<TID>* transition);
+  bool _transitionTo(AbstractTransition<SID,TID>* transition);
   bool _changeToState(State<SID>* s, unsigned long now);
 
   // void _addDotTransition(Transition& t);

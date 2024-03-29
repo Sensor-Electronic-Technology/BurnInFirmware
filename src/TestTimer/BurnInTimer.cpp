@@ -30,7 +30,7 @@
             this->testTimer.paused=false;
         }
     }
-   
+
     void BurnInTimer::StartFrom(const TimerData& savedTimerState){
         this->testTimer=savedTimerState;
         // if(!this->testTimer.running && !this->testTimer.paused){
