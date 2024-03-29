@@ -143,6 +143,8 @@ const char* const log_level_prefixes[] PROGMEM={
 
 typedef components::Function<void(void)> RestartRequiredCallback;
 typedef components::Function<void(StationCommand)> CommandCallback;
+typedef components::Function<void(bool*)> TestControllerCallback;
+typedef components::Function<void(void)> TestFinsihedCallback;
 typedef components::Function<void(Response)> ResponseCallback;
 
 //File indexes

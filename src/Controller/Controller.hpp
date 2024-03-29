@@ -11,6 +11,7 @@
 #include "../Files/FileManager.hpp"
 #include "SaveState.hpp"
 #include "StationState.hpp"
+#include "../StressTest/TestController.hpp"
 #include "../TestTimer/burn_timer_includes.h"
 #include "../constants.h"
 
@@ -71,12 +72,13 @@ private:
     void ToggelHeaters();
 
 private:
-    ProbeController*    probeControl;
-    HeaterController*   heaterControl;
-    BurnInTimer*        burnTimer;
-    BurnInTimer*        testTimer;
-    CommandCallback     _commandCallback=[](StationCommand){};
-    Task                task,nextTask;
+    ProbeController*        probeControl;
+    HeaterController*       heaterControl;
+    BurnInTimer*            burnTimer;
+    TestController*         testController;
+    CommandCallback         _commandCallback=[](StationCommand){};
+    TestFinsihedCallback    _testFinishedCallback=[](){};
+    Task                    task,nextTask;
     Array<ProbeResult,PROBE_COUNT>  probeResults;
     Array<HeaterResult,HEATER_COUNT> heaterResults;
     bool                probeChecks[PROBE_COUNT];
@@ -85,7 +87,7 @@ private:
     unsigned long       logInterval=LOG_INTERVAL;
     unsigned long       versionInterval=VER_CHECK_INTERVAL;
     SaveState           saveState;
-    Timer               comTimer,updateTimer,logTimer,versionTimer;
+    Timer               comTimer,updateTimer,logTimer,versionTimer,stateLogTimer;
     SerialDataOutput    comData;
     bool lockStartTest=false;
     //const char*         

@@ -50,16 +50,22 @@ private:
     unsigned long durSec60mA;
     unsigned long durSec120mA;
     unsigned long durSec150mA;
+    bool savedStateLoaded=false;
 public:
     TimerData testTimer;
 
     BurnInTimer(const BurnTimerConfig& config);
+
+    const TimerData& GetTimerData(){
+        return this->testTimer;
+    }
 
     void Start(CurrentValue current);
 
     void Start();
    
     void StartFrom(const TimerData& savedState);
+
    
     void Stop();
 

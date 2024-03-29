@@ -349,6 +349,7 @@ bool SimpleFSM<SID,TID>::_changeToState(State<SID>* s, unsigned long now) {
   last_transition = now;
   // is this the end?
   // if (s->is_final && finished_cb != NULL) finished_cb();
+  on_transition_cb();
   if (s->is_final) finished_cb();
   if (s->is_final) is_finished = true;
   return true;
@@ -377,7 +378,7 @@ bool SimpleFSM<SID,TID>::_transitionTo(AbstractTransition<SID,TID>* transition) 
   //if (transition->on_run_cb != NULL) 
   transition->on_run_cb();
   // if (on_transition_cb != NULL) 
-  on_transition_cb();
+  
 
   return _changeToState(transition->to, millis());
 }

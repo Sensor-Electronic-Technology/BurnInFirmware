@@ -22,6 +22,7 @@ public:
     void TurnOn();
     void TurnOff();
     void ReadTemperatures();
+    void ChangeSetPoint(int setPoint);
     void HandleResponse(Response response);
     void TuningComplete(HeaterTuneResult result);
     void ChangeMode(HeaterMode nextMode);

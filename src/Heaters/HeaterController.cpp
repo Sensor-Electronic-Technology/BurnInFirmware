@@ -91,6 +91,12 @@ void HeaterController::ChangeMode(HeaterMode nextMode){
     }
 }
 
+void HeaterController::ChangeSetPoint(int setPoint){
+    for(auto heater:this->heaters){
+        heater->ChangeSetpoint(setPoint);
+    }
+}
+
 void HeaterController::StartTuning(){
     this->isTuning=true;
     for(auto heater:this->heaters){
