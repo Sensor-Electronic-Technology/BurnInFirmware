@@ -2,7 +2,8 @@
 //#include <ArduinoComponents.h>
 #include "../constants.h"
 #include "../Probes/probe_constants.h"
-#include "ControllerConfiguration.hpp"
+#include "../Serializable.hpp"
+#include "BurnTimerConfig.hpp"
 
 using namespace components;
 

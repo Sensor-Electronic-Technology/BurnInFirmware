@@ -1,24 +1,24 @@
 /////////////////////////////////////////////////////////////////
 #include "State.h"
 /////////////////////////////////////////////////////////////////
-
-int State::_next_id = 0;
+template <typename T>
+int State<T>::_next_id = 0;
 
 /////////////////////////////////////////////////////////////////
-
-State::State() {
+template <typename T>
+State<T>::State() {
 }
 
 /////////////////////////////////////////////////////////////////
-
-State::State(String name, CallbackFunction on_enter, CallbackFunction on_state, CallbackFunction on_exit, bool is_final /* = false */) {
+template <typename T>
+State<T>::State(T stateId, CallbackFunction on_enter, CallbackFunction on_state, CallbackFunction on_exit, bool is_final /* = false */) {
   setup(name, on_enter, on_state, on_exit, is_final);
 }
 
 /////////////////////////////////////////////////////////////////
-
-void State::setup(String name, CallbackFunction on_enter, CallbackFunction on_state, CallbackFunction on_exit, bool is_final /* = false */) {
-  this->name = name;
+template <typename T>
+void State<T>::setup(T stateId, CallbackFunction on_enter, CallbackFunction on_state, CallbackFunction on_exit, bool is_final /* = false */) {
+  this->state_id = name;
   this->on_enter = on_enter;
   this->on_state = on_state;
   this->on_exit = on_exit;
@@ -27,50 +27,50 @@ void State::setup(String name, CallbackFunction on_enter, CallbackFunction on_st
 }
 
 /////////////////////////////////////////////////////////////////
-
-String State::getName() const {
-  return name;
+template <typename T>
+T State<T>::getStateId() const {
+  return state_id;
 }
 
 /////////////////////////////////////////////////////////////////
-
-bool State::isFinal() const {
+template <typename T>
+bool State<T>::isFinal() const {
   return is_final;
 }
 
 /////////////////////////////////////////////////////////////////
-
-void State::setName(String name) {
-  this->name = name;
+template <typename T>
+void State<T>::setStateId(T name) {
+  this->state_id = name;
 }
 
 /////////////////////////////////////////////////////////////////
-
-void State::setOnEnterHandler(CallbackFunction f) {
+template <typename T>
+void State<T>::setOnEnterHandler(CallbackFunction f) {
   this->on_enter = f;
 }
 
 /////////////////////////////////////////////////////////////////
-
-void State::setOnStateHandler(CallbackFunction f) {
+template <typename T>
+void State<T>::setOnStateHandler(CallbackFunction f) {
   this->on_state = f;
 }
 
 /////////////////////////////////////////////////////////////////
-
-void State::setOnExitHandler(CallbackFunction f) {
+template <typename T>
+void State<T>::setOnExitHandler(CallbackFunction f) {
   this->on_exit = f;
 }
 
 /////////////////////////////////////////////////////////////////
-
-int State::getID() const {
+template <typename T>
+int State<T>::getID() const {
   return id;
 }
 
 /////////////////////////////////////////////////////////////////
-
-void State::setAsFinal(bool final /* = true */) {
+template <typename T>
+void State<T>::setAsFinal(bool final /* = true */) {
   is_final = final;
 }
 

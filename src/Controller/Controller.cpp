@@ -131,7 +131,6 @@ void Controller::UpdateSerialData(){
 void Controller::HandleCommand(StationCommand command){
     switch(command){
         case StationCommand::START:{
-            
             StationLogger::Log(LogLevel::INFO,true,true,F("Start Command Recieved"));
             if(!this->burnTimer->IsRunning()){
                 this->burnTimer->Start(CurrentValue::c150);

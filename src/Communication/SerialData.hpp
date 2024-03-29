@@ -4,7 +4,7 @@
 #include "../Serializable.hpp"
 #include "../Heaters/heaters_include.h"
 #include "../Probes/probes_include.h"
-#include "../Controller/BurnInTimer.hpp"
+#include "../TestTimer/burn_timer_includes.h"
 #include "../constants.h"
 
 

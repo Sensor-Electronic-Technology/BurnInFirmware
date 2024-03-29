@@ -11,7 +11,7 @@
 #include "../Files/FileManager.hpp"
 #include "SaveState.hpp"
 #include "StationState.hpp"
-#include "BurnInTimer.hpp"
+#include "../TestTimer/burn_timer_includes.h"
 #include "../constants.h"
 
 using namespace components;
