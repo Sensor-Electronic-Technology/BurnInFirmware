@@ -35,23 +35,23 @@ void FileManager::InstanceLoadConfig(Serializable* config,PacketType configType)
 
 FileResult FileManager::InstanceLoadState(Serializable* sysState){
     auto fileName=read_filename(PacketType::SAVE_STATE);
-    StationLogger::Log(LogLevel::INFO,true,false,F("Checking if file exists"));
+    StationLogger::Log(LogLevel::INFO,true,false,F("Checking if state file exists"));
     if(!SD.exists(fileName)){
         return FileResult::DOES_NOT_EXIST;
     }
-    StationLogger::Log(LogLevel::INFO,true,false,F("File Exists, Opening"));
+    StationLogger::Log(LogLevel::INFO,true,false,F("State file exists, opening...."));
     this->file=SD.open(fileName);
     if(!this->file){
         StationLogger::Log(LogLevel::CRITICAL_ERROR,true,false,
-            F("Configuration file failed to open. System will not start until user manually starts test"));
+            F("Configuration file failed to open. Cannot continue from saved state. Manually start test"));
         return FileResult::FAILED_TO_OPEN;
     }
-    StationLogger::Log(LogLevel::INFO,true,false,F("File opened, deserializing"));
+    StationLogger::Log(LogLevel::INFO,true,false,F("Saved state file opened, deserializing..."));
     this->doc.clear();
     auto error=deserializeJson(this->doc,this->file);
     if(error){
         StationLogger::Log(LogLevel::CRITICAL_ERROR,true,false,
-            F("State Deserialization Failed. Tests will not start until manually started."));
+            F("State Deserialization Failed. \n Cannot continue from saved state. \n Manually start test"));
         this->file.close();
         return FileResult::DESERIALIZE_FAILED;
     }

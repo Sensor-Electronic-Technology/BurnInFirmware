@@ -33,6 +33,10 @@ CurrentValue ProbeController::GetSetCurrent(){
     return this->currentSelector.GetSetCurrent();
 }
 
+void ProbeController::SetCurrent(CurrentValue current){
+    this->currentSelector.SetCurrent(current);
+}
+
 void ProbeController::TurnOffSrc(){
     this->currentSelector.TurnOff();
 }

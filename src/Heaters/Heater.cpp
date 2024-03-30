@@ -150,8 +150,8 @@ void Heater::OutputAction(unsigned long now){
 
 HeaterResult Heater::Read(){
     this->temperature=this->ntc.Read();
-    auto max=this->tempSetPoint+(this->tempSetPoint*this->tempDeviation);
-    auto min=this->tempSetPoint-(this->tempSetPoint*this->tempDeviation);
+    auto max=this->tempSetPoint*(1+(this->tempDeviation/100));
+    auto min=this->tempSetPoint*(1-(this->tempDeviation/100));
     HeaterResult data;
     this->result.temperature=temperature;
     this->result.tempOkay=(this->temperature<=max && this->temperature>=min);
@@ -167,6 +167,10 @@ HeaterResult Heater::GetHeaterResult(){
 
 void Heater::ChangeSetpoint(int setPoint) {
     this->tempSetPoint = setPoint;
+}
+
+bool Heater::TempOkay(){
+    return this->result.tempOkay;
 }
 
 void Heater::privateLoop(){

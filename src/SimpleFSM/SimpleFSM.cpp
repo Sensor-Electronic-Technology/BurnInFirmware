@@ -3,17 +3,17 @@
 
 #include "State.h"
 #include "Transitions.h"
-///////////////////
-template<typename SID,typename TID>
-SimpleFSM<SID,TID>::SimpleFSM() {
+/////////////////////////////////////////////////////////////////
+
+SimpleFSM::SimpleFSM() {
 }
 
 /////////////////////////////////////////////////////////////////
 /*
  * Constructor.
  */
-template<typename SID,typename TID>
-SimpleFSM<SID,TID>::SimpleFSM(State<SID>* initial_state) {
+
+SimpleFSM::SimpleFSM(State* initial_state) {
   SimpleFSM();
   setInitialState(initial_state);
 }
@@ -22,8 +22,8 @@ SimpleFSM<SID,TID>::SimpleFSM(State<SID>* initial_state) {
 /*
  * Destructor.
  */
-template<typename SID,typename TID>
-SimpleFSM<SID,TID>::~SimpleFSM() {
+
+SimpleFSM::~SimpleFSM() {
   transitions = NULL;
   timed = NULL;
 }
@@ -32,8 +32,8 @@ SimpleFSM<SID,TID>::~SimpleFSM() {
 /*
  * Get the number of transitions.
  */
-template<typename SID,typename TID>
-int SimpleFSM<SID,TID>::getTransitionCount() const {
+
+int SimpleFSM::getTransitionCount() const {
   return num_standard;
 }
 
@@ -41,8 +41,8 @@ int SimpleFSM<SID,TID>::getTransitionCount() const {
 /*
  * Get the number of timed transitions.
  */
-template<typename SID,typename TID>
-int SimpleFSM<SID,TID>::getTimedTransitionCount() const {
+
+int SimpleFSM::getTimedTransitionCount() const {
   return num_timed;
 }
 
@@ -50,8 +50,8 @@ int SimpleFSM<SID,TID>::getTimedTransitionCount() const {
 /*
  * Reset the FSM to its initial state.
  */
-template<typename SID,typename TID>
-void SimpleFSM<SID,TID>::reset() {
+
+void SimpleFSM::reset() {
   is_initialized = false;
   is_finished = false;
   last_run = 0;
@@ -69,8 +69,8 @@ void SimpleFSM<SID,TID>::reset() {
 /*
  * Set the initial state.
  */
-template<typename SID,typename TID>
-void SimpleFSM<SID,TID>::setInitialState(State<SID>* state) {
+
+void SimpleFSM::setInitialState(State* state) {
   inital_state = state;
 }
 
@@ -78,8 +78,8 @@ void SimpleFSM<SID,TID>::setInitialState(State<SID>* state) {
 /*
  * Trigger an event.
  */
-template<typename SID,typename TID>
-bool SimpleFSM<SID,TID>::trigger(int event_id) {
+
+bool SimpleFSM::trigger(int event_id) {
   if (!is_initialized) _initFSM();
   // Find the transition with the current state and given event
   for (int i = 0; i < num_standard; i++) {
@@ -94,8 +94,8 @@ bool SimpleFSM<SID,TID>::trigger(int event_id) {
 /*
  * Get the previous state.
  */ 
-template<typename SID,typename TID>
-State<SID>* SimpleFSM<SID,TID>::getPreviousState() const {
+
+State* SimpleFSM::getPreviousState() const {
   return prev_state;
 }
 
@@ -103,8 +103,8 @@ State<SID>* SimpleFSM<SID,TID>::getPreviousState() const {
 /*
  * Get the current state.
  */
-template<typename SID,typename TID>
-State<SID>* SimpleFSM<SID,TID>::getState() const {
+
+State* SimpleFSM::getState() const {
   return current_state;
 }
 
@@ -112,8 +112,8 @@ State<SID>* SimpleFSM<SID,TID>::getState() const {
 /*
  * Check if the FSM is in a given state.
  */
-template<typename SID,typename TID>
-bool SimpleFSM<SID,TID>::isInState(State<SID>* t) const {
+
+bool SimpleFSM::isInState(State* t) const {
   return t == current_state;
 }
 
@@ -121,8 +121,8 @@ bool SimpleFSM<SID,TID>::isInState(State<SID>* t) const {
 /*
  * Sets the transition handler.
  */
-template<typename SID,typename TID>
-void SimpleFSM<SID,TID>::setTransitionHandler(CallbackFunction f) {
+
+void SimpleFSM::setTransitionHandler(CallbackFunction f) {
   on_transition_cb = f;
 }
 
@@ -133,8 +133,8 @@ void SimpleFSM<SID,TID>::setTransitionHandler(CallbackFunction f) {
  * @param t[] An array of transitions.
  * @param size The size of the array.  
  */
-template<typename SID,typename TID>
-void SimpleFSM<SID,TID>::add(Transition<SID,TID> newTransitions[], int size) {
+
+void SimpleFSM::add(Transition newTransitions[], int size) {
   // Count the number of unique transitions
   int uniqueCount = 0;
   for (int i = 0; i < size; ++i) {
@@ -144,9 +144,9 @@ void SimpleFSM<SID,TID>::add(Transition<SID,TID> newTransitions[], int size) {
     }
   }
   // Allocate or expand storage for transitions with exact size
-  Transition<SID,TID>* temp = new Transition<SID,TID>[num_standard + uniqueCount];
+  Transition* temp = new Transition[num_standard + uniqueCount];
   if (transitions != NULL) {
-    memcpy(temp, transitions, num_standard * sizeof(Transition<SID,TID>));
+    memcpy(temp, transitions, num_standard * sizeof(Transition));
     delete[] transitions;
   }
   transitions = temp;
@@ -173,8 +173,8 @@ void SimpleFSM<SID,TID>::add(Transition<SID,TID> newTransitions[], int size) {
   * @param t[] An array of timed transitions.
   * @param size The size of the array.  
   */
-template<typename SID,typename TID>
-void SimpleFSM<SID,TID>::add(TimedTransition<SID,TID> newTransitions[], int size) {
+
+void SimpleFSM::add(TimedTransition newTransitions[], int size) {
   // Count the number of unique transitions
   int uniqueCount = 0;
   for (int i = 0; i < size; ++i) {
@@ -184,9 +184,9 @@ void SimpleFSM<SID,TID>::add(TimedTransition<SID,TID> newTransitions[], int size
     }
   }
   // Allocate memory or expand existing storage with exact size
-  TimedTransition<SID,TID>* temp = new TimedTransition<SID,TID>[num_timed + uniqueCount];
+  TimedTransition* temp = new TimedTransition[num_timed + uniqueCount];
   if (timed != NULL) {
-    memcpy(temp, timed, num_timed * sizeof(TimedTransition<SID,TID>));
+    memcpy(temp, timed, num_timed * sizeof(TimedTransition));
     delete[] timed;
   }
   timed = temp;
@@ -210,8 +210,8 @@ void SimpleFSM<SID,TID>::add(TimedTransition<SID,TID> newTransitions[], int size
 /*
  * Check if a timed transition is a duplicate.
  */
-template<typename SID,typename TID>
-bool SimpleFSM<SID,TID>::_isDuplicate(const TimedTransition<SID,TID>& transition, const TimedTransition<SID,TID>* transitionArray, int arraySize) const {
+ 
+bool SimpleFSM::_isDuplicate(const TimedTransition& transition, const TimedTransition* transitionArray, int arraySize) const {
   for (int i = 0; i < arraySize; ++i) {
     if (transitionArray[i].from == transition.from &&
         transitionArray[i].to == transition.to &&
@@ -226,8 +226,8 @@ bool SimpleFSM<SID,TID>::_isDuplicate(const TimedTransition<SID,TID>& transition
 /*
  * Check if a transition is a duplicate.
  */
-template<typename SID,typename TID>
-bool SimpleFSM<SID,TID>::_isDuplicate(const Transition<SID,TID>& transition, const Transition<SID,TID>* transitionArray, int arraySize) const {
+
+bool SimpleFSM::_isDuplicate(const Transition& transition, const Transition* transitionArray, int arraySize) const {
   for (int i = 0; i < arraySize; ++i) {
     if (transitionArray[i].from == transition.from &&
         transitionArray[i].to == transition.to &&
@@ -242,8 +242,8 @@ bool SimpleFSM<SID,TID>::_isDuplicate(const Transition<SID,TID>& transition, con
 /*
  * Set the finished handler.
  */
-template<typename SID,typename TID>
-void SimpleFSM<SID,TID>::setFinishedHandler(CallbackFunction f) {
+
+void SimpleFSM::setFinishedHandler(CallbackFunction f) {
   finished_cb = f;
 }
 
@@ -251,8 +251,8 @@ void SimpleFSM<SID,TID>::setFinishedHandler(CallbackFunction f) {
 /*
  * Get the time since the last transition.
  */
-template<typename SID,typename TID>
-unsigned long SimpleFSM<SID,TID>::lastTransitioned() const {
+
+unsigned long SimpleFSM::lastTransitioned() const {
   return (last_transition == 0) ? 0 : (millis() - last_transition);
 }
 
@@ -260,8 +260,8 @@ unsigned long SimpleFSM<SID,TID>::lastTransitioned() const {
 /*
 * Check if the FSM is finished.
 */
-template<typename SID,typename TID>
-bool SimpleFSM<SID,TID>::isFinished() const {
+
+bool SimpleFSM::isFinished() const {
   return is_finished;
 }
 
@@ -271,8 +271,8 @@ bool SimpleFSM<SID,TID>::isFinished() const {
 * interval: The interval in milliseconds.
 * tick_cb: A callback function that is called on every tick.
 */
-template<typename SID,typename TID>
-void SimpleFSM<SID,TID>::run(int interval /* = 1000 */, CallbackFunction tick_cb /* = NULL */) {
+
+void SimpleFSM::run(int interval /* = 1000 */, CallbackFunction tick_cb /* = NULL */) {
   unsigned long now = millis();
   // is the machine set up?
   if (!is_initialized) _initFSM();
@@ -287,22 +287,20 @@ void SimpleFSM<SID,TID>::run(int interval /* = 1000 */, CallbackFunction tick_cb
   // go through the timed events
   _handleTimedEvents(now);
   // trigger the on_state event
-  // if (current_state->on_state != NULL) 
   current_state->on_state();
   // trigger the regular tick event
-  // if (tick_cb != NULL) 
   tick_cb();
 }
 
 /////////////////////////////////////////////////////////////////
-template<typename SID,typename TID>
-bool SimpleFSM<SID,TID>::_isTimeForRun(unsigned long now, int interval) {
+
+bool SimpleFSM::_isTimeForRun(unsigned long now, int interval) {
   return now >= last_run + interval;
 }
 
 /////////////////////////////////////////////////////////////////
-template<typename SID,typename TID>
-void SimpleFSM<SID,TID>::_handleTimedEvents(unsigned long now) {
+
+void SimpleFSM::_handleTimedEvents(unsigned long now) {
   for (int i = 0; i < num_timed; i++) {
     if (timed[i].from != current_state) continue;
     // start the transition timer 
@@ -324,8 +322,8 @@ void SimpleFSM<SID,TID>::_handleTimedEvents(unsigned long now) {
 /*
 * Initialize the FSM.
 */
-template<typename SID,typename TID>
-bool SimpleFSM<SID,TID>::_initFSM() {
+
+bool SimpleFSM::_initFSM() {
   if (is_initialized) return false;
   is_initialized = true;
   if (inital_state == NULL) return false;
@@ -336,20 +334,18 @@ bool SimpleFSM<SID,TID>::_initFSM() {
 /*
  * Change to a new state.
  */
-template<typename SID,typename TID>
-bool SimpleFSM<SID,TID>::_changeToState(State<SID>* s, unsigned long now) {
+
+bool SimpleFSM::_changeToState(State* s, unsigned long now) {
   if (s == NULL) return false;
   // set the new state
   prev_state = current_state;
   current_state = s;
-  // if (s->on_enter != NULL) 
   s->on_enter();
   // save the time
+  on_transition_cb();
   last_run = now;
   last_transition = now;
   // is this the end?
-  // if (s->is_final && finished_cb != NULL) finished_cb();
-  on_transition_cb();
   if (s->is_final) finished_cb();
   if (s->is_final) is_finished = true;
   return true;
@@ -365,21 +361,16 @@ bool SimpleFSM<SID,TID>::_changeToState(State<SID>* s, unsigned long now) {
 // }
 
 /////////////////////////////////////////////////////////////////
-template<typename SID,typename TID>
-bool SimpleFSM<SID,TID>::_transitionTo(AbstractTransition<SID,TID>* transition) {
+
+bool SimpleFSM::_transitionTo(AbstractTransition* transition) {
   // empty parameter?
   if (transition->to == NULL) return false;
   // can I pass the guard
-  // if (transition->guard_cb != NULL && !transition->guard_cb()) return false;
-  if(!transition->guard_cb()) return false;
+  if (!transition->guard_cb()) return false;
   // trigger events
-  // if (transition->from->on_exit != NULL) 
   transition->from->on_exit();
-  //if (transition->on_run_cb != NULL) 
   transition->on_run_cb();
-  // if (on_transition_cb != NULL) 
   
-
   return _changeToState(transition->to, millis());
 }
 

@@ -22,6 +22,7 @@ public:
     void TurnOn();
     void TurnOff();
     void ReadTemperatures();
+    bool TempOkay();
     void ChangeSetPoint(int setPoint);
     void HandleResponse(Response response);
     void TuningComplete(HeaterTuneResult result);

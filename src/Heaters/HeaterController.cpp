@@ -153,6 +153,14 @@ void HeaterController::ReadTemperatures(){
     }
 }
 
+bool HeaterController::TempOkay(){
+    bool okay=true;
+    for(auto result:this->results){
+        okay&=result.tempOkay;
+    }
+    return okay;
+}
+
 Array<HeaterResult,HEATER_COUNT> HeaterController::GetResults(){
     for(int i=0;i<HEATER_COUNT;i++){
         this->results[i]=this->heaters[i]->GetHeaterResult();

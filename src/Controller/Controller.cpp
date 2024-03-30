@@ -7,6 +7,9 @@ Controller::Controller():Component(){
         this->HandleCommand(command);
     };
     ComHandler::MapCommandCallback(this->_commandCallback);
+    this->_testFinishedCallback=[&](){
+        this->TestFinished();
+    };
     //this->mode_run[StationMode::NORMAL]=&Controller::NormalRun;
     
 }
@@ -34,6 +37,7 @@ void Controller::LoadConfigurations(){
     this->heaterControl=new HeaterController(heatersConfig);
     this->probeControl=new ProbeController(probesConfig);
     this->testController=new TestController(controllerConfig.burnTimerConfig);
+    this->testController->SetFinsihedCallback(this->_testFinishedCallback);
     // this->burnTimer=new BurnInTimer(controllerConfig.burnTimerConfig);
 
     this->comInterval=controllerConfig.comInterval;
@@ -56,26 +60,23 @@ void Controller::SetupComponents(){
     this->heaterResults=this->heaterControl->GetResults();
 
     StationLogger::LogInit(LogLevel::INFO,true,F("Setting up timers..."));
-    this->logTimer.onInterval([&](){
-        // if(this->testController->IsRunning()){
-        //     this->saveState.Set(CurrentValue::c150,85,this->testController->GetTimerData());
-        //     //FileManager::Save(&this->saveState,PacketType::SAVE_STATE);
-        // }
-        this->UpdateSerialData();
-        this->comData.Set(this->probeResults,this->heaterResults,*(this->testController->GetBurnTimer()));
-        ComHandler::MsgPacketSerializer(this->comData,PacketType::DATA);
-    },1000);
+
+    this->testTimer.onInterval([&](){
+        bool probeChecks[PROBE_COUNT]={true};
+        this->testController->Tick(probeChecks);
+    },250);
 
     this->stateLogTimer.onInterval([&](){
         if(this->testController->IsRunning()){
             this->saveState.Set(CurrentValue::c150,85,this->testController->GetTimerData());
-            FileManager::Save(&this->saveState);
+            FileManager::Save(&this->saveState,PacketType::SAVE_STATE);
         }
     },30000);
 
     this->comTimer.onInterval([&](){
+        this->UpdateSerialData();
         this->comData.Set(this->probeResults,this->heaterResults,*(this->testController->GetBurnTimer()));
-        //ComHandler::MsgPacketSerializer(this->comData,PacketType::DATA);
+        ComHandler::MsgPacketSerializer(this->comData,PacketType::DATA);
     },this->comInterval);
 
     this->updateTimer.onInterval([&](){
@@ -86,7 +87,7 @@ void Controller::SetupComponents(){
     StationLogger::LogInit(LogLevel::INFO,true,F("Registering Components..."));
     //RegisterChild(this->heaterControl);
     //RegisterChild(this->probeControl);
-    RegisterChild(this->logTimer);
+    RegisterChild(this->testTimer);
     //RegisterChild(this->comTimer);
     //RegisterChild(this->updateTimer);
     StationLogger::LogInit(LogLevel::INFO,true,F("Checking for saved state"));
@@ -97,30 +98,25 @@ void Controller::SetupComponents(){
 }
 
 void Controller::CheckSavedState(){
-    // FileManager::Load(&this->saveState,PacketType::SAVE_STATE);
-    // if(this->saveState.currentTimes.running){
-    //     this->burnTimer->StartFrom(this->saveState.currentTimes);
-    // }
     FileResult result=FileManager::LoadState(&this->saveState);
     switch(result){
         case FileResult::LOADED:{
             StationLogger::Log(LogLevel::INFO,true,false,F("Saved State Found! Continuing Test"));
-            this->testController->StartTestFrom(this->saveState.setCurrent,this->saveState.currentTimes);
-            this->probeControl->SetCurrent(this->saveState.setCurrent);
-            this->heaterControl->ChangeSetPoint(this->saveState.setTemperature);
-            this->heaterControl->TurnOn();
-            this->TurnOnCurrent();
+            if(this->testController->StartTest(this->saveState.currentTimes)){
+                this->probeControl->SetCurrent(this->saveState.setCurrent);
+                this->heaterControl->ChangeSetPoint(this->saveState.setTemperature);
+                this->heaterControl->TurnOn();
+                this->probeControl->TurnOnSrc();
+            }
             break;
         }
         case FileResult::DOES_NOT_EXIST:{
             StationLogger::Log(LogLevel::INFO,true,false,F("No Saved State found, continuing normal operation"));
-            this->lockStartTest=false;
             break;
         }
         case FileResult::DESERIALIZE_FAILED:
         case FileResult::FAILED_TO_OPEN:{
             StationLogger::Log(LogLevel::ERROR,true,false,F("Failed to load saved state"));
-            this->lockStartTest=true;
             break;
         }
     }
@@ -141,31 +137,18 @@ void Controller::UpdateSerialData(){
 void Controller::HandleCommand(StationCommand command){
     switch(command){
         case StationCommand::START:{
-            StationLogger::Log(LogLevel::INFO,true,true,F("Start Command Recieved"));
-            if(!this->burnTimer->IsRunning()){
-                this->burnTimer->Start(CurrentValue::c150);
-                ComHandler::SendStartResponse(true,F("Test started"));
-                //StationLogger::Log(LogLevel::INFO,true,false,F("BurnTimer started"));
-            }else{
-                if(this->burnTimer->IsPaused()){
-                    this->burnTimer->Continue();
-                    StationLogger::Log(LogLevel::INFO,true,true,F("BurnTimer continuing"));
-                }else{
-                    ComHandler::SendStartResponse(false,F("Failed to start test, another test is already running"));
-                    //StationLogger::Log(LogLevel::INFO,true,false,F("Station is running and not paused"));
+            auto tempOkay=this->heaterControl->TempOkay();
+            if(tempOkay=true){//TODO: undo bypass for testing
+                if(this->testController->StartTest(this->probeControl->GetSetCurrent())){
+                    this->probeControl->TurnOnSrc();
+                    this->heaterControl->TurnOn();
                 }
             }
             break;
         }
         case StationCommand::PAUSE:{
-            StationLogger::Log(LogLevel::INFO,true,false,F("Pause Command Recieved"));
-            if(!this->burnTimer->IsPaused()){
-                this->burnTimer->Pause();
-                StationLogger::Log(LogLevel::INFO,true,false,F("BurnTimer Paused"));
-                // this->nextTask=this->task;
-                // this->nextTask.state.n_state=Station_States::N_PAUSED;
-            }else{
-                StationLogger::Log(LogLevel::INFO,true,false,F("BurnTimer already paused,send Start command to continue"));
+            if(this->testController->PauseTest()){
+                this->probeControl->TurnOffSrc();
             }
             break;
         }
@@ -174,11 +157,15 @@ void Controller::HandleCommand(StationCommand command){
             break;
         }
         case StationCommand::CYCLE_CURRENT:{
-            StationLogger::Log(LogLevel::INFO,true,false,F("Switch Current Command Recieved!"));
+            if(!this->testController->IsRunning()){
+                this->probeControl->CycleCurrent();
+            }
             break;
         }
         case StationCommand::TOGGLE_HEAT:{
-            StationLogger::Log(LogLevel::INFO,true,false,F("Toggle Heat Command Recieved!"));
+            if(!this->testController->IsRunning()){
+                this->heaterControl->ToggleHeaters();
+            }
             break;
         }
         case StationCommand::CHANGE_MODE_ATUNE:{
@@ -234,41 +221,15 @@ void Controller::HandleCommand(StationCommand command){
             break;
         }
     }
-    switch(this->task.mode){
-        case StationMode::NORMAL:{
-            this->NormalRun();
-            break;
-        }
-        case StationMode::TUNE:{
-            this->TuningRun();
-            break;
-        }
-        case StationMode::CAL:{
-            //this->CalRun();
-            break;
-        }
-    }
 }
 
 void Controller::privateLoop(){
-    // if(this->burnTimer->IsRunning()){
-    //     bool checks[PROBE_COUNT]={true};
-    //     this->burnTimer->Increment(checks);
-    // }
 }
 
 void Controller::Reset(){
     wdt_disable();
 	wdt_enable(WDTO_15MS);
-	while(true){;}
-}
-
-void Controller::CycleCurrent(){
-    this->probeControl->CycleCurrent();
-}
-
-void Controller::TurnOnCurrent(){
-    this->probeControl->TurnOnSrc();
+	while(true){_NOP();}
 }
 
 bool* Controller::CheckCurrents(){
@@ -277,6 +238,12 @@ bool* Controller::CheckCurrents(){
         checks[i]=this->probeResults[i].okay;
     }
     return checks;
+}
+
+void Controller::TestFinished(){
+    this->probeControl->TurnOffSrc();
+    this->heaterControl->TurnOff();
+
 }
 
 void Controller::TuningRun(){

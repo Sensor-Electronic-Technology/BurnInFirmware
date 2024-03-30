@@ -10,16 +10,11 @@
 #include "Handlers.h"
 #include "State.h"
 
-/////////////////////////////////////////////////////////////////
-
-// typedef void (*CallbackFunction)();
-// typedef bool (*GuardCondition)();
 
 /////////////////////////////////////////////////////////////////
 // abstract parent class for Transition and TimedTransition
-template<typename SID,typename TID>
+
 class AbstractTransition {
-  template<typename,typename>
   friend class SimpleFSM;
 
  public:
@@ -27,36 +22,32 @@ class AbstractTransition {
   // to make this class an interface
   virtual ~AbstractTransition(){};
   virtual int getID() const = 0;
-  TID getTransitionId() const;
+  int getTransitionId() const;
 
-  void setTransitionId(TID t_id);
+  void setTransitionId(int transitionId);
   void setOnRunHandler(CallbackFunction f);
   void setGuardCondition(GuardCondition f);
 
  protected:
   static int _next_id;
   int id = 0;
-  bool                  hasTransitionId=false;
-  TID                   transitionId;
-  State<SID>*           from = NULL;
-  State<SID>*           to = NULL;
-  CallbackFunction      on_run_cb = [](){_NOP();};
-  GuardCondition        guard_cb = [](){return true;};
+  int transition_id =-1;
+  State* from = NULL;
+  State* to = NULL;
+  CallbackFunction on_run_cb = [](){};
+  GuardCondition guard_cb = [](){ return true; };
 };
 
 /////////////////////////////////////////////////////////////////
-template<typename SID,typename TID>
-class Transition : public AbstractTransition<SID,TID> {
-  // template<typenaname,typename>
-  // friend class SimpleFSM;
+
+class Transition : public AbstractTransition {
+  friend class SimpleFSM;
 
  public:
   Transition();
-  Transition(State<SID>* from, State<SID>* to, int event_id,TID t_id, CallbackFunction on_run = [](){_NOP();}, GuardCondition guard =[](){return true;});
-  Transition(State<SID>* from, State<SID>* to, int event_id, CallbackFunction on_run = [](){_NOP();}, GuardCondition guard =[](){return true;});
+  Transition(State* from, State* to, int event_id, int transitionId = -1,CallbackFunction on_run = [](){}, GuardCondition guard = [](){ return true; });
 
-  void setup(State<SID>* from, State<SID>* to, int event_id, TID t_id,CallbackFunction on_run = [](){_NOP();}, GuardCondition guard = [](){return true;});
-  void setup(State<SID>* from, State<SID>* to, int event_id, CallbackFunction on_run = [](){_NOP();}, GuardCondition guard = [](){return true;});
+  void setup(State* from, State* to, int event_id,int transitionId = -1, CallbackFunction on_run = [](){}, GuardCondition guard = [](){ return true; });
 
   int getID() const;
   int getEventID() const;
@@ -66,20 +57,15 @@ class Transition : public AbstractTransition<SID,TID> {
 };
 
 /////////////////////////////////////////////////////////////////
-template<typename SID,typename TID>
-class TimedTransition : public AbstractTransition<SID,TID> {
-  // template<typenaname,typename>
-  // friend class SimpleFSM;
+
+class TimedTransition : public AbstractTransition {
+  friend class SimpleFSM;
 
  public:
   TimedTransition();
-  TimedTransition(State<SID>* from, State<SID>* to, int interval,TID t_id, CallbackFunction on_run = [](){_NOP();}, GuardCondition guard = [](){return true;});
+  TimedTransition(State* from, State* to, int interval, int transitionId = -1,CallbackFunction on_run = [](){}, GuardCondition guard = [](){ return true; });
 
-  void setup(State<SID>* from, State<SID>* to, int interval,TID t_id, CallbackFunction on_run = [](){_NOP();}, GuardCondition guard = [](){return true;});
-
-  TimedTransition(State<SID>* from, State<SID>* to, int interval, CallbackFunction on_run = [](){_NOP();}, GuardCondition guard = [](){return true;});
-
-  void setup(State<SID>* from, State<SID>* to, int interval, CallbackFunction on_run = [](){_NOP();}, GuardCondition guard = [](){return true;});
+  void setup(State* from, State* to, int interval, int transitionId = -1,CallbackFunction on_run = [](){}, GuardCondition guard = [](){ return true; });
 
   int getID() const;
   int getInterval() const;

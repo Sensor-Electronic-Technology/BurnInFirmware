@@ -2,7 +2,6 @@
 #include <Arduino.h>
 #include <EEPROM.h>
 #include <ArduinoComponents.h>
-#include <ArxContainer.h>
 
 template <class T> int EEPROM_write(int addr, const T& value) {
     const byte* p = (const byte*)(const void*)&value;
@@ -88,7 +87,9 @@ enum PacketType:uint8_t{
     VER_RECIEVE=13,
     VER_REQUEST=14,
     INIT=15,
-    TEST_START_STATUS=16
+    TEST_START_STATUS=16, //Notify PC that test has started
+    TEST_COMPLETED=17,    //Notify PC that test has completed
+    TEST_LOAD_START=18,   //Notify PC that test is starting from a load state
 };
 
 const char* const prefixes[] PROGMEM = {
@@ -108,7 +109,9 @@ const char* const prefixes[] PROGMEM = {
     "VERREC", //13
     "VERREQ",  //14
     "INIT",     //15
-    "TSTAT"     //16
+    "TSTAT",     //16
+    "TCOMP",     //17
+    "TLOAD"      //18
 };
 
 const char* const json_filenames[] PROGMEM = {
@@ -143,7 +146,6 @@ const char* const log_level_prefixes[] PROGMEM={
 
 typedef components::Function<void(void)> RestartRequiredCallback;
 typedef components::Function<void(StationCommand)> CommandCallback;
-typedef components::Function<void(bool*)> TestControllerCallback;
 typedef components::Function<void(void)> TestFinsihedCallback;
 typedef components::Function<void(Response)> ResponseCallback;
 

@@ -117,6 +117,27 @@ void ComHandler::InstanceSendStartResponse(bool success,const char* message){
     this->serializerDoc.clear();
 }
 
+void ComHandler::InstanceSendTestCompleted(const char* message){
+    this->serializerDoc.clear();
+    this->serializerDoc[F("Prefix")]=read_packet_prefix(PacketType::TEST_COMPLETED);
+    JsonObject packet=this->serializerDoc[F("Packet")].to<JsonObject>();
+    packet[F("Message")]=message;
+    serializeJson(this->serializerDoc,*this->serial);
+    this->serial->println();
+    this->serializerDoc.clear();
+}
+
+void ComHandler::InstanceSendTestStartFromLoad(bool success,const char* message){
+    this->serializerDoc.clear();
+    this->serializerDoc[F("Prefix")]=read_packet_prefix(PacketType::TEST_LOAD_START);
+    JsonObject packet=this->serializerDoc[F("Packet")].to<JsonObject>();
+    packet[F("Status")]=success;
+    packet[F("Message")]=message;
+    serializeJson(this->serializerDoc,*this->serial);
+    this->serial->println();
+    this->serializerDoc.clear();
+}
+
 void ComHandler::ReceiveVersion(){
     auto version=this->serialEventDoc[F("Packet")].as<const char*>();
     sprintf(FirmwareVersion,version);

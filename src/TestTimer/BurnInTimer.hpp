@@ -15,6 +15,17 @@ struct TimerData{
     unsigned long   duration_secs=0ul;
     //unsigned long   timeOnSecs=0;
 
+    void Reset(){
+        this->running=false;
+        this->paused=false;
+        this->lastCheck=0ul;
+        this->duration_secs=0ul;
+        this->elapsed_secs=0ul;
+        for(int i=0;i<PROBE_COUNT;i++){
+            this->probeRunTimes[i]=0ul;
+        }
+    }
+
     void Serialize(JsonObject* timerJson,bool initialize){
         JsonArray jsonPTimers;
         (*timerJson)[F("Running")]=this->running;
@@ -50,22 +61,19 @@ private:
     unsigned long durSec60mA;
     unsigned long durSec120mA;
     unsigned long durSec150mA;
-    bool savedStateLoaded=false;
+
 public:
     TimerData testTimer;
 
     BurnInTimer(const BurnTimerConfig& config);
 
-    const TimerData& GetTimerData(){
-        return this->testTimer;
-    }
+    const TimerData& GetTimerData();
 
-    void Start(CurrentValue current);
+    bool Start(CurrentValue current);
 
-    void Start();
+    bool Start(const TimerData& savedState);
    
-    void StartFrom(const TimerData& savedState);
-
+    // void SetStartFrom(const TimerData& savedState);
    
     void Stop();
 
@@ -79,9 +87,7 @@ public:
 
     bool IsPaused();
     
-    bool IsRunning(){
-        return this->testTimer.running || this->testTimer.paused;
-    }
+    bool IsRunning();
     
     unsigned long GetElapsed();
     

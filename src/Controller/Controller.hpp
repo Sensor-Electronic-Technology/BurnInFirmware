@@ -45,9 +45,6 @@ public:
 
 private:
     void BuildStateMachine(void);
-    void BuildTransitions(void);
-    void BuildTimedTransitions(void);
-    void BuildStates(void);
 
     //Modes
     void NormalRun();
@@ -55,13 +52,10 @@ private:
     void CalRun();
 
     //Test Actions
-    void TurnOnCurrent();
     bool* CheckCurrents();
-
-
     //actions
     void StartTest();
-    void CycleCurrent();
+    void TestFinished();
     void RunTestProbes();
     void Reset();
     //void SetStationId();
@@ -69,15 +63,14 @@ private:
 
     //Heater Actions
     void RunAutoTune();
-    void ToggelHeaters();
 
 private:
     ProbeController*        probeControl;
     HeaterController*       heaterControl;
     BurnInTimer*            burnTimer;
     TestController*         testController;
-    CommandCallback         _commandCallback=[](StationCommand){};
-    TestFinsihedCallback    _testFinishedCallback=[](){};
+    CommandCallback         _commandCallback=[](StationCommand){_NOP();};
+    TestFinsihedCallback    _testFinishedCallback=[](){_NOP();};
     Task                    task,nextTask;
     Array<ProbeResult,PROBE_COUNT>  probeResults;
     Array<HeaterResult,HEATER_COUNT> heaterResults;
@@ -87,9 +80,8 @@ private:
     unsigned long       logInterval=LOG_INTERVAL;
     unsigned long       versionInterval=VER_CHECK_INTERVAL;
     SaveState           saveState;
-    Timer               comTimer,updateTimer,logTimer,versionTimer,stateLogTimer;
+    Timer               comTimer,updateTimer,testTimer,versionTimer,stateLogTimer;
     SerialDataOutput    comData;
-    bool lockStartTest=false;
     //const char*         
     //typedef void(Controller::*ModeRun)(void);
     //ModeRun mode_run[3];

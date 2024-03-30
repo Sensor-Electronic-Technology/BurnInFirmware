@@ -67,7 +67,22 @@ public:
         PGM_P msgMem=reinterpret_cast<PGM_P>(msg);
         strcpy_P(buffer,msgMem);
         instance->InstanceSendStartResponse(success,buffer);
-        
+    }
+
+    static void SendStartFromLoad(bool success,const __FlashStringHelper* msg){
+        auto instance=ComHandler::Instance();
+        char buffer[255];
+        PGM_P msgMem=reinterpret_cast<PGM_P>(msg);
+        strcpy_P(buffer,msgMem);
+        instance->InstanceSendTestStartFromLoad(success,buffer);
+    }
+
+    static void SendTestCompleted(const __FlashStringHelper* msg){
+        auto instance=ComHandler::Instance();
+        char buffer[255];
+        PGM_P msgMem=reinterpret_cast<PGM_P>(msg);
+        strcpy_P(buffer,msgMem);
+        instance->InstanceSendTestCompleted(buffer);
     }
 
     static void HandleSerial(){
@@ -139,6 +154,9 @@ private:
     void ReceiveVersion();
     void InstanceSendInitMessage(const char* message);
     void InstanceSendStartResponse(bool success,const char* message);
+
+    void InstanceSendTestStartFromLoad(bool success,const char* message);
+    void InstanceSendTestCompleted(const char* message);
 
 private:
     static ComHandler* instance;

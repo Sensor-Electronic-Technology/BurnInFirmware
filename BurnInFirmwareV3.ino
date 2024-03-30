@@ -12,16 +12,16 @@
 #include "src/Logging/StationLogger.hpp"
 #include "src/Controller/StationState.hpp"
 #include "src/Controller/Controller.hpp"
+#include "src/StressTest/TestController.hpp"
+#include "src/SimpleFSM/State.h"
+#include "src/SimpleFSM/Transitions.h"
+#include "src/SimpleFSM/SimpleFSM.h"
 #include "src/free_memory.h"
-
-
 
 unsigned long lastCheck=0;
 unsigned long deadLine=3000;
 
-
 Controller controller;
-
 
 int count=0;
 JsonDocument doc;

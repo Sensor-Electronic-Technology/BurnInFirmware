@@ -1,6 +1,7 @@
 {
     "sketch": "BurnInFirmwareV3.ino",
     "configuration": "cpu=atmega2560",
+    "board": "arduino:avr:mega",
     "output": "C:\\Users\\aelmendo\\Documents\\Arduino\\burn-build",
-    "board": "arduino:avr:mega"
+    "port": "COM3"
 }
