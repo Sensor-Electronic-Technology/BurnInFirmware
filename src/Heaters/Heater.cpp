@@ -11,7 +11,7 @@ Heater::Heater(const HeaterConfig& config)
     tempDeviation(config.tempDeviation),
     WindowSize(config.pidConfig.windowSize),
     heaterState(HeaterState::Off),
-    heaterMode(HeaterMode::PID_RUN){
+    mode(HeaterMode::PID_RUN){
     this->tempSetPoint=DEFAULT_TEMPSP;
     //this->pid=new PID(&this->temperature,&this->pidOutput,&this->tempSetPoint,this->kp,this->ki,this->kd);
     this->pid.Setup(&this->temperature,&this->pidOutput,&this->tempSetPoint,this->kp,this->ki,this->kd);
@@ -46,7 +46,7 @@ void Heater::SetConfiguration(const HeaterConfig& config){
     this->WindowSize=config.pidConfig.windowSize;
     this->tempSetPoint=DEFAULT_TEMPSP;
 
-    this->heaterMode=HeaterMode::PID_RUN;
+    this->mode=HeaterMode::PID_RUN;
     this->heaterState=HeaterState::Off;
 
     this->pid.Setup(&this->temperature,&this->pidOutput,&this->tempSetPoint,this->kp,this->ki,this->kd);
@@ -91,19 +91,20 @@ void Heater::StopTuning(){
 }
 
 void Heater::SwitchMode(HeaterMode nextMode){
-    if(this->heaterMode!=nextMode){
-        switch(this->heaterMode){
+
+    if(this->mode!=nextMode){
+        switch(this->mode){
             //Transition to Tuning
             case HeaterMode::PID_RUN:{
                 this->TurnOff();
-                this->heaterMode=nextMode;
+                this->mode=nextMode;
                 break;
             }
             //Transition to PID(Normal Operation)
             case HeaterMode::ATUNE_RUN:{
                 this->StopTuning();
                 this->TurnOff();
-                this->heaterMode=nextMode;
+                this->mode=nextMode;
                 break;
             }
         }
@@ -111,10 +112,23 @@ void Heater::SwitchMode(HeaterMode nextMode){
 }
 
 void Heater::PrintTuning(bool completed){
-    Serial.print("H");Serial.print("[F(");Serial.print(this->id);Serial.print(")]: ");
-    Serial.print("kp=");Serial.print(this->autoTuner.GetKp());
-    Serial.print(" , ki=");Serial.print(this->autoTuner.GetKd());
-    Serial.print(" , kd=");Serial.print(this->autoTuner.GetKi());
+    if(completed){
+        HeaterTuneResult result;
+        result.kd=this->autoTuner.GetKd();
+        result.ki=this->autoTuner.GetKi();
+        result.kp=this->autoTuner.GetKp();
+        result.complete=completed;
+        result.heaterNumber=this->id;
+        this->tuningCompleteCb(result);
+        StationLogger::Log(LogLevel::INFO,true,false,F("Heater %d Tuning Complete"),this->id);
+    }else{
+        #if HEATER_DEBUG==1
+        Serial.print("H");Serial.print("[F(");Serial.print(this->id);Serial.print(")]: ");
+        Serial.print("kp=");Serial.print(this->autoTuner.GetKp());
+        Serial.print(" , ki=");Serial.print(this->autoTuner.GetKd());
+        Serial.print(" , kd=");Serial.print(this->autoTuner.GetKi());
+        #endif
+    }
 }
 
 bool Heater::IsTuning(){
@@ -122,6 +136,27 @@ bool Heater::IsTuning(){
 }
 
 void Heater::RunPid(){
+    if(this->nextState.pidState!=this->state.pidState){
+        switch(nextState.pidState){
+            case PIDState::WARMUP:{
+                if(state.pidState==PIDState::ON){
+                    this->pid.Stop();
+                }
+                break;
+            }
+            case PIDState::ON:{
+                if(state.pidState==PIDState::WARMUP){
+                    this->pid.Start();
+                }
+                break;
+            }
+            case PIDState::OFF:{
+                this->pid.Stop();
+                break;
+            }
+        }
+        this->state=nextState;
+    }
     auto now=millis();
     this->Read();
     if(this->heaterState==HeaterState::On){
@@ -135,6 +170,28 @@ void Heater::RunPid(){
 }
 
 void Heater::RunAutoTune(){
+    if(state.tuneState!=nextState.tuneState){
+        switch(nextState.tuneState){
+            case TuneState::TUNE_IDLE:{
+                if(state.tuneState==TuneState::TUNE_RUNNING){
+                    this->StopTuning();
+                }else if(state.tuneState==TuneState::TUNE_COMPLETE){
+                    this->PrintTuning(true);
+                }
+                break;
+            }
+            case TuneState::TUNE_RUNNING:{
+                this->StartTuning();
+                break;
+            }
+            case TuneState::TUNE_COMPLETE:{
+                this->PrintTuning(true);
+                break;
+            }
+        }
+        this->state=nextState;
+    }
+
     auto now=millis();
     this->Read();
     if(this->isTuning){
@@ -213,5 +270,5 @@ bool Heater::TempOkay(){
 }
 
 void Heater::privateLoop(){
-    (this->*run[this->heaterMode])();
+    (this->*run[this->mode])();
 }

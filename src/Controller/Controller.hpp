@@ -17,16 +17,6 @@
 
 using namespace components;
 
-enum StateTriggers{
-    START_TEST,
-    PAUSE_TEST,
-    CONTINUE_TEST,
-    SW_TUNE,
-    SW_NORM,
-    ACCECPT_TUNE,
-    REJECT_TUNE    
-};
-
 
 class Controller:public Component{
 public:
@@ -51,6 +41,14 @@ private:
     void TuningRun();
     void CalRun();
 
+    //Transitions
+    void NormalToTuning();
+    void NormalToCal();
+    void TuningToNormal();
+    void TuningToCal();
+    void CalToNormal();
+    void CalToTuning();
+
     //Test Actions
     bool* CheckCurrents();
     //actions
@@ -66,10 +64,10 @@ private:
     TestController         testController;
     CommandCallback        _commandCallback=[](StationCommand){_NOP();};
     TestFinsihedCallback   _testFinishedCallback=[](){_NOP();};
-    Task                   task,nextTask;
+
+
     ProbeResult            probeResults[PROBE_COUNT];
     HeaterResult           heaterResults[HEATER_COUNT];
-    // bool                   probeChecks[PROBE_COUNT];
     unsigned long          comInterval=COM_INTERVAL;
     unsigned long          updateInterval=UPDATE_INTERVAL;
     unsigned long          logInterval=LOG_INTERVAL;

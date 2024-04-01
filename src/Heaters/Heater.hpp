@@ -3,6 +3,7 @@
 #include "heater_constants.h"
 #include "TemperatureSensor.hpp"
 #include "HeaterConfiguration.hpp"
+#include "../Logging/StationLogger.hpp"
 #include "./PID/PID.hpp"
 #include "./PID/PID_AutoTune.hpp"
 
@@ -74,7 +75,8 @@ private:
 	bool isTuning=false;
 	bool relayState=false;
 	int id=0;
-	HeaterMode heaterMode;
+	HeaterMode mode,nextMode;
+	HeatState state,nextState;
 	RunFunc	run[2];
 	TuningCompleteCallback tuningCompleteCb=[](HeaterTuneResult){};
 	virtual void privateLoop()override;

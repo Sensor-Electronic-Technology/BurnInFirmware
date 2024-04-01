@@ -97,7 +97,7 @@ void Controller::SetupComponents(){
     StationLogger::LogInit(LogLevel::INFO,true,F("Registering Components..."));
     //RegisterChild(this->heaterControl);
     //RegisterChild(this->probeControl);
-    //RegisterChild(this->testTimer);
+    RegisterChild(this->testTimer);
     RegisterChild(this->stateLogTimer);
     RegisterChild(this->comTimer);
     RegisterChild(this->updateTimer);
@@ -160,6 +160,13 @@ void Controller::HandleCommand(StationCommand command){
         case StationCommand::PAUSE:{
             if(this->testController.PauseTest()){
                 this->probeControl.TurnOffSrc();
+            }
+            break;
+        }
+
+        case StationCommand::CONTINUE:{
+            if(this->testController.ContinueTest()){
+                this->probeControl.TurnOnSrc();
             }
             break;
         }

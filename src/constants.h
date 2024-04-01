@@ -59,15 +59,16 @@ inline char FirmwareVersion[8];
 enum StationCommand:uint8_t{
     START=0,
     PAUSE=1,
-    TOGGLE_HEAT=2,
-    CYCLE_CURRENT=3,
-    PROBE_TEST=4,
-    CHANGE_MODE_ATUNE=5,
-    CHANGE_MODE_NORMAL=6,
-    START_TUNE=7,
-    STOP_TUNE=8,
-    SAVE_ATUNE_RESULT=9,
-    RESET=10
+    CONTINUE=2,
+    TOGGLE_HEAT=3,
+    CYCLE_CURRENT=4,
+    PROBE_TEST=5,
+    CHANGE_MODE_ATUNE=6,
+    CHANGE_MODE_NORMAL=7,
+    START_TUNE=8,
+    STOP_TUNE=9,
+    SAVE_ATUNE_RESULT=10,
+    RESET=11
 };
 
 enum PacketType:uint8_t{
