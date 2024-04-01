@@ -6,6 +6,17 @@ CurrentSensor::CurrentSensor(PinNumber pin):Component(),
     this->current=0;
 }
 
+CurrentSensor::CurrentSensor():Component(),
+    fWeight(DEFAULT_FWEIGHT){
+    this->current=0;
+}
+
+void CurrentSensor::Setup(const CurrentSensorConfig& config){
+    this->currentIn.setAnalogPin(config.Pin);
+    this->fWeight=config.fWeight;
+    this->current-0;
+}
+
 CurrentSensor::CurrentSensor(const CurrentSensorConfig& config)
         :Component(),currentIn(config.Pin),
         fWeight(config.fWeight){

@@ -19,6 +19,24 @@ public:
         this->currentPin060.low();
     }
 
+    CurrentSelector():Component(){
+        this->currentOutput.low();
+        this->currentPin120.low();
+        this->currentPin060.low();
+    }
+
+    void Setup(const CurrentSelectorConfig& config){
+        this->currentPin120.SetPinNumber(config.pin120mA);
+        this->currentPin060.SetPinNumber(config.pin60mA);
+        this->currentOutput.SetPinNumber(config.currentPin);
+        this->setCurrent=config.SetCurrent;
+        this->configuration=config;
+        this->switchEnabled=config.switchEnabled;
+        this->currentOutput.low();
+        this->currentPin120.low();
+        this->currentPin060.low();
+    }
+
     void SetCurrent(CurrentValue current){
         this->setCurrent=current;
     }

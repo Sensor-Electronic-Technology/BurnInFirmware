@@ -6,6 +6,12 @@
         durSec150mA(config.time150mASecs){
     }
 
+    void BurnInTimer::SetConfig(const BurnTimerConfig& config){
+        this->durSec60mA=config.time60mASecs;
+        this->durSec120mA=config.time120mASecs;
+        this->durSec150mA=config.time150mASecs;
+    }
+
     bool BurnInTimer::Start(CurrentValue current){
         if(!this->testTimer.running){
             switch(current){

@@ -24,7 +24,7 @@ public:
         auto instance=ComHandler::Instance();
         if(instance->serial!=nullptr){
             instance->serialEventEnabled=true;
-            instance->SendVersion();
+            //instance->SendVersion();
             //instance->serial->flush();
         }
     }

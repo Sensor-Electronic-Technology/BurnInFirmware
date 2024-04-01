@@ -11,7 +11,18 @@ VoltageSensor::VoltageSensor(const VoltageSensorConfig& config)
     voltageIn(config.Pin),
     fWeight(config.fWeight),
     configuration(config){
-} 
+}
+
+VoltageSensor::VoltageSensor():Component(),
+    fWeight(DEFAULT_FWEIGHT) {
+    this->voltage=0.0;
+}
+
+void VoltageSensor::Setup(const VoltageSensorConfig& config){
+    this->voltageIn.setAnalogPin(config.Pin);
+    this->configuration=config;
+    this->fWeight=config.fWeight;
+}
 
 double VoltageSensor::ReadVoltage() {
     float value=this->voltageIn.read();

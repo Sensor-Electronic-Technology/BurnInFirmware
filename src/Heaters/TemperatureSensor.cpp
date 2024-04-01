@@ -13,6 +13,8 @@ TemperatureSensor::TemperatureSensor(const NtcConfig& config)
     cValue(config.cCoeff),
     fWeight(config.fWeight){ /***/ }
 
+
+
 double TemperatureSensor::Read(){
     double aValue = this->input.read();
     double ntc_res=R_REF/(ADC_MAX/aValue-1);

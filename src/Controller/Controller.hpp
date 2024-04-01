@@ -54,36 +54,32 @@ private:
     //Test Actions
     bool* CheckCurrents();
     //actions
-    void StartTest();
     void TestFinished();
     void RunTestProbes();
     void Reset();
     //void SetStationId();
     void UpdateSerialData();
 
-    //Heater Actions
-    void RunAutoTune();
-
 private:
-    ProbeController*        probeControl;
-    HeaterController*       heaterControl;
-    BurnInTimer*            burnTimer;
-    TestController*         testController;
-    CommandCallback         _commandCallback=[](StationCommand){_NOP();};
-    TestFinsihedCallback    _testFinishedCallback=[](){_NOP();};
-    Task                    task,nextTask;
-    Array<ProbeResult,PROBE_COUNT>  probeResults;
-    Array<HeaterResult,HEATER_COUNT> heaterResults;
-    bool                probeChecks[PROBE_COUNT];
-    unsigned long       comInterval=COM_INTERVAL;
-    unsigned long       updateInterval=UPDATE_INTERVAL;
-    unsigned long       logInterval=LOG_INTERVAL;
-    unsigned long       versionInterval=VER_CHECK_INTERVAL;
-    SaveState           saveState;
-    Timer               comTimer,updateTimer,testTimer,versionTimer,stateLogTimer;
-    SerialDataOutput    comData;
-    //const char*         
-    //typedef void(Controller::*ModeRun)(void);
-    //ModeRun mode_run[3];
+    ProbeController        probeControl;
+    HeaterController       heaterControl;
+    TestController         testController;
+    CommandCallback        _commandCallback=[](StationCommand){_NOP();};
+    TestFinsihedCallback   _testFinishedCallback=[](){_NOP();};
+    Task                   task,nextTask;
+    ProbeResult            probeResults[PROBE_COUNT];
+    HeaterResult           heaterResults[HEATER_COUNT];
+    // bool                   probeChecks[PROBE_COUNT];
+    unsigned long          comInterval=COM_INTERVAL;
+    unsigned long          updateInterval=UPDATE_INTERVAL;
+    unsigned long          logInterval=LOG_INTERVAL;
+    unsigned long          versionInterval=VER_CHECK_INTERVAL;
+    SaveState              saveState;
+    Timer                  comTimer,updateTimer,testTimer,versionTimer,stateLogTimer;
+    SerialDataOutput       comData;
+    HeaterControllerConfig heatersConfig;
+    ProbeControllerConfig  probesConfig;
+    bool                    probeChecks[PROBE_COUNT]={true};
+    ControllerConfig       controllerConfig;
     void privateLoop() override;
 };

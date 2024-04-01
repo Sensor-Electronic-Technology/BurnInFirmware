@@ -13,14 +13,53 @@ Heater::Heater(const HeaterConfig& config)
     heaterState(HeaterState::Off),
     heaterMode(HeaterMode::PID_RUN){
     this->tempSetPoint=DEFAULT_TEMPSP;
-    this->pid=new PID(&this->temperature,&this->pidOutput,&this->tempSetPoint,
-    this->kp,this->ki,this->kd);
-    this->pid->SetOutputRange(0,this->WindowSize,true);
-    this->autoTuner=new PID_AutoTune(&this->temperature,&this->pidOutput,this->tempSetPoint,this->pid->GetSampleTime(),15);
+    //this->pid=new PID(&this->temperature,&this->pidOutput,&this->tempSetPoint,this->kp,this->ki,this->kd);
+    this->pid.Setup(&this->temperature,&this->pidOutput,&this->tempSetPoint,this->kp,this->ki,this->kd);
+    this->pid.SetOutputRange(0,this->WindowSize,true);
+    this->autoTuner.Setup(&this->temperature,&this->pidOutput,this->tempSetPoint,this->pid.GetSampleTime(),15);
+    //this->autoTuner=new PID_AutoTune(&this->temperature,&this->pidOutput,this->tempSetPoint,this->pid.GetSampleTime(),15);
     this->run[HeaterMode::PID_RUN]=&Heater::RunPid;
     this->run[HeaterMode::ATUNE_RUN]=&Heater::RunAutoTune;
-    this->autoTuner->SetOutputRange(0,this->WindowSize);
-    Serial.print("Sample Time=");Serial.print(this->pid->GetSampleTime());
+    this->autoTuner.SetOutputRange(0,this->WindowSize);
+    // Serial.print("Sample Time=");Serial.print(this->pid.GetSampleTime());
+}
+
+Heater::Heater(){
+    this->pid.Setup(&this->temperature,&this->pidOutput,&this->tempSetPoint,this->kp,this->ki,this->kd);
+    this->pid.SetOutputRange(0,this->WindowSize,true);
+    this->autoTuner.Setup(&this->temperature,&this->pidOutput,this->tempSetPoint,this->pid.GetSampleTime(),15);
+    //this->autoTuner=new PID_AutoTune(&this->temperature,&this->pidOutput,this->tempSetPoint,this->pid.GetSampleTime(),15);
+    this->run[HeaterMode::PID_RUN]=&Heater::RunPid;
+    this->run[HeaterMode::ATUNE_RUN]=&Heater::RunAutoTune;
+    this->autoTuner.SetOutputRange(0,this->WindowSize);
+}
+
+void Heater::SetConfiguration(const HeaterConfig& config){
+    Serial.println(F("Heater Configuration Set"));
+    this->id=config.HeaterId;
+    this->ntc.Setup(config.ntcConfig);
+    this->output.SetPinNumber(config.Pin);
+    this->kp=config.pidConfig.kp;
+    this->ki=config.pidConfig.ki;
+    this->kd=config.pidConfig.kd;
+    this->tempDeviation=config.tempDeviation;
+    this->WindowSize=config.pidConfig.windowSize;
+    this->tempSetPoint=DEFAULT_TEMPSP;
+
+    this->heaterMode=HeaterMode::PID_RUN;
+    this->heaterState=HeaterState::Off;
+
+    this->pid.Setup(&this->temperature,&this->pidOutput,&this->tempSetPoint,this->kp,this->ki,this->kd);
+    this->pid.SetTuning(this->kp,this->ki,this->kd);
+    this->pid.SetOutputRange(0,this->WindowSize,true);
+
+    this->autoTuner.Setup(&this->temperature,&this->pidOutput,this->tempSetPoint,this->pid.GetSampleTime(),15);
+    this->autoTuner.SetOutputRange(0,this->WindowSize);
+
+    this->run[HeaterMode::PID_RUN]=&Heater::RunPid;
+    this->run[HeaterMode::ATUNE_RUN]=&Heater::RunAutoTune;
+    Serial.println(F("End of Heater Configuration Set"));
+    // Serial.print("Sample Time=");Serial.print(this->pid.GetSampleTime());
 }
 
 void Heater::Initialize(){
@@ -28,13 +67,13 @@ void Heater::Initialize(){
 }
 
 void Heater::UpdatePid(HeaterTuneResult newPid){
-    this->pid->SetTuning(newPid.kp,newPid.ki,newPid.kd);
+    this->pid.SetTuning(newPid.kp,newPid.ki,newPid.kd);
 }
 
 void Heater::TurnOn(){
     this->heaterState=HeaterState::On;
     this->windowLastTime=millis();
-    this->pid->Start();
+    this->pid.Start();
 }
 
 void Heater::TurnOff(){
@@ -42,7 +81,7 @@ void Heater::TurnOff(){
 }
 
 void Heater::StartTuning(){
-    this->autoTuner->StartTuning();
+    this->autoTuner.StartTuning();
     this->isTuning=true;
 }
 
@@ -73,9 +112,9 @@ void Heater::SwitchMode(HeaterMode nextMode){
 
 void Heater::PrintTuning(bool completed){
     Serial.print("H");Serial.print("[F(");Serial.print(this->id);Serial.print(")]: ");
-    Serial.print("kp=");Serial.print(this->autoTuner->GetKp());
-    Serial.print(" , ki=");Serial.print(this->autoTuner->GetKd());
-    Serial.print(" , kd=");Serial.print(this->autoTuner->GetKi());
+    Serial.print("kp=");Serial.print(this->autoTuner.GetKp());
+    Serial.print(" , ki=");Serial.print(this->autoTuner.GetKd());
+    Serial.print(" , kd=");Serial.print(this->autoTuner.GetKi());
 }
 
 bool Heater::IsTuning(){
@@ -86,7 +125,7 @@ void Heater::RunPid(){
     auto now=millis();
     this->Read();
     if(this->heaterState==HeaterState::On){
-        if(this->pid->Run()){
+        if(this->pid.Run()){
             this->windowLastTime=now;
         }
         this->OutputAction(now);
@@ -99,7 +138,7 @@ void Heater::RunAutoTune(){
     auto now=millis();
     this->Read();
     if(this->isTuning){
-        if(this->autoTuner->Tune()){
+        if(this->autoTuner.Tune()){
             if(!this->relayState){
                 this->relayState=true;
                 this->output.high();
@@ -115,12 +154,12 @@ void Heater::RunAutoTune(){
             }
         }
         this->OutputAction(now);
-        if(this->autoTuner->Finished()){
+        if(this->autoTuner.Finished()){
             this->isTuning=false;
             HeaterTuneResult result;
-            result.kd=this->autoTuner->GetKd();
-            result.ki=this->autoTuner->GetKi();
-            result.kp=this->autoTuner->GetKp();
+            result.kd=this->autoTuner.GetKd();
+            result.ki=this->autoTuner.GetKi();
+            result.kp=this->autoTuner.GetKp();
             result.ki=true;
             result.heaterNumber=this->id;
             this->tuningCompleteCb(result);

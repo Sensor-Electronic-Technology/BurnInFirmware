@@ -37,7 +37,7 @@ public:
 
     static void LogInit(LogLevel level,bool printPrefix,const __FlashStringHelper* format,...){
         auto instance=StationLogger::Instance();
-        char buffer[128];
+        char buffer[64];
         if(printPrefix){
             auto prefix=read_log_prefix(level);
             instance->append_buffers(prefix);
@@ -53,7 +53,7 @@ public:
 
     static void Log(LogLevel level,bool printPrefix,bool newLine,const __FlashStringHelper* format,...){
         auto instance=StationLogger::Instance();
-        char buffer[128];
+        char buffer[64];
         if(printPrefix){
             auto prefix=read_log_prefix(level);
             instance->append_buffers(prefix);
@@ -72,7 +72,7 @@ public:
 
     static void Log(LogLevel level, bool printPrefix,bool newLine,const char* format,...){
         auto instance=StationLogger::Instance();
-        char buffer[128];
+        char buffer[64];
         if(printPrefix){
             auto prefix=read_log_prefix(level);
             instance->append_buffers(prefix);
@@ -90,7 +90,7 @@ public:
 
     static void Log(LogLevel level,bool printPrefix,bool newLine,SystemMessage message,...){
         auto instance=StationLogger::Instance();
-        char buffer[128];
+        char buffer[64];
         if(printPrefix){
             auto prefix=read_log_prefix(level);
             instance->append_buffers(prefix);
@@ -163,7 +163,7 @@ private:
     static StationLogger* instance;
     //Print* serialLogger;
     File  file;
-    JsonDocument serialDoc;
+    //JsonDocument serialDoc;
     String fileBuffer;
     String msgBuffer;
 

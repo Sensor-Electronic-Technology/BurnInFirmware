@@ -5,8 +5,8 @@
     }
 
     void TestController::Tick(bool *probesOkay){
-        this->burn_timer->Increment(probesOkay);
-        this->state_machine.run(0);
+        this->burn_timer.Increment(probesOkay);
+        this->state_machine.run(500);
     }
 
     void TestController::SetCurrent(CurrentValue current){
@@ -29,15 +29,15 @@
     }//
 
     const TimerData& TestController::GetTimerData(){
-        return this->burn_timer->GetTimerData();
+        return this->burn_timer.GetTimerData();
     }
 
     BurnInTimer* TestController::GetBurnTimer(){
-        return this->burn_timer;
+        return &this->burn_timer;
     }
 
     void TestController::Running(){
-        if(this->burn_timer->IsDone()){
+        if(this->burn_timer.IsDone()){
             if(!this->state_machine.trigger(StateTrigger::STRESS_TEST_DONE)){
                 StationLogger::Log(LogLevel::CRITICAL_ERROR,true,false,F("Failed to transition to idle from running state, test is being hard stopped. \n restart controller before starting another test"));
                 this->_finishedCallback();
@@ -50,7 +50,7 @@
     bool TestController::StartTest(CurrentValue current){
         this->currentSet=true;
         this->stressCurrent=current;
-        if(this->burn_timer->IsRunning()){
+        if(this->burn_timer.IsRunning()){
             ComHandler::SendStartResponse(false,F("Failed to start, test is already running"));
             StationLogger::Log(LogLevel::ERROR,true,false,F("Failed to start, test is already running"));
             return false;
@@ -80,11 +80,11 @@
     }
 
     bool TestController::CanStart(){
-        return !this->burn_timer->IsRunning() && (this->currentSet || this->savedStateLoaded);
+        return !this->burn_timer.IsRunning() && (this->currentSet || this->savedStateLoaded);
     }
 
     bool TestController::IsRunning(){
-        return this->burn_timer->IsRunning();
+        return this->burn_timer.IsRunning();
     }
 #pragma endregion
 
@@ -94,7 +94,7 @@
     }
 
     bool TestController::CanPause(){
-        return !this->burn_timer->IsPaused();
+        return !this->burn_timer.IsPaused();
     }
 #pragma endregion
 
@@ -104,39 +104,39 @@
     }
 
     bool TestController::CanContinue(){
-        return this->burn_timer->IsPaused();
+        return this->burn_timer.IsPaused();
     }
 #pragma endregion
 
 #pragma region TransitionHandlers
 
     void TestController::OnRunningToIdle(){
-        this->burn_timer->Reset();
+        this->burn_timer.Reset();
         this->_finishedCallback();
     }
 
     void TestController::OnIdleToRunning(){
         if(this->savedStateLoaded){
-            this->burn_timer->Start(this->savedState);
+            this->burn_timer.Start(this->savedState);
             return;
         }
 
         if(this->currentSet){
-            this->burn_timer->Start(this->stressCurrent);
+            this->burn_timer.Start(this->stressCurrent);
             return;
         }
     }
 
     void TestController::OnRunningToPaused(){
-        this->burn_timer->Pause();
+        this->burn_timer.Pause();
     }
 
     void TestController::OnPausedToIdle(){
-        this->burn_timer->Reset();
+        this->burn_timer.Reset();
     }
 
     void TestController::OnPausedToRunning(){
-        this->burn_timer->Continue();
+        this->burn_timer.Continue();
     }
 
 #pragma endregion

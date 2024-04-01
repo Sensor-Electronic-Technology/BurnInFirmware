@@ -67,6 +67,11 @@ public:
 
     BurnInTimer(const BurnTimerConfig& config);
 
+    BurnInTimer(){
+        
+    }
+    void SetConfig(const BurnTimerConfig& config);
+
     const TimerData& GetTimerData();
 
     bool Start(CurrentValue current);

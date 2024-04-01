@@ -13,6 +13,8 @@ class HeaterController:public Component{
     typedef void(HeaterController::*RunMode)();
 public:
     HeaterController(const HeaterControllerConfig& config);
+    HeaterController();
+    void Setup(const HeaterControllerConfig& config);
     void Initialize();
     void StartTuning();
     void StopTuning();
@@ -27,7 +29,7 @@ public:
     void HandleResponse(Response response);
     void TuningComplete(HeaterTuneResult result);
     void ChangeMode(HeaterMode nextMode);
-    Array<HeaterResult,HEATER_COUNT> GetResults();
+    void GetResults(HeaterResult* fill);
     void Print();
     void Printv2(){
         Serial.println(json_filenames[0]);
@@ -46,8 +48,8 @@ public:
     
 
 private:
-    Array<Heater*,HEATER_COUNT> heaters;
-    Array<HeaterResult,HEATER_COUNT> results;
+    Heater heaters[HEATER_COUNT];
+    HeaterResult results[HEATER_COUNT];
     AutoTuneResults tuningResults;
     Timer  readTimer,printTimer;
     HeaterState heaterState=HeaterState::Off;

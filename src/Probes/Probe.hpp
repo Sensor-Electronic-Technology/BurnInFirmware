@@ -27,6 +27,8 @@ typedef struct ProbeResult{
 class Probe:public Component{
 public:
 	Probe(const ProbeConfig& config);
+	Probe();
+	void Setup(const ProbeConfig& config);
 	ProbeResult Read();
 	ProbeResult GetProbeReading();
 

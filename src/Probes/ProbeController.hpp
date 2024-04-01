@@ -12,6 +12,8 @@ using namespace components;
 class ProbeController:public Component{
 public:
     ProbeController(const ProbeControllerConfig& config);
+    ProbeController();
+    void Setup(const ProbeControllerConfig& config);
     void Initialize();
     void Read();
     void TurnOnSrc();
@@ -19,15 +21,15 @@ public:
     void CycleCurrent();
     CurrentValue GetSetCurrent();
     void SetCurrent(CurrentValue current);
-    Array<ProbeResult,PROBE_COUNT> GetProbeResults();
+    void GetProbeResults(ProbeResult* results);
 
 private:
-    Array<Probe*,PROBE_COUNT>        probes;
-    Array<ProbeResult,PROBE_COUNT>   results;
-    CurrentSelector                  currentSelector;
-    CurrentValue                     testCurrent;
-    double                           currentPercent;
-    Timer                            readTimer;
+    Probe           probes[PROBE_COUNT];
+    ProbeResult     results[PROBE_COUNT];
+    CurrentSelector currentSelector;
+    CurrentValue    testCurrent;
+    double          currentPercent;
+    Timer           readTimer;
     void privateLoop(){ }
 
 

@@ -10,6 +10,14 @@ Controller::Controller():Component(){
     this->_testFinishedCallback=[&](){
         this->TestFinished();
     };
+
+    for(int i=0;i<PROBE_COUNT;i++){
+        this->probeResults[i]=ProbeResult();
+    }
+
+    for(int i=0;i<HEATER_COUNT;i++){
+        this->heaterResults[i]=HeaterResult();
+    }   
     //this->mode_run[StationMode::NORMAL]=&Controller::NormalRun;
     
 }
@@ -19,10 +27,9 @@ void Controller::BuildStateMachine(void){
 }
 
 void Controller::LoadConfigurations(){
+    StationLogger::LogInit(LogLevel::INFO,true,F("Before Loading Free Memory: %d"),FreeSRAM());
     StationLogger::LogInit(LogLevel::INFO,true,F("--------Firmware Initialization Starting--------"));
-    HeaterControllerConfig heatersConfig;
-    ProbeControllerConfig  probesConfig;
-    ControllerConfig       controllerConfig;
+
     StationLogger::LogInit(LogLevel::INFO,true,F("Loading configuration files..."));
 
     FileManager::Load(&heatersConfig,PacketType::HEATER_CONFIG);
@@ -34,16 +41,17 @@ void Controller::LoadConfigurations(){
     // ComHandler::MsgPacketSerializer(probesConfig,PacketType::PROBE_CONFIG);
     // ComHandler::MsgPacketSerializer(controllerConfig,PacketType::SYSTEM_CONFIG);
     
-    this->heaterControl=new HeaterController(heatersConfig);
-    this->probeControl=new ProbeController(probesConfig);
-    this->testController=new TestController(controllerConfig.burnTimerConfig);
-    this->testController->SetFinsihedCallback(this->_testFinishedCallback);
+    this->heaterControl.Setup(heatersConfig);
+    this->probeControl.Setup(probesConfig);
+    this->testController.SetConfig(controllerConfig.burnTimerConfig);
+    this->testController.SetFinsihedCallback(this->_testFinishedCallback);
     // this->burnTimer=new BurnInTimer(controllerConfig.burnTimerConfig);
 
     this->comInterval=controllerConfig.comInterval;
     this->updateInterval=controllerConfig.updateInterval;
     this->logInterval=controllerConfig.logInterval;
     this->versionInterval=controllerConfig.versionInterval;
+    StationLogger::LogInit(LogLevel::INFO,true,F("After Loading Free Memory: %d"),FreeSRAM());
     StationLogger::LogInit(LogLevel::INFO,true,F("--------Configuration Files Loaded--------"));
 }
 
@@ -51,45 +59,48 @@ void Controller::SetupComponents(){
     StationLogger::LogInit(LogLevel::INFO,true,F("-------Initalizing Components-------"));
     //Send messages
 
-    this->heaterControl->Initialize();
-    this->probeControl->Initialize();
-    this->probeControl->TurnOffSrc();
+    this->heaterControl.Initialize();
+    this->probeControl.Initialize();
+    this->probeControl.TurnOffSrc();
 
     StationLogger::LogInit(LogLevel::INFO,true,F("Reading intitial values..."));
-    this->probeResults=this->probeControl->GetProbeResults();
-    this->heaterResults=this->heaterControl->GetResults();
+    this->probeControl.GetProbeResults(this->probeResults);
+    this->heaterControl.GetResults(this->heaterResults);
 
     StationLogger::LogInit(LogLevel::INFO,true,F("Setting up timers..."));
 
     this->testTimer.onInterval([&](){
-        bool probeChecks[PROBE_COUNT]={true};
-        this->testController->Tick(probeChecks);
+        
+        this->testController.Tick(this->probeChecks);
     },250);
 
     this->stateLogTimer.onInterval([&](){
-        if(this->testController->IsRunning()){
-            this->saveState.Set(CurrentValue::c150,85,this->testController->GetTimerData());
+        if(this->testController.IsRunning()){
+            this->saveState.Set(CurrentValue::c150,85,this->testController.GetTimerData());
             FileManager::Save(&this->saveState,PacketType::SAVE_STATE);
         }
     },30000);
 
     this->comTimer.onInterval([&](){
         this->UpdateSerialData();
-        this->comData.Set(this->probeResults,this->heaterResults,*(this->testController->GetBurnTimer()));
+        this->comData.Set(this->probeResults,this->heaterResults,*(this->testController.GetBurnTimer()));
         ComHandler::MsgPacketSerializer(this->comData,PacketType::DATA);
+        Serial.print(F("Free SRAM"));
+        Serial.println(FreeSRAM());
     },this->comInterval);
 
     this->updateTimer.onInterval([&](){
-        this->probeResults=this->probeControl->GetProbeResults();
-        this->heaterResults=this->heaterControl->GetResults();
+        this->probeControl.GetProbeResults(this->probeResults);
+        this->heaterControl.GetResults(this->heaterResults);
     },this->updateInterval);
 
     StationLogger::LogInit(LogLevel::INFO,true,F("Registering Components..."));
     //RegisterChild(this->heaterControl);
     //RegisterChild(this->probeControl);
-    RegisterChild(this->testTimer);
-    //RegisterChild(this->comTimer);
-    //RegisterChild(this->updateTimer);
+    //RegisterChild(this->testTimer);
+    RegisterChild(this->stateLogTimer);
+    RegisterChild(this->comTimer);
+    RegisterChild(this->updateTimer);
     StationLogger::LogInit(LogLevel::INFO,true,F("Checking for saved state"));
     StationLogger::LogInit(LogLevel::INFO,true,F("Free Memory: %d"),FreeSRAM());
     this->CheckSavedState();
@@ -102,11 +113,11 @@ void Controller::CheckSavedState(){
     switch(result){
         case FileResult::LOADED:{
             StationLogger::Log(LogLevel::INFO,true,false,F("Saved State Found! Continuing Test"));
-            if(this->testController->StartTest(this->saveState.currentTimes)){
-                this->probeControl->SetCurrent(this->saveState.setCurrent);
-                this->heaterControl->ChangeSetPoint(this->saveState.setTemperature);
-                this->heaterControl->TurnOn();
-                this->probeControl->TurnOnSrc();
+            if(this->testController.StartTest(this->saveState.currentTimes)){
+                this->probeControl.SetCurrent(this->saveState.setCurrent);
+                this->heaterControl.ChangeSetPoint(this->saveState.setTemperature);
+                this->heaterControl.TurnOn();
+                this->probeControl.TurnOnSrc();
             }
             break;
         }
@@ -137,18 +148,18 @@ void Controller::UpdateSerialData(){
 void Controller::HandleCommand(StationCommand command){
     switch(command){
         case StationCommand::START:{
-            auto tempOkay=this->heaterControl->TempOkay();
+            auto tempOkay=this->heaterControl.TempOkay();
             if(tempOkay=true){//TODO: undo bypass for testing
-                if(this->testController->StartTest(this->probeControl->GetSetCurrent())){
-                    this->probeControl->TurnOnSrc();
-                    this->heaterControl->TurnOn();
+                if(this->testController.StartTest(this->probeControl.GetSetCurrent())){
+                    this->probeControl.TurnOnSrc();
+                    this->heaterControl.TurnOn();
                 }
             }
             break;
         }
         case StationCommand::PAUSE:{
-            if(this->testController->PauseTest()){
-                this->probeControl->TurnOffSrc();
+            if(this->testController.PauseTest()){
+                this->probeControl.TurnOffSrc();
             }
             break;
         }
@@ -157,21 +168,21 @@ void Controller::HandleCommand(StationCommand command){
             break;
         }
         case StationCommand::CYCLE_CURRENT:{
-            if(!this->testController->IsRunning()){
-                this->probeControl->CycleCurrent();
+            if(!this->testController.IsRunning()){
+                this->probeControl.CycleCurrent();
             }
             break;
         }
         case StationCommand::TOGGLE_HEAT:{
-            if(!this->testController->IsRunning()){
-                this->heaterControl->ToggleHeaters();
+            if(!this->testController.IsRunning()){
+                this->heaterControl.ToggleHeaters();
             }
             break;
         }
         case StationCommand::CHANGE_MODE_ATUNE:{
             // if(!this->burnTimer->IsRunning()){
-            //     if(this->heaterControl->GetMode()==HeaterMode::PID_RUN){
-            //         this->heaterControl->ChangeMode(HeaterMode::ATUNE_RUN);
+            //     if(this->heaterControl.GetMode()==HeaterMode::PID_RUN){
+            //         this->heaterControl.ChangeMode(HeaterMode::ATUNE_RUN);
             //     }
             //     break;
             // }
@@ -179,8 +190,8 @@ void Controller::HandleCommand(StationCommand command){
             break;
         }
         case StationCommand::CHANGE_MODE_NORMAL:{
-            // if(this->heaterControl->GetMode()==HeaterMode::ATUNE_RUN){
-            //     this->heaterControl->ChangeMode(HeaterMode::PID_RUN);
+            // if(this->heaterControl.GetMode()==HeaterMode::ATUNE_RUN){
+            //     this->heaterControl.ChangeMode(HeaterMode::PID_RUN);
             //     StationLogger::Log(LogLevel::INFO,true,false,SystemMessage::STATION_MODE_NORM_MSG);
                 
             //     break;
@@ -188,8 +199,8 @@ void Controller::HandleCommand(StationCommand command){
             break;
         }
         case StationCommand::START_TUNE:{
-            // if(this->heaterControl->GetMode()==HeaterMode::ATUNE_RUN){
-            //     this->heaterControl->StartTuning();
+            // if(this->heaterControl.GetMode()==HeaterMode::ATUNE_RUN){
+            //     this->heaterControl.StartTuning();
             //     StationLogger::Log(LogLevel::INFO,true,false,SystemMessage::PID_ATUNE_START_MSG);
             //     break;
             // }
@@ -197,8 +208,8 @@ void Controller::HandleCommand(StationCommand command){
             break;
         }
         case StationCommand::STOP_TUNE:{
-            // if(this->heaterControl->GetMode()==HeaterMode::ATUNE_RUN){
-            //     this->heaterControl->StopTuning();
+            // if(this->heaterControl.GetMode()==HeaterMode::ATUNE_RUN){
+            //     this->heaterControl.StopTuning();
             //     StationLogger::Log(LogLevel::INFO,true,false,SystemMessage::PID_ATUNE_STOP_MSG);
             //     break;
             // }
@@ -241,68 +252,7 @@ bool* Controller::CheckCurrents(){
 }
 
 void Controller::TestFinished(){
-    this->probeControl->TurnOffSrc();
-    this->heaterControl->TurnOff();
-
-}
-
-void Controller::TuningRun(){
-
-}
-
-void Controller::NormalRun(){
-    if(!this->task.m_latched){
-
-        //others
-        this->task.m_latched=true;
-    }
-    switch(this->task.state.n_state){
-        case Station_States::N_INIT:{
-            this->heaterControl->TurnOff();
-            this->probeControl->TurnOffSrc();
-            this->task.state.n_state=Station_States::N_IDLE;
-            break;
-        }
-        case Station_States::N_RUNNING:{
-            if(!this->task.s_latched){
-                this->task.s_latched=true;
-            }
-            auto currentChecks=this->CheckCurrents();
-            this->burnTimer->Increment(currentChecks);
-            if(this->burnTimer->IsDone()){
-                this->probeControl->TurnOffSrc();
-                this->heaterControl->TurnOff();
-                this->task.state.n_state=Station_States::N_DONE;
-            }
-            break; 
-        }
-        case Station_States::N_PAUSED:{
-            if(!this->task.s_latched){
-                this->probeControl->TurnOffSrc();
-                this->task.s_latched=true;
-            }
-            if(!this->burnTimer->IsPaused()){
-                this->burnTimer->Continue();
-                this->probeControl->TurnOffSrc();
-                this->task.s_latched=true;
-                this->task.state.n_state=Station_States::N_RUNNING;
-            }
-            //wait,no log
-            break; 
-        }
-
-        case Station_States::N_IDLE:{
-            //wait
-            break; 
-        }
-        case Station_States::N_DONE:{
-            //Erase logs
-            break; 
-        }
-        case Station_States::N_ERROR:{
-            //delete?
-            break; 
-        }
-    }
+    this->probeControl.TurnOffSrc();
+    this->heaterControl.TurnOff();
 
 }

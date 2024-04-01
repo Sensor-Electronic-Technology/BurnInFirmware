@@ -8,6 +8,14 @@
         this->cycles=cyc;
     }
 
+    void PID_AutoTune::Setup(double *in,double *out,double sp,unsigned long period,int cyc=10){
+        this->input=in;
+        this->outputValue=out;
+        this->setPoint=sp;
+        this->sampleTime=period;
+        this->cycles=cyc;
+    }
+
     void PID_AutoTune::SetOutputRange(double _min,double _max){
         this->maxOut=_max;
         this->minOut=_min;

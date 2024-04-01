@@ -35,10 +35,11 @@ class Heater:public Component{
 	typedef void(Heater::*RunFunc)(void);
 public:
 	Heater(const HeaterConfig& config);
+	Heater();
+	void SetConfiguration(const HeaterConfig& config);
 	void Initialize();
 	void UpdatePid(HeaterTuneResult newPid);
 	void SwitchMode(HeaterMode nextMode);
-
 	void TurnOn();
 	void TurnOff();
 	void StartTuning();
@@ -60,8 +61,8 @@ private:
 	TemperatureSensor 	ntc;
 	DigitalOutput 		output;
 	HeaterState 		heaterState=HeaterState::Off;
-	PID  				*pid;
-	PID_AutoTune		*autoTuner;
+	PID  				pid;
+	PID_AutoTune		autoTuner;
 	HeaterResult		result;
 	double tempDeviation;
 	double tempSetPoint;

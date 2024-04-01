@@ -9,6 +9,8 @@ class CurrentSensor:public Component{
 public:
 	CurrentSensor(PinNumber pin);
 	CurrentSensor(const CurrentSensorConfig& config);
+	CurrentSensor();
+	void Setup(const CurrentSensorConfig& config);
 	double ReadCurrent();
 	float GetCurrent();
 

@@ -22,6 +22,15 @@ PID::PID(double* in,double *out,double *set,double _kp,double _ki,double _kd){
 
 }
 
+void PID::Setup(double* in,double *out,double *set,double _kp,double _ki,double _kd){
+    this->input=in;
+    this->output=out;
+    this->setpoint=set;
+    this->sampleTime=1e5;
+    this->SetTuning(_kp,_ki,_kd);
+    this->lastTime=micros()-this->sampleTime;
+}
+
 /**
  * @brief Sets the gains.  Can be used at anytime
  * 

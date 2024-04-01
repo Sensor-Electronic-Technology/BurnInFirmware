@@ -8,7 +8,8 @@
  */
 class PID{
 public:
-    PID(double* in,double *out,double *set,double _kp,double _ki,double _kd);
+    PID(double* in=nullptr,double *out=nullptr,double *set=nullptr,double _kp=0,double _ki=0,double _kd=0);
+    void Setup(double* in,double *out,double *set,double _kp,double _ki,double _kd);
     void SetTuning(double _kp,double _ki,double _kd);
     void SetOutputRange(double _min,double _max,bool relayCntrl);
     void SetSampleTime(unsigned long newSampleTime);

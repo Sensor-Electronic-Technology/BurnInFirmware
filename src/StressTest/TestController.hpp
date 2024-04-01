@@ -36,10 +36,18 @@ enum TransitionId{
 class TestController:public Component{
 public:
 
-    TestController(const BurnTimerConfig timerConfig):Component(){
-        this->burn_timer=new BurnInTimer(timerConfig);
+    TestController(const BurnTimerConfig timerConfig):Component(),burn_timer(timerConfig){
+        // this->burn_timer=new BurnInTimer(timerConfig);
         this->BuildFSM();
     }
+
+    TestController(){
+    }
+
+    void SetConfig(const BurnTimerConfig timerConfig){
+        this->burn_timer.SetConfig(timerConfig);
+    }
+
     void SetFinsihedCallback(TestFinsihedCallback callback);
     void Tick(bool *probesOkay);
 
@@ -77,7 +85,7 @@ private:
     }
 
 private:
-    BurnInTimer*            burn_timer;
+    BurnInTimer            burn_timer;
     CurrentValue            stressCurrent;
     TimerData               savedState;
     bool                    currentSet=false;   

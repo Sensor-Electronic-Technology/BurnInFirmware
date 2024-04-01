@@ -9,7 +9,8 @@
 
 class PID_AutoTune{
 public:
-    PID_AutoTune(double *in,double *out,double sp,unsigned long period,int cyc=10);
+    PID_AutoTune(double *in=nullptr,double *out=nullptr,double sp=0,unsigned long period=0,int cyc=10);
+    void Setup(double *in,double *out,double sp,unsigned long period,int cyc=10);
     void SetOutputRange(double _min,double _max);
     void StartTuning();
     bool Tune();

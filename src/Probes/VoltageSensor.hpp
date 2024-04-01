@@ -9,6 +9,8 @@ class VoltageSensor:public Component{
 public:
 	VoltageSensor(PinNumber voltagePin);
 	VoltageSensor(const VoltageSensorConfig& config);
+	VoltageSensor();
+	void Setup(const VoltageSensorConfig& config);
 	double ReadVoltage();
 	float GetVoltage();
 private:
