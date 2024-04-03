@@ -52,8 +52,8 @@ private:
     HeaterResult results[HEATER_COUNT];
     AutoTuneResults tuningResults;
     Timer  readTimer,printTimer;
-    HeaterState heaterState=HeaterState::Off;
-    HeaterMode heaterMode=HeaterMode::PID_RUN;
+    HeatState heaterState=HeatState::Off;
+    HeaterMode heaterMode=HeaterMode::HEATING;
     HeaterControllerConfig configuration;
     TuningCompleteCallback tuningCompleteCbk=[](HeaterTuneResult){};
     ResponseCallback responseCbk=[](Response){};

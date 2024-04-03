@@ -2,6 +2,9 @@
 #include <Arduino.h>
 #include <ArduinoComponents.h>
 
+
+typedef components::Function<void(void)> TransitionActionHandler;
+
 struct HeaterTuneResult{
     int heaterNumber=-1;
     bool complete=false;
@@ -21,62 +24,23 @@ enum TuneState:uint8_t{
     TUNE_COMPLETE,  //Tuning complete, wating for save command
 };
 
-enum PIDState:uint8_t{
+enum HeaterState:uint8_t{
     WARMUP, //Warmup tempOkay=false;
     ON, //PID ON and warmup complete
     OFF, //Heater off
 };
 
 enum HeaterMode:uint8_t{
-    PID_RUN=0,      //Normal Heater Mode
-    ATUNE_RUN=1     //AutoTune Mode
+    HEATING=0,      //Normal Heater Mode
+    ATUNE=1     //AutoTune Mode
 };
 
-union HeatState{
-    PIDState    pidState;
+union HeaterStateSelector{
+    HeaterState    pidState;
     TuneState   tuneState;
 };
 
-struct HeaterTask{
-    HeaterMode mode;
-    HeatState state;
-    HeaterTuneResult result;
-    bool latched=false;
-    void clear(){
-        this->mode=HeaterMode::PID_RUN;
-        this->state.pidState=PIDState::OFF;
-        this->state.tuneState=TuneState::TUNE_IDLE;
-        this->result.clear();
-        this->latched=false;
-    }
-    bool operator==(const HeaterTask& rhs){
-        if(this->mode!=rhs.mode){
-            return false;
-        }
 
-        if(rhs.mode==HeaterMode::PID_RUN){
-            return this->state.tuneState==rhs.state.tuneState;    
-        }
-
-        if(rhs.mode==HeaterMode::PID_RUN){
-            return this->state.tuneState==rhs.state.tuneState;
-        }
-    }
-
-    bool operator!=(const HeaterTask& rhs){
-        if(this->mode==rhs.mode){
-            return false;
-        }
-
-        if(rhs.mode==HeaterMode::PID_RUN){
-            return this->state.tuneState!=rhs.state.tuneState;    
-        }
-
-        if(rhs.mode==HeaterMode::PID_RUN){
-            return this->state.tuneState!=rhs.state.tuneState;
-        }
-    }
-};
 
 typedef components::Function<void(HeaterTuneResult)> TuningCompleteCallback;
 

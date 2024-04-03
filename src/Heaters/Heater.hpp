@@ -11,7 +11,7 @@ using namespace components;
 
 #define HEATER_DEBUG 	1
 
-enum HeaterState {
+enum HeatState {
 	On,
 	Off
 };
@@ -38,6 +38,7 @@ public:
 	Heater(const HeaterConfig& config);
 	Heater();
 	void SetConfiguration(const HeaterConfig& config);
+	void BuildStateMachine();
 	void Initialize();
 	void UpdatePid(HeaterTuneResult newPid);
 	void SwitchMode(HeaterMode nextMode);
@@ -61,7 +62,7 @@ public:
 private:
 	TemperatureSensor 	ntc;
 	DigitalOutput 		output;
-	HeaterState 		heaterState=HeaterState::Off;
+	
 	PID  				pid;
 	PID_AutoTune		autoTuner;
 	HeaterResult		result;
@@ -76,8 +77,8 @@ private:
 	bool relayState=false;
 	int id=0;
 	HeaterMode mode,nextMode;
-	HeatState state,nextState;
-	RunFunc	run[2];
+	HeatState heaterState=HeatState::Off;
+	HeaterStateSelector state,nextState;
 	TuningCompleteCallback tuningCompleteCb=[](HeaterTuneResult){};
 	virtual void privateLoop()override;
 };

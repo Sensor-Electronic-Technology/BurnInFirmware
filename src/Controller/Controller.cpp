@@ -22,10 +22,6 @@ Controller::Controller():Component(){
     
 }
 
-void Controller::BuildStateMachine(void){
-
-}
-
 void Controller::LoadConfigurations(){
     StationLogger::LogInit(LogLevel::INFO,true,F("Before Loading Free Memory: %d"),FreeSRAM());
     StationLogger::LogInit(LogLevel::INFO,true,F("--------Firmware Initialization Starting--------"));

@@ -31,8 +31,7 @@ HeaterController::HeaterController(const HeaterControllerConfig& config)
         this->heaters[i].MapTurningComplete(this->tuningCompleteCbk);
         RegisterChild(this->heaters[i]);
     }
-    this->run[HeaterMode::PID_RUN]=&HeaterController::Run;
-    this->run[HeaterMode::ATUNE_RUN]=&HeaterController::RunAutoTune;
+
 }
 
 HeaterController::HeaterController():Component(){
@@ -59,8 +58,7 @@ void HeaterController::Setup(const HeaterControllerConfig& config){
         this->heaters[i].MapTurningComplete(this->tuningCompleteCbk);
         RegisterChild(this->heaters[i]);
     }
-    this->run[HeaterMode::PID_RUN]=&HeaterController::Run;
-    this->run[HeaterMode::ATUNE_RUN]=&HeaterController::RunAutoTune;
+
     //Serial.println(F("End HeaterController Setup"));
 }
 
@@ -168,7 +166,7 @@ void HeaterController::Run(){
 }
 
 void HeaterController::ToggleHeaters(){
-    if(this->heaterState==HeaterState::On){
+    if(this->heaterState==HeatState::On){
         this->TurnOff();
     }else{
         this->TurnOn();
@@ -176,14 +174,14 @@ void HeaterController::ToggleHeaters(){
 }
 
 void HeaterController::TurnOn(){
-    this->heaterState=HeaterState::On;
+    this->heaterState=HeatState::On;
     for(int i=0;i<HEATER_COUNT;i++){
         this->heaters[i].TurnOn();
     }
 }
 
 void HeaterController::TurnOff(){
-    this->heaterState=HeaterState::Off;
+    this->heaterState=HeatState::Off;
     for(int i=0;i<HEATER_COUNT;i++){
         this->heaters[i].TurnOff();
     }

@@ -1,7 +1,6 @@
 #pragma once
 #include <Arduino.h>
-// #include "../SimpleFSM/State.h"
-// #include "../SimpleFSM/SimpleFSM.h"
+#include "../StateMachine/StateMachine.hpp"
 #include "../Logging/StationLogger.hpp"
 #include "../Probes/probe_constants.h"
 #include "../TestTimer/burn_timer_includes.h"
@@ -17,27 +16,27 @@ enum class TestState{
 };
 
 
-// enum StateId{
-//     TEST_IDLE=0,
-//     TEST_RUNNING=1,
-//     TEST_PAUSED=2
-// };
+enum StateId:uint8_t{
+    TEST_IDLE=0,
+    TEST_RUNNING=1,
+    TEST_PAUSED=2
+};
 
-// enum StateTrigger:int{
-//     STRESS_TEST_START=0,
-//     STRESS_TEST_PAUSE=1,
-//     STRESS_TEST_CONTINUE=2,
-//     STRESS_TEST_DONE=3,
-//     TEST_RESET=4
-// };
+enum StateTrigger:uint8_t{
+    STRESS_TEST_START=0,
+    STRESS_TEST_PAUSE=1,
+    STRESS_TEST_CONTINUE=2,
+    STRESS_TEST_DONE=3,
+    TEST_RESET=4
+};
 
-// enum TransitionId{
-//     IDLE_TO_RUNNING=0,
-//     RUNNING_TO_PAUSED=1,
-//     PAUSED_TO_RUNNING=2,
-//     PAUSED_TO_IDLE=3,
-//     RUNNING_TO_IDLE=4
-// };
+enum TransitionId:uint8_t{
+    IDLE_TO_RUNNING=0,
+    RUNNING_TO_PAUSED=1,
+    PAUSED_TO_RUNNING=2,
+    PAUSED_TO_IDLE=3,
+    RUNNING_TO_IDLE=4
+};
 
 
 class TestController:public Component{
@@ -46,9 +45,22 @@ public:
     TestController(const BurnTimerConfig timerConfig):Component(),burn_timer(timerConfig){
         // this->burn_timer=new BurnInTimer(timerConfig);
         //this->BuildFSM();
+        this->state_machine.Setup(&states[StateId::TEST_IDLE],this->transitions);
+        this->state_machine.SetOnTransitionHandler([&](){
+            auto from=this->state_machine.GetPreviousStateId();
+            auto to=this->state_machine.GetCurrentStateId();
+            StationLogger::Log(LogLevel::INFO,true,false,F("Test Controller Transition from StateId %d from StateId %d"),(int)from,(int)to);
+        });
     }
 
     TestController(){
+        this->state_machine.Setup(&states[StateId::TEST_IDLE],this->transitions);
+        this->state_machine.SetOnTransitionHandler([&](){
+            auto from=this->state_machine.GetPreviousStateId();
+            auto to=this->state_machine.GetCurrentStateId();
+            StationLogger::Log(LogLevel::INFO,true,false,F("Test Controller Transition from StateId %d from StateId %d"),(int)from,(int)to);
+        });
+
     }
 
     void SetConfig(const BurnTimerConfig timerConfig){
@@ -63,7 +75,7 @@ public:
     bool StartTest(const TimerData& savedState);
     bool CanStart();
     bool IsRunning();
-    void Running(bool probesOkay[PROBE_COUNT]);
+    void Running();
 
 
     //Pause Test
@@ -100,6 +112,43 @@ private:
     TestFinsihedCallback    _finishedCallback=[](){_NOP();}; 
     TestState               currentState=TestState::TEST_IDLE;
     TestState               nextState=TestState::TEST_IDLE;
+    
+    
+    
+    State states[STATE_COUNT]={
+        State(StateId::TEST_IDLE),
+        State(StateId::TEST_RUNNING,[&](){this->Running();}),
+        State(StateId::TEST_PAUSED)
+    };
+
+    Transition transitions[TRANSITION_COUNT]={
+        Transition(&states[StateId::TEST_IDLE],&states[StateId::TEST_RUNNING],
+                TransitionId::IDLE_TO_RUNNING,
+                StateTrigger::STRESS_TEST_START,
+                [&](){this->OnIdleToRunning();},
+                [&](){return this->CanStart();}),
+        Transition(&states[StateId::TEST_RUNNING],&states[StateId::TEST_PAUSED],
+                TransitionId::RUNNING_TO_PAUSED,
+                StateTrigger::STRESS_TEST_PAUSE,
+                [&](){this->OnRunningToPaused();},
+                [&](){return this->CanPause();}),
+        Transition(&states[StateId::TEST_PAUSED],&states[StateId::TEST_RUNNING],
+                TransitionId::PAUSED_TO_RUNNING,
+                StateTrigger::STRESS_TEST_CONTINUE,
+                [&](){this->OnPausedToRunning();},
+                [&](){return this->CanContinue();}),
+        Transition(&states[StateId::TEST_RUNNING],&states[StateId::TEST_IDLE],
+                TransitionId::RUNNING_TO_IDLE,
+                StateTrigger::STRESS_TEST_DONE,
+                [&](){this->OnRunningToIdle();}),
+        Transition(nullptr,&states[StateId::TEST_IDLE],
+                TransitionId::PAUSED_TO_IDLE,
+                StateTrigger::TEST_RESET,
+                [&](){this->OnPausedToIdle();})
+    };        
+    StateMachine<TRANSITION_COUNT> state_machine;
+};
+
     // SimpleFSM state_machine;
     // State states[STATE_COUNT]={
     //     State(StateId::TEST_IDLE),
@@ -134,5 +183,5 @@ private:
     //             [&](){this->OnPausedToIdle();},
     //             [](){return true;})
     // };
-};
+
 

@@ -41,9 +41,9 @@
     }
 
     bool BurnInTimer::Start(const TimerData& savedState){
-        if(this->testTimer.running){
-            return false;
-        }
+        // if(this->testTimer.running){
+        //     return false;
+        // }
         this->testTimer=savedState;
         this->testTimer.running=true;
         this->testTimer.paused=false;
@@ -86,11 +86,11 @@
     }
 
     bool BurnInTimer::IsPaused(){
-        return this->testTimer.running && this->testTimer.paused;
+        return this->testTimer.paused;
     }
 
     bool BurnInTimer::IsRunning(){
-        return this->testTimer.running;
+        return this->testTimer.running && !this->testTimer.paused;
     }
     
     unsigned long BurnInTimer::GetElapsed(){

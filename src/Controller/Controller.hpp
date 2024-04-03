@@ -10,7 +10,6 @@
 #include "../Logging/StationLogger.hpp"
 #include "../Files/FileManager.hpp"
 #include "SaveState.hpp"
-#include "StationState.hpp"
 #include "../StressTest/TestController.hpp"
 #include "../TestTimer/burn_timer_includes.h"
 #include "../constants.h"
@@ -28,7 +27,7 @@ public:
     void CheckSavedState();
 
     //Transition Checks 
-    bool CanTransitionTo(StationMode mode);
+
 
     //other
     void HandleCommand(StationCommand command);

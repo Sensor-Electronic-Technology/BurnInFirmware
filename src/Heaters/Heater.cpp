@@ -10,16 +10,14 @@ Heater::Heater(const HeaterConfig& config)
     ki(config.pidConfig.ki),
     tempDeviation(config.tempDeviation),
     WindowSize(config.pidConfig.windowSize),
-    heaterState(HeaterState::Off),
-    mode(HeaterMode::PID_RUN){
+    heaterState(HeatState::Off),
+    mode(HeaterMode::HEATING){
     this->tempSetPoint=DEFAULT_TEMPSP;
     //this->pid=new PID(&this->temperature,&this->pidOutput,&this->tempSetPoint,this->kp,this->ki,this->kd);
     this->pid.Setup(&this->temperature,&this->pidOutput,&this->tempSetPoint,this->kp,this->ki,this->kd);
     this->pid.SetOutputRange(0,this->WindowSize,true);
     this->autoTuner.Setup(&this->temperature,&this->pidOutput,this->tempSetPoint,this->pid.GetSampleTime(),15);
     //this->autoTuner=new PID_AutoTune(&this->temperature,&this->pidOutput,this->tempSetPoint,this->pid.GetSampleTime(),15);
-    this->run[HeaterMode::PID_RUN]=&Heater::RunPid;
-    this->run[HeaterMode::ATUNE_RUN]=&Heater::RunAutoTune;
     this->autoTuner.SetOutputRange(0,this->WindowSize);
     // Serial.print("Sample Time=");Serial.print(this->pid.GetSampleTime());
 }
@@ -29,8 +27,6 @@ Heater::Heater(){
     this->pid.SetOutputRange(0,this->WindowSize,true);
     this->autoTuner.Setup(&this->temperature,&this->pidOutput,this->tempSetPoint,this->pid.GetSampleTime(),15);
     //this->autoTuner=new PID_AutoTune(&this->temperature,&this->pidOutput,this->tempSetPoint,this->pid.GetSampleTime(),15);
-    this->run[HeaterMode::PID_RUN]=&Heater::RunPid;
-    this->run[HeaterMode::ATUNE_RUN]=&Heater::RunAutoTune;
     this->autoTuner.SetOutputRange(0,this->WindowSize);
 }
 
@@ -46,8 +42,8 @@ void Heater::SetConfiguration(const HeaterConfig& config){
     this->WindowSize=config.pidConfig.windowSize;
     this->tempSetPoint=DEFAULT_TEMPSP;
 
-    this->mode=HeaterMode::PID_RUN;
-    this->heaterState=HeaterState::Off;
+    this->mode=HeaterMode::HEATING;
+    this->heaterState=HeatState::Off;
 
     this->pid.Setup(&this->temperature,&this->pidOutput,&this->tempSetPoint,this->kp,this->ki,this->kd);
     this->pid.SetTuning(this->kp,this->ki,this->kd);
@@ -56,10 +52,14 @@ void Heater::SetConfiguration(const HeaterConfig& config){
     this->autoTuner.Setup(&this->temperature,&this->pidOutput,this->tempSetPoint,this->pid.GetSampleTime(),15);
     this->autoTuner.SetOutputRange(0,this->WindowSize);
 
-    this->run[HeaterMode::PID_RUN]=&Heater::RunPid;
-    this->run[HeaterMode::ATUNE_RUN]=&Heater::RunAutoTune;
+
     Serial.println(F("End of Heater Configuration Set"));
     // Serial.print("Sample Time=");Serial.print(this->pid.GetSampleTime());
+}
+
+void Heater::BuildStateMachine(){
+
+
 }
 
 void Heater::Initialize(){
@@ -71,13 +71,13 @@ void Heater::UpdatePid(HeaterTuneResult newPid){
 }
 
 void Heater::TurnOn(){
-    this->heaterState=HeaterState::On;
+    this->heaterState=HeatState::On;
     this->windowLastTime=millis();
     this->pid.Start();
 }
 
 void Heater::TurnOff(){
-    this->heaterState=HeaterState::Off;
+    this->heaterState=HeatState::Off;
 }
 
 void Heater::StartTuning(){
@@ -95,13 +95,13 @@ void Heater::SwitchMode(HeaterMode nextMode){
     if(this->mode!=nextMode){
         switch(this->mode){
             //Transition to Tuning
-            case HeaterMode::PID_RUN:{
+            case HeaterMode::HEATING:{
                 this->TurnOff();
                 this->mode=nextMode;
                 break;
             }
             //Transition to PID(Normal Operation)
-            case HeaterMode::ATUNE_RUN:{
+            case HeaterMode::ATUNE:{
                 this->StopTuning();
                 this->TurnOff();
                 this->mode=nextMode;
@@ -138,20 +138,20 @@ bool Heater::IsTuning(){
 void Heater::RunPid(){
     if(this->nextState.pidState!=this->state.pidState){
         switch(nextState.pidState){
-            case PIDState::WARMUP:{
-                if(state.pidState==PIDState::ON){
-                    this->pid.Stop();
-                }
+            case HeaterState::WARMUP:{
+                // if(state.pidState==PIDState::OFF){
+                //     this->pid.Start();
+                // }
                 break;
             }
-            case PIDState::ON:{
-                if(state.pidState==PIDState::WARMUP){
-                    this->pid.Start();
-                }
+            case HeaterState::ON:{
+                // if(state.pidState==PIDState::WARMUP){
+                //     this->pid.Start();
+                // }
                 break;
             }
-            case PIDState::OFF:{
-                this->pid.Stop();
+            case HeaterState::OFF:{
+                //this->pid.Stop();
                 break;
             }
         }
@@ -159,14 +159,14 @@ void Heater::RunPid(){
     }
     auto now=millis();
     this->Read();
-    if(this->heaterState==HeaterState::On){
-        if(this->pid.Run()){
-            this->windowLastTime=now;
-        }
-        this->OutputAction(now);
-    }else{
-        this->output.low();
-    }
+    // if(this->heaterState==HeaterState::On){
+    //     if(this->pid.Run()){
+    //         this->windowLastTime=now;
+    //     }
+    //     this->OutputAction(now);
+    // }else{
+    //     this->output.low();
+    // }
 }
 
 void Heater::RunAutoTune(){
@@ -270,5 +270,5 @@ bool Heater::TempOkay(){
 }
 
 void Heater::privateLoop(){
-    (this->*run[this->mode])();
+    //(this->*run[this->mode])();
 }
