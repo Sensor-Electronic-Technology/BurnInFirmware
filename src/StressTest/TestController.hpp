@@ -110,8 +110,7 @@ private:
     bool                    currentSet=false;   
     bool                    savedStateLoaded=false;
     TestFinsihedCallback    _finishedCallback=[](){_NOP();}; 
-    TestState               currentState=TestState::TEST_IDLE;
-    TestState               nextState=TestState::TEST_IDLE;
+
     
     
     

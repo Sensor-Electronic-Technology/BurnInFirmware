@@ -12,7 +12,7 @@
  * @param _kd derivitive gain
  */
 
-PID::PID(double* in,double *out,double *set,double _kp,double _ki,double _kd){
+PID::PID(float* in,float *out,float *set,float _kp,float _ki,float _kd){
     this->input=in;
     this->output=out;
     this->setpoint=set;
@@ -22,7 +22,7 @@ PID::PID(double* in,double *out,double *set,double _kp,double _ki,double _kd){
 
 }
 
-void PID::Setup(double* in,double *out,double *set,double _kp,double _ki,double _kd){
+void PID::Setup(float* in,float *out,float *set,float _kp,float _ki,float _kd){
     this->input=in;
     this->output=out;
     this->setpoint=set;
@@ -38,14 +38,14 @@ void PID::Setup(double* in,double *out,double *set,double _kp,double _ki,double 
  * @param _ki integral gain
  * @param _kd derivitive gain
  */
-void PID::SetTuning(double _kp,double _ki,double _kd){
+void PID::SetTuning(float _kp,float _ki,float _kd){
     if(_kp<0 || _ki<0 || _kd<0){
         return;
     }
     if(ki==0){
         this->outputSum=0;
     }
-    double sampleSec=this->sampleTime/1e6;
+    float sampleSec=this->sampleTime/1e6;
     this->dispKd=_kd;
     this->dispKp=_kp;
     this->dispKi=_ki;
@@ -62,7 +62,7 @@ void PID::SetTuning(double _kp,double _ki,double _kd){
  * @param relayCntrl whether out not this is relay output. If it is the sample time is set to the max x1000
  * This implies the output range is a time window
  */
-void PID::SetOutputRange(double _min,double _max,bool relayCntrl){
+void PID::SetOutputRange(float _min,float _max,bool relayCntrl){
     if(_min>=_max){
         return;
     }
@@ -81,7 +81,7 @@ void PID::SetOutputRange(double _min,double _max,bool relayCntrl){
  */
 void PID::SetSampleTime(unsigned long newSampleTime){
     if(newSampleTime>0){
-        double ratio=newSampleTime/this->sampleTime;
+        float ratio=newSampleTime/this->sampleTime;
         this->ki*=ratio;
         this->kd/=ratio;
         this->sampleTime=newSampleTime;
@@ -131,9 +131,9 @@ bool PID::Run(){
     auto now=micros();
     auto dt=now-lastTime;
     if(dt>=sampleTime){
-        double in,din,dErr;
-        double peTerm,pmTerm;
-        double iTermOut;
+        float in,din,dErr;
+        float peTerm,pmTerm;
+        float iTermOut;
 
         in=*input;
         din=in-lastInput;

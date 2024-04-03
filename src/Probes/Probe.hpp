@@ -8,11 +8,11 @@
 using namespace components;
 
 typedef struct ProbeResult{
-	double voltage=0;
-	double current=0;
+	float voltage=0;
+	float current=0;
 	bool okay=false;
 
-	void check(double currentPercent){
+	void check(float currentPercent){
 		okay=(current>=(current*currentPercent));
 	}
 

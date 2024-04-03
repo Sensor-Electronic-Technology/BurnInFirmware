@@ -10,7 +10,7 @@ public:
     HeaterTuneResult results[HEATER_COUNT];
     
     void Clear(){
-        for(int i=0;i<HEATER_COUNT;i++){
+        for(uint8_t i=0;i<HEATER_COUNT;i++){
             this->results[i].clear();
         }
     }
@@ -26,7 +26,7 @@ public:
             }
         }else{
             JsonArray turnResultsJson=(*packet)[F("AutoTuneResults")].as<JsonArray>();
-            for(int i=0;i<HEATER_COUNT;i++){
+            for(uint8_t i=0;i<HEATER_COUNT;i++){
                 JsonObject resultJson=turnResultsJson[i].as<JsonObject>();
                 resultJson[F("HeaterNumber")]=results[i].heaterNumber;
                 resultJson[F("kp")]=results[i].kp;
@@ -51,10 +51,10 @@ public:
 
 class NtcConfig{
 public:
-	double aCoeff,bCoeff,cCoeff;
-	int Pin;
-	double fWeight;
-	NtcConfig(int pin=0,double a=0,double b=0,double c=0,double fweight=DEFAULT_FWEIGHT)
+	float aCoeff,bCoeff,cCoeff;
+	uint8_t Pin;
+	float fWeight;
+	NtcConfig(uint8_t pin=0,float a=0,float b=0,float c=0,float fweight=DEFAULT_FWEIGHT)
 			:Pin(pin),aCoeff(a),bCoeff(b),cCoeff(c),fWeight(fweight){
 	}
     void Deserialize(JsonObject config){
@@ -78,10 +78,10 @@ public:
 
 class PidConfig{
 public:
-	double kp,kd,ki;
+	float kp,kd,ki;
 	unsigned long windowSize;
 
-    PidConfig(double _kp=KP_DEFAULT,double _ki=KI_DEFAULT,double _kd=KD_DEFAULT,unsigned long window=DEFAULT_WINDOW)
+    PidConfig(float _kp=KP_DEFAULT,float _ki=KI_DEFAULT,float _kd=KD_DEFAULT,unsigned long window=DEFAULT_WINDOW)
     :kp(_kp),ki(_ki),kd(_kd),windowSize(window){  }
 
     void Serialize(JsonObject *pidJson){
@@ -103,17 +103,17 @@ public:
 
 class HeaterConfig{
 public:
-	double tempDeviation;
-	int Pin;
-	int HeaterId;
+	float tempDeviation;
+	uint8_t Pin;
+	uint8_t HeaterId;
 	NtcConfig ntcConfig;
     PidConfig pidConfig;
 	HeaterConfig(
 		const NtcConfig& ntc_config,
         const PidConfig& pid_config,
-        int id=0,
-        int pin=0,
-		double tempDev=DEFAULT_TEMP_DEV)
+        uint8_t id=0,
+        uint8_t pin=0,
+		float tempDev=DEFAULT_TEMP_DEV)
 			:HeaterId(id),Pin(pin),pidConfig(pidConfig),ntcConfig(ntc_config),
 			tempDeviation(tempDev){	}
 
@@ -173,14 +173,14 @@ public:
     virtual void Serialize(JsonDocument *doc,bool initialize) override{
         if(initialize){
             auto heaterJsonConfigs=(*doc)[F("HeaterConfigurations")].to<JsonArray>();
-            for(int i=0;i<HEATER_COUNT;i++){
+            for(uint8_t i=0;i<HEATER_COUNT;i++){
                 auto heaterJsonConfig = heaterJsonConfigs.add<JsonObject>();
                 this->heaterConfigs[i].Serialize(&heaterJsonConfig,true);
                 
             }
         }else{
             auto heaterJsonConfigs=(*doc)[F("HeaterConfigurations")].as<JsonArray>();
-            for(int i=0;i<HEATER_COUNT;i++){
+            for(uint8_t i=0;i<HEATER_COUNT;i++){
                 auto heaterJsonConfig = heaterJsonConfigs[i].as<JsonObject>();
                 this->heaterConfigs[i].Serialize(&heaterJsonConfig,false);
             }
@@ -191,14 +191,14 @@ public:
     virtual void Serialize(JsonObject *packet,bool initialize){
         if(initialize){
             auto heaterJsonConfigs=(*packet)[F("HeaterConfigurations")].to<JsonArray>();
-            for(int i=0;i<HEATER_COUNT;i++){
+            for(uint8_t i=0;i<HEATER_COUNT;i++){
                 auto heaterJsonConfig = heaterJsonConfigs.add<JsonObject>();
                 this->heaterConfigs[i].Serialize(&heaterJsonConfig,true);
                 
             }
         }else{
             auto heaterJsonConfigs=(*packet)[F("HeaterConfigurations")].as<JsonArray>();
-            for(int i=0;i<HEATER_COUNT;i++){
+            for(uint8_t i=0;i<HEATER_COUNT;i++){
                 auto heaterJsonConfig = heaterJsonConfigs[i].as<JsonObject>();
                 this->heaterConfigs[i].Serialize(&heaterJsonConfig,false);
             }
@@ -208,7 +208,7 @@ public:
 
     virtual void Deserialize(JsonDocument &doc) override{
         auto heaterJsonConfigs=doc[F("HeaterConfigurations")].as<JsonArray>();
-        for(int i=0;i<HEATER_COUNT;i++){
+        for(uint8_t i=0;i<HEATER_COUNT;i++){
             JsonObject heaterJson=heaterJsonConfigs[i].as<JsonObject>();
             this->heaterConfigs[i].Deserialize(heaterJson);   
         }
@@ -217,7 +217,7 @@ public:
 
     virtual void Deserialize(JsonObject &packet) override{
         auto heaterJsonConfigs=packet[F("HeaterConfigurations")].as<JsonArray>();
-        for(int i=0;i<HEATER_COUNT;i++){
+        for(uint8_t i=0;i<HEATER_COUNT;i++){
             JsonObject heaterJson=heaterJsonConfigs[i].as<JsonObject>();
             this->heaterConfigs[i].Deserialize(heaterJson);   
         }

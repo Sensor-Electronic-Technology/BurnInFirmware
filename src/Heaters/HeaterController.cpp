@@ -6,20 +6,12 @@ HeaterController::HeaterController(const HeaterControllerConfig& config)
     this->tuningCompleteCbk=[&](HeaterTuneResult result){
         this->TuningComplete(result);
     };
-    this->responseCbk=[&](Response response){
-        this->HandleResponse(response);
-    };
-    ComHandler::MapHeaterResponseCallback(this->responseCbk);
 
-    // for(int i=0;i<HEATER_COUNT;i++){
-    //     Heater* heater=new Heater(config.heaterConfigs[i]);
-    //     heater->MapTurningComplete(this->tuningCompleteCbk);
-    //     this->heaters.push_back(heater);
-    //     RegisterChild(heater);
-    //     HeaterResult result;
-    //     this->results.push_back(result);
-    // }
-    for(int i=0;i<HEATER_COUNT;i++){ 
+    ComHandler::MapHeaterResponseCallback([&](Response response){
+        this->HandleResponse(response);
+    });
+
+    for(uint8_t i=0;i<HEATER_COUNT;i++){ 
         //Heater heater(config.heaterConfigs[i]);
         this->heaters[i]=Heater(config.heaterConfigs[i]);
         // HeaterResult result;
@@ -27,49 +19,41 @@ HeaterController::HeaterController(const HeaterControllerConfig& config)
         //this->heaters[i].SetConfiguration(config.heaterConfigs[i]);
     }
 
-    for(int i=0;i<HEATER_COUNT;i++){ 
+    for(uint8_t i=0;i<HEATER_COUNT;i++){ 
         this->heaters[i].MapTurningComplete(this->tuningCompleteCbk);
         RegisterChild(this->heaters[i]);
     }
-
 }
 
 HeaterController::HeaterController():Component(){
     this->tuningCompleteCbk=[&](HeaterTuneResult result){
         this->TuningComplete(result);
     };
-    this->responseCbk=[&](Response response){
+
+    ComHandler::MapHeaterResponseCallback([&](Response response){
         this->HandleResponse(response);
-    };
-    ComHandler::MapHeaterResponseCallback(this->responseCbk);   
+    });
+
 }
 
 void HeaterController::Setup(const HeaterControllerConfig& config){
-    //Serial.println(F("HeaterController Setup"));
-    for(int i=0;i<HEATER_COUNT;i++){ 
-        //Heater heater(config.heaterConfigs[i]);
+    for(uint8_t i=0;i<HEATER_COUNT;i++){ 
         this->heaters[i]=Heater(config.heaterConfigs[i]);
-        // HeaterResult result;
         this->results[i]=HeaterResult();
-        //this->heaters[i].SetConfiguration(config.heaterConfigs[i]);
     }
 
-    for(int i=0;i<HEATER_COUNT;i++){ 
+    for(uint8_t i=0;i<HEATER_COUNT;i++){ 
         this->heaters[i].MapTurningComplete(this->tuningCompleteCbk);
         RegisterChild(this->heaters[i]);
     }
-
-    //Serial.println(F("End HeaterController Setup"));
 }
 
 void HeaterController::Initialize(){
-    //Serial.println(F("Heater Controller Initialize"));
-    for(int i=0;i<HEATER_COUNT;i++){ 
+    for(uint8_t i=0;i<HEATER_COUNT;i++){ 
         this->heaters[i].Initialize();
         
     }
-    //Serial.println(F("Heater Controller Initialize ReadTemperatures"));
-    for(int i=0;i<100;i++){
+    for(uint8_t i=0;i<100;i++){
         this->ReadTemperatures();
     }
 
@@ -81,19 +65,18 @@ void HeaterController::Initialize(){
         this->ReadTemperatures();
     },this->readInterval);
     RegisterChild(this->readTimer);
-    //Serial.println(F("Heater Controller Initialize Completed"));
-    //RegisterChild(this->printTimer);
 }
 
 void HeaterController::HandleResponse(Response response){
     if(response==Response::HEATER_SAVE){
         //update and save configuration
         //then request restart
-        for(int i=0;i<HEATER_COUNT;i++){
+        for(uint8_t i=0;i<HEATER_COUNT;i++){
             auto newPid=this->tuningResults.results[i];
             this->configuration.UpdateHeaterPid(newPid);
             this->heaters[newPid.heaterNumber-1].UpdatePid(newPid);
             FileManager::Save(&this->configuration,PacketType::HEATER_CONFIG);
+            //Send new config to PC!  ComHandler::SendConfig(&config);  //I thought i had this already
         }
     }else if(response==Response::HEATER_CANCEL){
         //clear tuning results
@@ -104,14 +87,19 @@ void HeaterController::HandleResponse(Response response){
 
 void HeaterController::TuningComplete(HeaterTuneResult result){
     if(result.heaterNumber<HEATER_COUNT && result.heaterNumber>-1){
+        HeaterTunePacket tuning;
+        //TODO: replace this->tuningResults with HeaterTunePacket
         this->tuningResults.results[result.heaterNumber-1]=result;
+        tuning.set(result.heaterNumber-1,result);
         bool tuningComplete=true;
-        for(int i=0;i<HEATER_COUNT;i++){
+        for(uint8_t i=0;i<HEATER_COUNT;i++){
             tuningComplete&=this->tuningResults.results[i].complete;
         }
         if(tuningComplete){
             //Send values
             this->tuningCompleted=true;
+            this->tuningStateMachine.triggerEvent(TUNE_COMPLETE);
+            ComHandler::MsgPacketSerializer(tuning,PacketType::HEATER_TUNE_COMPLETE);
             //ComHandler::SendRequest(PacketType::HEATER_REQUEST,F("Tuning Completed. Save new PID parameters?",this->tuningResults);
         }else{
             if(result.complete){
@@ -123,44 +111,36 @@ void HeaterController::TuningComplete(HeaterTuneResult result){
     }
 }
 
-void HeaterController::ChangeMode(HeaterMode nextMode){
-    if(this->heaterMode!=nextMode){
-        for(int i=0;i<HEATER_COUNT;i++){
-            this->heaters[i].SwitchMode(nextMode);
-        }
-        this->isTuning=false;
-    }
-}
-
-void HeaterController::ChangeSetPoint(int setPoint){
-    for(int i=0;i<HEATER_COUNT;i++){
+void HeaterController::ChangeSetPoint(uint8_t setPoint){
+    for(uint8_t i=0;i<HEATER_COUNT;i++){
         this->heaters[i].ChangeSetpoint(setPoint);
     }
 }
 
 void HeaterController::StartTuning(){
     this->isTuning=true;
-    for(int i=0;i<HEATER_COUNT;i++){
+    for(uint8_t i=0;i<HEATER_COUNT;i++){
         this->heaters[i].StartTuning();
     }
 }
 
 void HeaterController::StopTuning(){
     this->isTuning=false;
-    for(int i=0;i<HEATER_COUNT;i++){
+    for(uint8_t i=0;i<HEATER_COUNT;i++){
         this->heaters[i].StopTuning();
     }
 }
 
-void HeaterController::RunAutoTune(){
-    for(int i=0;i<HEATER_COUNT;i++){
+void HeaterController::TuningRun(){
+    this->isTuning=true;
+    for(uint8_t i=0;i<HEATER_COUNT;i++){
         this->heaters[i].RunAutoTune();
-        this->isTuning&=(bool)(this->heaters[i].IsTuning());
+        this->isTuning&=this->heaters[i].IsTuning();
     }
 }
 
 void HeaterController::Run(){
-    for(int i=0;i<HEATER_COUNT;i++){
+    for(uint8_t i=0;i<HEATER_COUNT;i++){
         this->heaters[i].RunPid();
     }
 }
@@ -175,20 +155,20 @@ void HeaterController::ToggleHeaters(){
 
 void HeaterController::TurnOn(){
     this->heaterState=HeatState::On;
-    for(int i=0;i<HEATER_COUNT;i++){
+    for(uint8_t i=0;i<HEATER_COUNT;i++){
         this->heaters[i].TurnOn();
     }
 }
 
 void HeaterController::TurnOff(){
     this->heaterState=HeatState::Off;
-    for(int i=0;i<HEATER_COUNT;i++){
+    for(uint8_t i=0;i<HEATER_COUNT;i++){
         this->heaters[i].TurnOff();
     }
 }
 
 void HeaterController::ReadTemperatures(){
-    for(int i=0;i<HEATER_COUNT;i++){
+    for(uint8_t i=0;i<HEATER_COUNT;i++){
         results[i]=heaters[i].Read();
         //results[i]=heaters[i]->GetHeaterResult();
     }
@@ -203,7 +183,7 @@ bool HeaterController::TempOkay(){
 }
 
 void HeaterController::GetResults(HeaterResult* fill){
-    for(int i=0;i<HEATER_COUNT;i++){
+    for(uint8_t i=0;i<HEATER_COUNT;i++){
        fill[i]=this->heaters[i].GetHeaterResult();
     }
 }
@@ -214,6 +194,14 @@ void HeaterController::Print(){
     Serial.print(" , H[3]=");Serial.println(results[0].temperature);
 }
 
+void HeaterController::RunHeating(){
+    this->heatersStateMachine.Run();
+}
+
+void HeaterController::RunAutoTune(){
+    this->tuningStateMachine.Run();
+}
+
 void HeaterController::privateLoop(){
-    
+    this->modeStateMachine.Run();
 }

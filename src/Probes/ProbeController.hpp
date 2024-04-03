@@ -28,7 +28,7 @@ private:
     ProbeResult     results[PROBE_COUNT];
     CurrentSelector currentSelector;
     CurrentValue    testCurrent;
-    double          currentPercent;
+    uint8_t           currentPercent;
     Timer           readTimer;
     void privateLoop(){ }
 

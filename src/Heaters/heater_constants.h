@@ -1,14 +1,19 @@
 #pragma once
 #include <Arduino.h>
 #include <ArduinoComponents.h>
+#include "../Serializable.hpp"
 
 
 typedef components::Function<void(void)> TransitionActionHandler;
 
+#define HEATER_COUNT                    3
+#define TEMP_INTERVAL                   100ul 
+#define DEFAULT_TEMP_DEV                0.1
+
 struct HeaterTuneResult{
     int heaterNumber=-1;
     bool complete=false;
-    double kp=0,ki=0,kd=0;
+    float kp=0,ki=0,kd=0;
     void clear(){
         this->heaterNumber=-1;
         this->complete=false;
@@ -18,6 +23,23 @@ struct HeaterTuneResult{
     }
 };
 
+struct HeaterTunePacket:Serializable{
+    HeaterTuneResult results[HEATER_COUNT];
+    void clear(){
+        for(uint8_t i=0;i<3;i++){
+            this->results[i].clear();
+        }
+    }
+    void set(uint8_t index,const HeaterTuneResult& result){
+        this->results[index]=result;
+    }
+    
+    virtual void Deserialize(JsonObject &packet);
+    virtual void Deserialize(JsonDocument &doc);
+    virtual void Serialize(JsonDocument *doc,bool initialize);
+    virtual void Serialize(JsonObject *packet,bool initialize);
+};
+
 enum TuneState:uint8_t{
     TUNE_IDLE,      //Waiting for start command
     TUNE_RUNNING,   //Tuning in progress
@@ -25,14 +47,53 @@ enum TuneState:uint8_t{
 };
 
 enum HeaterState:uint8_t{
-    WARMUP, //Warmup tempOkay=false;
-    ON, //PID ON and warmup complete
-    OFF, //Heater off
+    HEATER_OFF=0, //Heater off
+    HEATER_WARMUP=1, //Warmup tempOkay=false;
+    HEATER_ON=2, //PID ON and warmup complete
+
+};
+
+enum HeaterTransition:uint8_t{
+    HEATER_OFF_TO_WARMUP=0,  //Start Warmup
+    HEATER_WARMUP_TO_ON=1,  //TempOkay=true
+    HEATER_ON_TO_OFF=2,    //Turn Off
+    HEATER_WARMUP_TO_OFF=3 //Turn Off
+};
+
+enum HeaterTrigger:uint8_t{
+    START_HEATERS,
+    TEMP_REACHED,
+    STOP_HEATERS
+};
+
+enum TuneTrigger:uint8_t{
+    TUNE_START,     //Start Tuning
+    TUNE_FINISHED,  //Tuning Complete
+    TUNE_STOP,      //Stop Tuning->cancel before complete
+    TUNE_SAVE,     //Save Tuning Results
+    TUNE_CANCEL   //Discard Tuning Results
+};
+
+enum TuneTransition:uint8_t{
+    TUNE_IDLE_TO_RUNNING,  //Start Tuning
+    TUNE_RUNNING_TO_IDLE,  //cancel tuning
+    TUNE_RUNNING_TO_COMPLETE,  //Tuning Complete
+    TUNE_COMPLETE_TO_IDLE  //Save or discard tune results
 };
 
 enum HeaterMode:uint8_t{
     HEATING=0,      //Normal Heater Mode
     ATUNE=1     //AutoTune Mode
+};
+
+enum ModeTrigger:uint8_t{
+    ATUNE_START,
+    HEATING_START
+};
+
+enum ModeTransition:uint8_t{
+    MODE_HEATING_TO_ATUNE=0,  //Start AutoTune,
+    MODE_ATUNE_TO_HEATING=1  //Stop AutoTune, Start Heating
 };
 
 union HeaterStateSelector{
@@ -67,9 +128,7 @@ typedef components::Function<void(HeaterTuneResult)> TuningCompleteCallback;
 #define PIN_HEATER2_TEMP		       A7
 #define PIN_HEATER3_TEMP		       A8
 
-#define HEATER_COUNT                    3
-#define TEMP_INTERVAL                   100ul 
-#define DEFAULT_TEMP_DEV                0.1
+
 
 //Temperature Constants
 #define KELVIN_RT                       273.15

@@ -10,15 +10,15 @@
 
 class SerialDataOutput:public Serializable{
 public:
-     double voltages[PROBE_COUNT]={0,0,0,0,0,0};
-     double currents[PROBE_COUNT]={0,0,0,0,0,0};
-     double temperatures[HEATER_COUNT]={0,0,0};
-     double probeRuntimes[PROBE_COUNT]={0,0,0,0,0,0};
+     float voltages[PROBE_COUNT]={0,0,0,0,0,0};
+     float currents[PROBE_COUNT]={0,0,0,0,0,0};
+     float temperatures[HEATER_COUNT]={0,0,0};
+     float probeRuntimes[PROBE_COUNT]={0,0,0,0,0,0};
      bool heaterStates[HEATER_COUNT];
   
      bool running=false,paused=false;
-     int currentSP=150;
-     double temperatureSP=85;
+     uint8_t currentSP=150;
+     float temperatureSP=85;
      long runTimeSecs=54234;
      long elapsedSecs=12345;
 
@@ -26,14 +26,14 @@ public:
             const Array<HeaterResult,HEATER_COUNT>& heaterResults,
             const BurnInTimer& burnTimer){
         
-        for(int i=0;i<PROBE_COUNT;i++){
+        for(uint8_t i=0;i<PROBE_COUNT;i++){
             auto result=probeResults[i];
             this->voltages[i]=result.voltage;
             this->currents[i]=result.current;
             this->probeRuntimes[i]=burnTimer.testTimer.probeRunTimes[i];
         }
 
-        for(int i=0;i<HEATER_COUNT;i++){
+        for(uint8_t i=0;i<HEATER_COUNT;i++){
             auto result=heaterResults[i];
             this->heaterStates[i]=result.state;
             this->temperatures[i]=result.temperature;
@@ -51,7 +51,7 @@ public:
         JsonArray t_array=doc[F("Temperatures")].as<JsonArray>();
         JsonArray rt_array=doc[F("ProbeRuntimes")].as<JsonArray>();
         JsonArray h_array=doc[F("HeaterStates")].as<JsonArray>();
-        for(int i=0;i<PROBE_COUNT;i++){
+        for(uint8_t i=0;i<PROBE_COUNT;i++){
             this->voltages[i]=v_array[i];
             this->currents[i]=c_array[i];
             this->probeRuntimes[i]=rt_array[i];
@@ -74,7 +74,7 @@ public:
         JsonArray t_array=packet[F("Temperatures")].as<JsonArray>();
         JsonArray rt_array=packet[F("ProbeRuntimes")].as<JsonArray>();
         JsonArray h_array=packet[F("HeaterStates")].as<JsonArray>();
-        for(int i=0;i<PROBE_COUNT;i++){
+        for(uint8_t i=0;i<PROBE_COUNT;i++){
             this->voltages[i]=v_array[i];
             this->currents[i]=c_array[i];
             this->probeRuntimes[i]=rt_array[i];
@@ -110,7 +110,7 @@ public:
             rt_array=(*doc)[F("ProbeRuntimes")].as<JsonArray>();
             h_array=(*doc)[F("HeaterStates")].as<JsonArray>();
         }
-        for(int i=0;i<PROBE_COUNT;i++){
+        for(uint8_t i=0;i<PROBE_COUNT;i++){
             v_array[i]=this->voltages[i];
             c_array[i]=this->currents[i];
             rt_array[i]=this->probeRuntimes[i];
@@ -147,7 +147,7 @@ public:
             rt_array=(*packet)[F("ProbeRuntimes")].as<JsonArray>();
             h_array=(*packet)[F("HeaterStates")].as<JsonArray>();
         }
-        for(int i=0;i<PROBE_COUNT;i++){
+        for(uint8_t i=0;i<PROBE_COUNT;i++){
             v_array[i]=this->voltages[i];
             c_array[i]=this->currents[i];
             rt_array[i]=this->probeRuntimes[i];

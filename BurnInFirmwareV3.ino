@@ -1,6 +1,5 @@
 #include <ArduinoJson.h>
 #include <SD.h>
-#include <Array.h>
 #include "src/constants.h"
 #include "src/Heaters/heater_constants.h"
 #include "src/Communication/ComHandler.hpp"

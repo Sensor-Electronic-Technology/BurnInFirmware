@@ -3,6 +3,7 @@
 CurrentSensor::CurrentSensor(PinNumber pin):Component(),
     currentIn(pin),
     fWeight(DEFAULT_FWEIGHT){
+    pinMode(this->currentIn,INPUT);
     this->current=0;
 }
 
@@ -12,9 +13,10 @@ CurrentSensor::CurrentSensor():Component(),
 }
 
 void CurrentSensor::Setup(const CurrentSensorConfig& config){
-    this->currentIn.setAnalogPin(config.Pin);
+    this->currentIn=config.Pin;
     this->fWeight=config.fWeight;
     this->current-0;
+    pinMode(this->currentIn,INPUT);
 }
 
 CurrentSensor::CurrentSensor(const CurrentSensorConfig& config)
@@ -22,8 +24,8 @@ CurrentSensor::CurrentSensor(const CurrentSensorConfig& config)
         fWeight(config.fWeight){
 }
 
-double CurrentSensor::ReadCurrent() {
-    int value=this->currentIn.read();
+float CurrentSensor::ReadCurrent() {
+    int value=analogRead(this->currentIn);
     value=map(value,ADC_MIN,ADC_MAX,CURRENT_MIN,CURRENT_MAX);
     this->current+=(((float)value)-this->current)*this->fWeight;
     return this->current;

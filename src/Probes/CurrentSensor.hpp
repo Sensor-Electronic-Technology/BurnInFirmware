@@ -1,5 +1,6 @@
 #pragma once
 #include <ArduinoComponents.h>
+#include <Arduino.h>
 #include "ProbeConfiguration.hpp"
 #include "probe_constants.h"
 
@@ -11,13 +12,13 @@ public:
 	CurrentSensor(const CurrentSensorConfig& config);
 	CurrentSensor();
 	void Setup(const CurrentSensorConfig& config);
-	double ReadCurrent();
+	float ReadCurrent();
 	float GetCurrent();
 
 private:
-	AnalogInput currentIn;
-	double current=0;
-	double fWeight=1;
+	uint8_t currentIn;
+	float current=0;
+	float fWeight=1;
 
 	void privateLoop() {
 		//this->ReadCurrent();

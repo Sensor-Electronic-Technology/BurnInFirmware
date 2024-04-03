@@ -8,10 +8,10 @@
  */
 class PID{
 public:
-    PID(double* in=nullptr,double *out=nullptr,double *set=nullptr,double _kp=0,double _ki=0,double _kd=0);
-    void Setup(double* in,double *out,double *set,double _kp,double _ki,double _kd);
-    void SetTuning(double _kp,double _ki,double _kd);
-    void SetOutputRange(double _min,double _max,bool relayCntrl);
+    PID(float* in=nullptr,float *out=nullptr,float *set=nullptr,float _kp=0,float _ki=0,float _kd=0);
+    void Setup(float* in,float *out,float *set,float _kp,float _ki,float _kd);
+    void SetTuning(float _kp,float _ki,float _kd);
+    void SetOutputRange(float _min,float _max,bool relayCntrl);
     void SetSampleTime(unsigned long newSampleTime);
     unsigned long GetSampleTime();
     void Start();
@@ -19,17 +19,17 @@ public:
     bool Run();
 
 private:
-    double max;
-    double min;
-    double kp,ki,kd;
-    double dispKp,dispKi,dispKd;
-    double pTerm,iTerm,dTerm;
-    double error;
-    double outputSum;
-    double sampleTime;
+    float max;
+    float min;
+    float kp,ki,kd;
+    float dispKp,dispKi,dispKd;
+    float pTerm,iTerm,dTerm;
+    float error;
+    float outputSum;
+    float sampleTime;
     unsigned long lastTime;
-    double lastInput;
-    double lastError;
+    float lastInput;
+    float lastError;
 
     //relay control
     unsigned long lastRelayCheck;
@@ -37,6 +37,6 @@ private:
     unsigned long windowStart;
 
 
-    double *output,*input,*setpoint;
+    float *output,*input,*setpoint;
 
 };

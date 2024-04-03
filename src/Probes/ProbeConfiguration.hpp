@@ -4,9 +4,9 @@
 #include "probe_constants.h"
 
 struct CurrentSelectorConfig{
-    int pin120mA=PIN_CURRENT_120mA;
-    int pin60mA=PIN_CURRENT_60mA;
-    int currentPin=PIN_CURRENT;
+    uint8_t pin120mA=PIN_CURRENT_120mA;
+    uint8_t pin60mA=PIN_CURRENT_60mA;
+    uint8_t currentPin=PIN_CURRENT;
     CurrentValue SetCurrent=DEFAULT_CURRENT;
     bool switchEnabled=true;
     
@@ -28,11 +28,11 @@ struct CurrentSelectorConfig{
 
 
 struct CurrentSensorConfig{
-    CurrentSensorConfig(int pin=0,double fweight=DEFAULT_FWEIGHT)
+    CurrentSensorConfig(uint8_t pin=0,float fweight=DEFAULT_FWEIGHT)
 	:Pin(pin),fWeight(fweight){}
 	
-    int Pin;
-	double fWeight;
+    uint8_t Pin;
+	float fWeight;
 
     void Deserialize(JsonObject configJson){
         this->Pin=configJson[F("Pin")];
@@ -49,9 +49,9 @@ struct CurrentSensorConfig{
 };
 
 struct VoltageSensorConfig{
-	int Pin;
-	double fWeight;
-	VoltageSensorConfig(int pin=0,double fweight=DEFAULT_FWEIGHT)
+	uint8_t Pin;
+	float fWeight;
+	VoltageSensorConfig(uint8_t pin=0,float fweight=DEFAULT_FWEIGHT)
 		:Pin(pin),fWeight(fweight){}
 
     void Deserialize(JsonObject &configJson){
@@ -100,9 +100,9 @@ struct ProbeConfig{
 
 class ProbeControllerConfig:public Serializable{
 public:
-	int readInterval=PROBE_READINTERVAL;
+	uint8_t readInterval=PROBE_READINTERVAL;
     CurrentValue probeTestCurrent;
-    double probeCurrentPercent;
+    uint8_t probeCurrentPercent;
     CurrentSelectorConfig   currentSelectConfig;
     
 	ProbeConfig	probeConfigs[PROBE_COUNT]={
@@ -120,7 +120,7 @@ public:
             //to<JsonArray>() creates a new memory pointer
             selectJson=(*doc)[F("CurrentSelectConfig")].to<JsonObject>();
             JsonArray probeJsonConfigs = (*doc)[F("ProbeConfigurations")].to<JsonArray>();
-            for(int i=0;i<PROBE_COUNT;i++){
+            for(uint8_t i=0;i<PROBE_COUNT;i++){
                 auto probeConfig=probeJsonConfigs.add<JsonObject>();
                 this->probeConfigs[i].Serialize(&probeConfig,true);
             }
@@ -128,7 +128,7 @@ public:
             //as<JsonArray>() points to existing memory block
             selectJson=(*doc)[F("CurrentSelectConfig")].as<JsonObject>();
             JsonArray probeJsonConfigs = (*doc)[F("ProbeConfigurations")].as<JsonArray>();
-            for(int i=0;i<PROBE_COUNT;i++){
+            for(uint8_t i=0;i<PROBE_COUNT;i++){
                 auto probeConfig=probeJsonConfigs[i].as<JsonObject>();
                 this->probeConfigs[i].Serialize(&probeConfig,false);
             }
@@ -146,7 +146,7 @@ public:
             //to creates a new memory pointer
             selectJson=(*packet)[F("CurrentSelectConfig")].to<JsonObject>();
             JsonArray probeJsonConfigs = (*packet)[F("ProbeConfigurations")].to<JsonArray>();
-            for(int i=0;i<PROBE_COUNT;i++){
+            for(uint8_t i=0;i<PROBE_COUNT;i++){
                 auto probeConfig=probeJsonConfigs.add<JsonObject>();
                 this->probeConfigs[i].Serialize(&probeConfig,true);
             }
@@ -154,7 +154,7 @@ public:
             //as points to existing memory block
             selectJson=(*packet)[F("CurrentSelectConfig")].as<JsonObject>();
             JsonArray probeJsonConfigs = (*packet)[F("ProbeConfigurations")].as<JsonArray>();
-            for(int i=0;i<PROBE_COUNT;i++){
+            for(uint8_t i=0;i<PROBE_COUNT;i++){
                 auto probeConfig=probeJsonConfigs[i].as<JsonObject>();
                 this->probeConfigs[i].Serialize(&probeConfig,false);
             }
@@ -169,7 +169,7 @@ public:
         JsonObject selectJson=doc[F("CurrentSelectConfig")].as<JsonObject>();
         this->currentSelectConfig.Deserialize(selectJson);
         auto probeJsonConfigs = doc[F("ProbeConfigurations")].as<JsonArray>();
-        for(int i=0;i<PROBE_COUNT;i++){
+        for(uint8_t i=0;i<PROBE_COUNT;i++){
             auto probeConfig=probeJsonConfigs[i].as<JsonObject>();
             this->probeConfigs[i].Deserialize(probeConfig);
         }
@@ -182,7 +182,7 @@ public:
         JsonObject selectJson=packet[F("CurrentSelectConfig")].as<JsonObject>();
         this->currentSelectConfig.Deserialize(selectJson);
         auto probeJsonConfigs = packet[F("ProbeConfigurations")].as<JsonArray>();
-        for(int i=0;i<PROBE_COUNT;i++){
+        for(uint8_t i=0;i<PROBE_COUNT;i++){
             auto probeConfig=probeJsonConfigs[i].as<JsonObject>();
             this->probeConfigs[i].Deserialize(probeConfig);
         }

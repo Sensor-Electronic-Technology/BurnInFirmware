@@ -21,7 +21,7 @@ struct TimerData{
         this->lastCheck=0ul;
         this->duration_secs=0ul;
         this->elapsed_secs=0ul;
-        for(int i=0;i<PROBE_COUNT;i++){
+        for(uint8_t i=0;i<PROBE_COUNT;i++){
             this->probeRunTimes[i]=0ul;
         }
     }
@@ -37,7 +37,7 @@ struct TimerData{
         }else{
             jsonPTimers=(*timerJson)[F("ProbeRuntimes")].as<JsonArray>();
         }
-        for(int i=0;i<PROBE_COUNT;i++){
+        for(uint8_t i=0;i<PROBE_COUNT;i++){
             jsonPTimers[i]=this->probeRunTimes[i];
         }
     }
@@ -48,7 +48,7 @@ struct TimerData{
         this->elapsed_secs=timerJson[F("ElapsedSecs")];
         this->duration_secs=timerJson[F("DurationSecs")];
         //this->timeOnSecs=timerJson[F("TimeOnSecs")];
-        for(int i=0;i<PROBE_COUNT;i++){
+        for(uint8_t i=0;i<PROBE_COUNT;i++){
             this->probeRunTimes[i]=timerJson[F("ProbeRuntimes")][i];
         }
     }

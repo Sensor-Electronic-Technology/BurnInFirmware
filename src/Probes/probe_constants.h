@@ -1,7 +1,7 @@
 #pragma once
 #include <Arduino.h>
 
-enum CurrentValue:int{
+enum CurrentValue:uint8_t{
     c150=150,
     c120=120,
     c060=60

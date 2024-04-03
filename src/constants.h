@@ -79,18 +79,16 @@ enum PacketType:uint8_t{
     MESSAGE=4,
     DATA=5,
     COMMAND=6,
-    HEATER_RESPONSE=7, //Pc sends save response
-    TEST_RESPONSE=8,  //PC sends continue test request
-    HEATER_REQUEST=9,  //Pc recieves AutoTuneValues and request save response
-    TEST_REQUEST=10,   //Firmware sends continue test request
-    ID_RECEIVE=11,     //Set station id
-    ID_REQUEST=12,     //Request station id-Send to PC
-    VER_RECIEVE=13,
-    VER_REQUEST=14,
-    INIT=15,
-    TEST_START_STATUS=16, //Notify PC that test has started
-    TEST_COMPLETED=17,    //Notify PC that test has completed
-    TEST_LOAD_START=18,   //Notify PC that test is starting from a load state
+    ID_RECEIVE=7,     //Set station id
+    ID_REQUEST=8,     //Request station id-Send to PC
+    VER_RECIEVE=9,
+    VER_REQUEST=10,
+    INIT=11,
+    TEST_START_STATUS=12, //Notify PC that test has started
+    TEST_COMPLETED=13,    //Notify PC that test has completed
+    TEST_LOAD_START=14,   //Notify PC that test is starting from a load state
+    HEATER_TUNE_COMPLETE=15,
+    HEATER_TUNE_RESPONSE=16,
 };
 
 const char* const prefixes[] PROGMEM = {
@@ -101,19 +99,19 @@ const char* const prefixes[] PROGMEM = {
     "M",    //4
     "D",    //5
     "COM",  //6
-    "HRES", //7
-    "TRES", //8
-    "HREQ", //9
-    "TREQ", //10
-    "IDREC",  //11
-    "IDREQ",   //12
-    "VERREC", //13
-    "VERREQ",  //14
-    "INIT",     //15
-    "TSTAT",     //16
-    "TCOMP",     //17
-    "TLOAD"      //18
+    "IDREC",  //7
+    "IDREQ",   //8
+    "VERREC",  //9
+    "VERREQ",  //10
+    "INIT",     //11
+    "TSTAT",     //12
+    "TCOMP",     //13
+    "TLOAD"      //14
+    "HTD"     //15 
+    "HTR"    //16
 };
+
+
 
 const char* const json_filenames[] PROGMEM = {
     "/hConfigs.txt",  //0
@@ -125,8 +123,6 @@ const char* const json_filenames[] PROGMEM = {
 enum Response{
     HEATER_SAVE=0,
     HEATER_CANCEL=1,
-    TEST_CONTINUE=2,
-    TEST_CANCEL=3
 };
 
 enum LogLevel:uint8_t{
@@ -165,22 +161,65 @@ enum SystemMessage:uint8_t{
     TEST_RUN_MODESW_ERR_MSG,
 };
 
-const char* const message_table[] PROGMEM={
-    "PID Auto-tune started",
-    "PID Auto-tune stopped",
-    "Station not in PID Auto-tune mode, switch modes then try again",
-    "Station mode switched to PID Autotune",
-    "Station mode switched to Normal",
-    "Station mode switch to Probe Testing",
-    "Modes cannot be switched while a test is running, reset or wait for test to finish",
+// const char* const message_table[] PROGMEM={
+//     "PID Auto-tune started",
+//     "PID Auto-tune stopped",
+//     "Station not in PID Auto-tune mode, switch modes then try again",
+//     "Station mode switched to PID Autotune",
+//     "Station mode switched to Normal",
+//     "Station mode switch to Probe Testing",
+//     "Modes cannot be switched while a test is running, reset or wait for test to finish",
 
-};
+// };
 
-const char* const log_file PROGMEM={"log.txt"};
-
-
+// const char* const log_file PROGMEM={"log.txt"};
 
 
+
+// enum PacketType:uint8_t{
+//     HEATER_CONFIG=0,
+//     PROBE_CONFIG=1,
+//     SYSTEM_CONFIG=2,
+//     SAVE_STATE=3,
+//     MESSAGE=4,
+//     DATA=5,
+//     COMMAND=6,
+//     HEATER_RESPONSE=7, //Pc sends save response
+//     TEST_RESPONSE=8,  //PC sends continue test request
+//     HEATER_REQUEST=9,  //Pc recieves AutoTuneValues and request save response
+//     TEST_REQUEST=10,   //Firmware sends continue test request
+//     ID_RECEIVE=11,     //Set station id
+//     ID_REQUEST=12,     //Request station id-Send to PC
+//     VER_RECIEVE=13,
+//     VER_REQUEST=14,
+//     INIT=15,
+//     TEST_START_STATUS=16, //Notify PC that test has started
+//     TEST_COMPLETED=17,    //Notify PC that test has completed
+//     TEST_LOAD_START=18,   //Notify PC that test is starting from a load state
+// };
+
+// const char* const prefixes[] PROGMEM = {
+//     "CH",   //0
+//     "CP",   //1
+//     "CS",   //2
+//     "ST",   //3
+//     "M",    //4
+//     "D",    //5
+//     "COM",  //6
+//     "HRES", //7
+//     "TRES", //8
+//     "HREQ", //9
+//     "TREQ", //10
+//     "IDREC",  //11
+//     "IDREQ",   //12
+//     "VERREC", //13
+//     "VERREQ",  //14
+//     "INIT",     //15
+//     "TSTAT",     //16
+//     "TCOMP",     //17
+//     "TLOAD"      //18
+
+// };
 
 
 

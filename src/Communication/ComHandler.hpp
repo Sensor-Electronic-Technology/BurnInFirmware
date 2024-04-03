@@ -1,6 +1,6 @@
 #pragma once
 #include <SD.h>
-#include <StreamUtils.h>
+
 #include <ArduinoJson.h>
 #include "../Heaters/HeaterConfiguration.hpp"
 #include "../Probes/ProbeConfiguration.hpp"
@@ -10,6 +10,7 @@
 #include "avr/pgmspace.h"
 
 #define ARDUINOJSON_DEFAULT_NESTING_LIMIT       50
+#define BUFFER_SIZE                             255
 
 class ComHandler{
 public:
@@ -56,14 +57,9 @@ public:
         instance->heaterResponseCb=cbk;
     }
 
-    static void MapTestResponseCallback(ResponseCallback cbk){
-        auto instance=ComHandler::Instance();
-        instance->testResponseCb=cbk;
-    }
-
     static void SendStartResponse(bool success,const __FlashStringHelper* msg){
         auto instance=ComHandler::Instance();
-        char buffer[255];
+        char buffer[BUFFER_SIZE];
         PGM_P msgMem=reinterpret_cast<PGM_P>(msg);
         strcpy_P(buffer,msgMem);
         instance->InstanceSendStartResponse(success,buffer);
@@ -71,7 +67,7 @@ public:
 
     static void SendStartFromLoad(bool success,const __FlashStringHelper* msg){
         auto instance=ComHandler::Instance();
-        char buffer[255];
+        char buffer[BUFFER_SIZE];
         PGM_P msgMem=reinterpret_cast<PGM_P>(msg);
         strcpy_P(buffer,msgMem);
         instance->InstanceSendTestStartFromLoad(success,buffer);
@@ -79,7 +75,7 @@ public:
 
     static void SendTestCompleted(const __FlashStringHelper* msg){
         auto instance=ComHandler::Instance();
-        char buffer[255];
+        char buffer[BUFFER_SIZE];
         PGM_P msgMem=reinterpret_cast<PGM_P>(msg);
         strcpy_P(buffer,msgMem);
         instance->InstanceSendTestCompleted(buffer);
@@ -87,10 +83,10 @@ public:
 
     static void HandleSerial(){
         auto instance=ComHandler::Instance();
+        JsonDocument serialEventDoc;
         if(instance->serialEventEnabled && instance->serial!=nullptr){
             instance->serialEventEnabled=false;
-            instance->serializerDoc.clear();
-            auto error=deserializeJson(instance->serialEventDoc,*instance->serial);
+            auto error=deserializeJson(serialEventDoc,*instance->serial);
             if(error){
                 //StationLogger::Log(LogLevel::CRITICAL_ERROR,true,false,F("Deserialization Failed.. Reason: \n %s",error.c_str());
                 instance->serialEventEnabled=true;
@@ -103,15 +99,15 @@ public:
 
     template<typename T> 
     static void MsgPacketSerializer(const T& data,PacketType packetType){
+        JsonDocument serializerDoc;
         auto instance=ComHandler::Instance();
         Derived_from<T,Serializable>();
-        instance->serializerDoc.clear();
-        instance->serializerDoc[F("Prefix")]=read_packet_prefix(packetType);
-        JsonObject packet=instance->serializerDoc[F("Packet")].to<JsonObject>();
+        serializerDoc.clear();
+        serializerDoc[F("Prefix")]=read_packet_prefix(packetType);
+        JsonObject packet=serializerDoc[F("Packet")].to<JsonObject>();
         data.Serialize(&packet,true);
-        serializeJson(instance->serializerDoc,*instance->serial);
+        serializeJson(serializerDoc,*instance->serial);
         instance->serial->println();
-        instance->serialEventDoc.clear();
     }
 
     template <typename T> 
@@ -129,6 +125,10 @@ public:
         auto instance=ComHandler::Instance();
         instance->InstanceSendInitMessage(message);
     }
+
+    // static void SendHeaterTuneResult(const HeaterTuneResult& result){
+    //     ComHandler::MsgPacketSerializer(result,PacketType::HEATER_TUNE_RESULT);
+    // }
 
 private:
     void MsgPacketDeserialize();
@@ -149,27 +149,22 @@ private:
     void InstanceSendRequest(PacketType packetType,const char* request,const T& data);
     void InstanceSendMessage(const char* message);
     void SendId();
-    void ReceiveId();
+    void ReceiveId(const JsonDocument& serialEventDoc);
     void SendVersion();
-    void ReceiveVersion();
+    void ReceiveVersion(const JsonDocument& serialEventDoc);
     void InstanceSendInitMessage(const char* message);
     void InstanceSendStartResponse(bool success,const char* message);
-
     void InstanceSendTestStartFromLoad(bool success,const char* message);
     void InstanceSendTestCompleted(const char* message);
 
 private:
     static ComHandler* instance;
-    JsonDocument serialEventDoc;
-    JsonDocument serializerDoc;
+    
     Stream* serial=nullptr;
-    bool printInitialized;
-    bool fileInitialized;
     bool serialEventEnabled;
     CommandCallback _commandCallback=[](StationCommand){};
     ResponseCallback heaterResponseCb=[](Response){};
-    ResponseCallback testResponseCb=[](Response){};
-    bool awaitingHeaterResponse=false;
-    bool awaitingTestResponse=false;
+    // ResponseCallback testResponseCb=[](Response){};
+
 
 };

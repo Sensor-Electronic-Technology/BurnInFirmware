@@ -70,8 +70,4 @@ private:
     FileResult InstanceLoadState(Serializable* config);
 private:
     static FileManager* instance;
-    JsonDocument doc;
-    File file;
-    File stateFile;
-    WriteBufferingStream fileWriteBuffer{file, 64};
 };

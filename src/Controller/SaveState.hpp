@@ -6,10 +6,10 @@
 
 struct SaveState:public Serializable{
     CurrentValue    setCurrent;
-    int             setTemperature;
+    uint8_t             setTemperature;
     TimerData       currentTimes;
 
-    void Set(CurrentValue current,int temp,const TimerData& timeData){
+    void Set(CurrentValue current,uint8_t temp,const TimerData& timeData){
         this->setCurrent=current;
         this->setTemperature=temp;
         this->currentTimes=timeData;

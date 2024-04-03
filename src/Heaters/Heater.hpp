@@ -3,13 +3,14 @@
 #include "heater_constants.h"
 #include "TemperatureSensor.hpp"
 #include "HeaterConfiguration.hpp"
+#include "../StateMachine/StateMachine.hpp"
 #include "../Logging/StationLogger.hpp"
 #include "./PID/PID.hpp"
 #include "./PID/PID_AutoTune.hpp"
 
 using namespace components;
 
-#define HEATER_DEBUG 	1
+
 
 enum HeatState {
 	On,
@@ -17,7 +18,7 @@ enum HeatState {
 };
 
 typedef struct HeaterResult{
-	double temperature=0;
+	float temperature=0;
 	bool state=false;
 	bool tempOkay=false;
 
@@ -38,47 +39,55 @@ public:
 	Heater(const HeaterConfig& config);
 	Heater();
 	void SetConfiguration(const HeaterConfig& config);
-	void BuildStateMachine();
 	void Initialize();
 	void UpdatePid(HeaterTuneResult newPid);
 	void SwitchMode(HeaterMode nextMode);
 	void TurnOn();
 	void TurnOff();
-	void StartTuning();
-	void StopTuning();
-	void RunAutoTune();
-	void PrintTuning(bool completed);
+	
 	bool IsTuning();
-	void RunPid();
 	bool TempOkay();
-	void OutputAction(unsigned long now);
+	
 	HeaterResult Read();
 	HeaterResult GetHeaterResult();
 	void ChangeSetpoint(int setPoint);
+
+
+	void StartTuning();
+	void StopTuning();
+	void RunAutoTune();
+	void RunPid();
+
 	void MapTurningComplete(TuningCompleteCallback cbk){
 		this->tuningCompleteCb=cbk;	
 	}
 
 private:
+	void OutputAction(unsigned long now);
+	void PrintTuning(bool completed);	
+
+
+private:
 	TemperatureSensor 	ntc;
-	DigitalOutput 		output;
+	//DigitalOutput 		output;
+	uint8_t 			relayPin;
 	
 	PID  				pid;
 	PID_AutoTune		autoTuner;
 	HeaterResult		result;
-	double tempDeviation;
-	double tempSetPoint;
-	double kp, ki, kd;
+	float tempDeviation;
+	float tempSetPoint;
+	float kp, ki, kd;
 	unsigned long windowLastTime,WindowSize;
-	double pidOutput=0;
-	double temperature=0;
+	float pidOutput=0;
+	float temperature=0;
 	bool tempOk = false;
 	bool isTuning=false;
 	bool relayState=false;
-	int id=0;
+	int id=-1;
 	HeaterMode mode,nextMode;
 	HeatState heaterState=HeatState::Off;
-	HeaterStateSelector state,nextState;
+	RunFunc run[2];
 	TuningCompleteCallback tuningCompleteCb=[](HeaterTuneResult){};
 	virtual void privateLoop()override;
 };

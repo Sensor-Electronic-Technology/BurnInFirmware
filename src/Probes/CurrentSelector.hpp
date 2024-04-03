@@ -12,29 +12,34 @@ public:
             currentPin060(config.pin60mA),
             currentOutput(config.currentPin),
             switchEnabled(config.switchEnabled),
-            setCurrent(current),
-            configuration(config){
-        this->currentOutput.low();
-        this->currentPin120.low();
-        this->currentPin060.low();
+            setCurrent(current){
+            pinMode(this->currentOutput,OUTPUT);
+            pinMode(this->currentPin060,OUTPUT);
+            pinMode(this->currentPin120,OUTPUT);
+            digitalWrite(this->currentOutput,LOW);
+            digitalWrite(this->currentPin060,LOW);
+            digitalWrite(this->currentPin120,LOW);
     }
 
     CurrentSelector():Component(){
-        this->currentOutput.low();
-        this->currentPin120.low();
-        this->currentPin060.low();
+        digitalWrite(this->currentOutput,LOW);
+        digitalWrite(this->currentPin060,LOW);
+        digitalWrite(this->currentPin120,LOW);
     }
 
     void Setup(const CurrentSelectorConfig& config){
-        this->currentPin120.SetPinNumber(config.pin120mA);
-        this->currentPin060.SetPinNumber(config.pin60mA);
-        this->currentOutput.SetPinNumber(config.currentPin);
+        this->currentPin120=config.pin120mA;
+        this->currentPin060=config.pin60mA;
+        this->currentOutput=config.currentPin;
+
         this->setCurrent=config.SetCurrent;
-        this->configuration=config;
         this->switchEnabled=config.switchEnabled;
-        this->currentOutput.low();
-        this->currentPin120.low();
-        this->currentPin060.low();
+        pinMode(this->currentOutput,OUTPUT);
+        pinMode(this->currentPin060,OUTPUT);
+        pinMode(this->currentPin120,OUTPUT);
+        digitalWrite(this->currentOutput,LOW);
+        digitalWrite(this->currentPin060,LOW);
+        digitalWrite(this->currentPin120,LOW);
     }
 
     void SetCurrent(CurrentValue current){
@@ -66,36 +71,33 @@ public:
     void TurnOn(){
         switch(this->setCurrent){
             case CurrentValue::c150: {
-                this->currentPin120.low();
-                this->currentPin060.low();
-                this->currentOutput.high();
+                digitalWrite(this->currentPin120,LOW);
+                digitalWrite(this->currentPin060,LOW);
+                digitalWrite(this->currentOutput,HIGH);
                 return;
             }
             case CurrentValue::c120: {
-                this->currentPin120.high();
-                this->currentPin060.low();
-                this->currentOutput.high();
+                digitalWrite(this->currentPin120,HIGH);
+                digitalWrite(this->currentPin060,LOW);
+                digitalWrite(this->currentOutput,HIGH);
                 return;
             }
             case CurrentValue::c060: {
-                this->currentPin120.low();
-                this->currentPin060.high();
-                this->currentOutput.high();
+                digitalWrite(this->currentPin120,LOW);
+                digitalWrite(this->currentPin060,HIGH);
+                digitalWrite(this->currentOutput,HIGH);
                 return;
             }
         }
     }
 
     void TurnOff(){
-        this->currentOutput.low();
+        digitalWrite(this->currentOutput,LOW);
     }
     
 private:
     void privateLoop(){ }
-    CurrentSelectorConfig configuration;
-    DigitalOutput currentOutput;
-    DigitalOutput currentPin120;
-    DigitalOutput currentPin060;
+    uint8_t currentOutput,currentPin120,currentPin060;
     CurrentValue setCurrent;
     bool switchEnabled;
 };

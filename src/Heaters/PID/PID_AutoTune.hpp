@@ -9,28 +9,28 @@
 
 class PID_AutoTune{
 public:
-    PID_AutoTune(double *in=nullptr,double *out=nullptr,double sp=0,unsigned long period=0,int cyc=10);
-    void Setup(double *in,double *out,double sp,unsigned long period,int cyc=10);
-    void SetOutputRange(double _min,double _max);
+    PID_AutoTune(float *in=nullptr,float *out=nullptr,float sp=0,unsigned long period=0,int cyc=10);
+    void Setup(float *in,float *out,float sp,unsigned long period,int cyc=10);
+    void SetOutputRange(float _min,float _max);
     void StartTuning();
     bool Tune();
-    double GetKp();
-    double GetKd();
-    double GetKi();
+    float GetKp();
+    float GetKd();
+    float GetKi();
     bool Finished();
 private:
-    double setPoint;
-    double minOut,maxOut;
-    double sampleTime;
+    float setPoint;
+    float minOut,maxOut;
+    float sampleTime;
     int cycles=10;
 
     int cycleCount;
     bool output;
-    double *outputValue;
-    double *input;
-    double t1,t2,tHigh,tLow;
-    double max,min;
-    double pAvg,iAvg,dAvg;
-    double kp,ki,kd;
+    float *outputValue;
+    float *input;
+    float t1,t2,tHigh,tLow;
+    float max,min;
+    float pAvg,iAvg,dAvg;
+    float kp,ki,kd;
     unsigned long lastTime;
 };

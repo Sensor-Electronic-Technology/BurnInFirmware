@@ -4,66 +4,57 @@ Heater::Heater(const HeaterConfig& config)
     :Component(),
     id(config.HeaterId),
     ntc(config.ntcConfig),
-    output(config.Pin),
+    relayPin(config.Pin),
     kp(config.pidConfig.kp),
     kd(config.pidConfig.kd),
     ki(config.pidConfig.ki),
     tempDeviation(config.tempDeviation),
     WindowSize(config.pidConfig.windowSize),
-    heaterState(HeatState::Off),
-    mode(HeaterMode::HEATING){
+    heaterState(HeatState::Off){
     this->tempSetPoint=DEFAULT_TEMPSP;
-    //this->pid=new PID(&this->temperature,&this->pidOutput,&this->tempSetPoint,this->kp,this->ki,this->kd);
     this->pid.Setup(&this->temperature,&this->pidOutput,&this->tempSetPoint,this->kp,this->ki,this->kd);
     this->pid.SetOutputRange(0,this->WindowSize,true);
     this->autoTuner.Setup(&this->temperature,&this->pidOutput,this->tempSetPoint,this->pid.GetSampleTime(),15);
-    //this->autoTuner=new PID_AutoTune(&this->temperature,&this->pidOutput,this->tempSetPoint,this->pid.GetSampleTime(),15);
     this->autoTuner.SetOutputRange(0,this->WindowSize);
-    // Serial.print("Sample Time=");Serial.print(this->pid.GetSampleTime());
+    this->run[HeaterMode::HEATING]=&Heater::RunPid;
+    this->run[HeaterMode::ATUNE]=&Heater::RunAutoTune;
+    pinMode(this->relayPin,OUTPUT);
 }
 
 Heater::Heater(){
     this->pid.Setup(&this->temperature,&this->pidOutput,&this->tempSetPoint,this->kp,this->ki,this->kd);
     this->pid.SetOutputRange(0,this->WindowSize,true);
     this->autoTuner.Setup(&this->temperature,&this->pidOutput,this->tempSetPoint,this->pid.GetSampleTime(),15);
-    //this->autoTuner=new PID_AutoTune(&this->temperature,&this->pidOutput,this->tempSetPoint,this->pid.GetSampleTime(),15);
     this->autoTuner.SetOutputRange(0,this->WindowSize);
+    this->run[HeaterMode::HEATING]=&Heater::RunPid;
+    this->run[HeaterMode::ATUNE]=&Heater::RunAutoTune;
 }
 
 void Heater::SetConfiguration(const HeaterConfig& config){
     Serial.println(F("Heater Configuration Set"));
     this->id=config.HeaterId;
     this->ntc.Setup(config.ntcConfig);
-    this->output.SetPinNumber(config.Pin);
+    this->relayPin=config.Pin;
     this->kp=config.pidConfig.kp;
     this->ki=config.pidConfig.ki;
     this->kd=config.pidConfig.kd;
     this->tempDeviation=config.tempDeviation;
     this->WindowSize=config.pidConfig.windowSize;
     this->tempSetPoint=DEFAULT_TEMPSP;
-
-    this->mode=HeaterMode::HEATING;
     this->heaterState=HeatState::Off;
-
     this->pid.Setup(&this->temperature,&this->pidOutput,&this->tempSetPoint,this->kp,this->ki,this->kd);
     this->pid.SetTuning(this->kp,this->ki,this->kd);
     this->pid.SetOutputRange(0,this->WindowSize,true);
-
     this->autoTuner.Setup(&this->temperature,&this->pidOutput,this->tempSetPoint,this->pid.GetSampleTime(),15);
     this->autoTuner.SetOutputRange(0,this->WindowSize);
-
-
-    Serial.println(F("End of Heater Configuration Set"));
-    // Serial.print("Sample Time=");Serial.print(this->pid.GetSampleTime());
-}
-
-void Heater::BuildStateMachine(){
-
-
+    pinMode(this->relayPin,OUTPUT);
+    digitalWrite(this->relayPin,LOW);
+    this->run[HeaterMode::HEATING]=&Heater::RunPid;
+    this->run[HeaterMode::ATUNE]=&Heater::RunAutoTune;
 }
 
 void Heater::Initialize(){
-    this->output.low();
+    digitalWrite(this->relayPin,LOW);
 }
 
 void Heater::UpdatePid(HeaterTuneResult newPid){
@@ -88,28 +79,25 @@ void Heater::StartTuning(){
 void Heater::StopTuning(){
     this->isTuning=false;
     this->PrintTuning(false);
+    this->TurnOff();
 }
 
-void Heater::SwitchMode(HeaterMode nextMode){
-
-    if(this->mode!=nextMode){
-        switch(this->mode){
-            //Transition to Tuning
-            case HeaterMode::HEATING:{
-                this->TurnOff();
-                this->mode=nextMode;
-                break;
-            }
-            //Transition to PID(Normal Operation)
-            case HeaterMode::ATUNE:{
-                this->StopTuning();
-                this->TurnOff();
-                this->mode=nextMode;
-                break;
-            }
-        }
-    }
-}
+// void Heater::SwitchMode(HeaterMode nextMode){
+//     if(this->mode!=nextMode){
+//         switch(nextMode){
+//             case HeaterMode::HEATING:{
+//                 this->TurnOff();
+//                 this->StopTuning();
+//                 break;
+//             }
+//             case HeaterMode::ATUNE:{
+//                 this->TurnOff();
+//                 break;
+//             }
+//             this->mode=nextMode;
+//         }
+//     }
+// }
 
 void Heater::PrintTuning(bool completed){
     if(completed){
@@ -120,7 +108,9 @@ void Heater::PrintTuning(bool completed){
         result.complete=completed;
         result.heaterNumber=this->id;
         this->tuningCompleteCb(result);
-        StationLogger::Log(LogLevel::INFO,true,false,F("Heater %d Tuning Complete"),this->id);
+        //HeatersController notifys PC
+        //StationLogger::Log(LogLevel::INFO,true,false,F("Heater %d Tuning Complete"),this->id);
+        
     }else{
         #if HEATER_DEBUG==1
         Serial.print("H");Serial.print("[F(");Serial.print(this->id);Serial.print(")]: ");
@@ -136,76 +126,33 @@ bool Heater::IsTuning(){
 }
 
 void Heater::RunPid(){
-    if(this->nextState.pidState!=this->state.pidState){
-        switch(nextState.pidState){
-            case HeaterState::WARMUP:{
-                // if(state.pidState==PIDState::OFF){
-                //     this->pid.Start();
-                // }
-                break;
-            }
-            case HeaterState::ON:{
-                // if(state.pidState==PIDState::WARMUP){
-                //     this->pid.Start();
-                // }
-                break;
-            }
-            case HeaterState::OFF:{
-                //this->pid.Stop();
-                break;
-            }
-        }
-        this->state=nextState;
-    }
     auto now=millis();
     this->Read();
-    // if(this->heaterState==HeaterState::On){
-    //     if(this->pid.Run()){
-    //         this->windowLastTime=now;
-    //     }
-    //     this->OutputAction(now);
-    // }else{
-    //     this->output.low();
-    // }
+    if(this->heaterState==HeatState::On){
+        if(this->pid.Run()){
+            this->windowLastTime=now;
+        }
+        this->OutputAction(now);
+    }else{
+        digitalWrite(this->relayPin,LOW);
+    }
 }
 
 void Heater::RunAutoTune(){
-    if(state.tuneState!=nextState.tuneState){
-        switch(nextState.tuneState){
-            case TuneState::TUNE_IDLE:{
-                if(state.tuneState==TuneState::TUNE_RUNNING){
-                    this->StopTuning();
-                }else if(state.tuneState==TuneState::TUNE_COMPLETE){
-                    this->PrintTuning(true);
-                }
-                break;
-            }
-            case TuneState::TUNE_RUNNING:{
-                this->StartTuning();
-                break;
-            }
-            case TuneState::TUNE_COMPLETE:{
-                this->PrintTuning(true);
-                break;
-            }
-        }
-        this->state=nextState;
-    }
-
     auto now=millis();
     this->Read();
     if(this->isTuning){
         if(this->autoTuner.Tune()){
             if(!this->relayState){
                 this->relayState=true;
-                this->output.high();
+                digitalWrite(this->relayPin,HIGH);
                 //Serial.print("H");Serial.print("[F(");Serial.print(this->id);Serial.print(")]: ");
                 //Serial.print("Output high");Serial.print(" Pid Out: ");Serial.println(pidOutput);
             }
         }else{
             if(this->relayState){
                 this->relayState=false;
-                this->output.low();
+                digitalWrite(this->relayPin,LOW);
                 //Serial.print("H");Serial.print("[F(");Serial.print(this->id);Serial.print(")]: ");
                 //Serial.print("Output Low");Serial.print(" Pid Out: ");Serial.println(pidOutput);
             }
@@ -229,14 +176,14 @@ void Heater::RunAutoTune(){
 void Heater::OutputAction(unsigned long now){
     if(!this->relayState && this->pidOutput>(now-this->windowLastTime)){
         this->relayState=true;
-        this->output.high();
+        digitalWrite(this->relayPin,HIGH);
         #if HEATER_DEBUG==1
         Serial.print("Output high Now: ");Serial.print(now);Serial.print(" Last: ");Serial.print(windowLastTime);
         Serial.print(" Pid Out: ");Serial.println(pidOutput);
         #endif
     }else if(this->relayState && this->pidOutput<(now-this->windowLastTime)){
         this->relayState=false;
-        this->output.low();
+        digitalWrite(this->relayPin,LOW);
         #if HEATER_DEBUG==1
         Serial.print("Output low Now: ");Serial.print(now);Serial.print(" Last: ");Serial.print(windowLastTime);
         Serial.print(" Pid Out: ");Serial.println(pidOutput);

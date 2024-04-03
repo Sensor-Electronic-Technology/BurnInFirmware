@@ -12,14 +12,14 @@ typedef components::Function<void(void)> OnTransitionHandler;
 
 
 class State{
-    template<int N>friend class StateMachine;
+    template<uint8_t N>friend class StateMachine;
 public:
     State(){}
     State(uint8_t id):id(id){}
     State(uint8_t id,StateActionHandler action):id(id),action(action){}
 
-    void OnState(){
-        action();
+    void StateRun(){
+        this->action();
     }
 
     uint8_t GetId(){
@@ -36,7 +36,7 @@ private:
 };
 
 class Transition{
-    template<int N>friend class StateMachine;
+    template<uint8_t N>friend class StateMachine;
 public:
     Transition(){}
     Transition(State* from,State* to,uint8_t transitionId):from(from),to(to){}
@@ -61,19 +61,22 @@ private:
     uint8_t    eventId:4;
 };
 
-template<int N>
+template<uint8_t N>
 class StateMachine{
 public:
     // StateMachine(State initial){}
     // StateMachine(State initial,transitions[N]):transitions(transitions){}
     StateMachine(){
-        currentState=nullptr;
-        previousState=nullptr;
+        this->currentState=nullptr;
+        this->previousState=nullptr;
+        this->initialState=nullptr;
+
     }
 
     void Setup(State* initialState,const Transition (&transitions)[N]){
         this->currentState=initialState;
-        for(int i=0;i<N;i++){
+        this->initialState=initialState;
+        for(uint8_t i=0;i<N;i++){
             this->transitions[i]=transitions[i];
         }
     }
@@ -82,8 +85,24 @@ public:
         this->onTransition=onTransition;
     }
 
-    bool triggerEvent(int eventId){
-        for(int i=0;i<N;i++){
+    void Reset(){
+        this->currentState=this->initialState;
+        this->previousState=nullptr;
+    }
+
+    bool CanTransition(uint8_t eventId){
+        for(uint8_t i=0;i<N;i++){
+            if(transitions[i].eventId==eventId){
+                if(this->currentState==transitions[i].from){
+                    return transitions[i].CanTransition();
+                }
+            }
+        }
+        return false;
+    }
+
+    bool triggerEvent(uint8_t eventId){
+        for(uint8_t i=0;i<N;i++){
             if(transitions[i].eventId==eventId){
                 if(this->currentState==transitions[i].from){
                     return this->_transition(&transitions[i]);
@@ -95,7 +114,7 @@ public:
     }
 
     void Run(){
-        this->currentState->OnState();
+        this->currentState->StateRun();
     }
 
     uint8_t GetCurrentStateId(){
@@ -110,6 +129,7 @@ private:
     Transition transitions[N];
     State* currentState=nullptr;
     State* previousState=nullptr;
+    State* initialState=nullptr;
     OnTransitionHandler onTransition=[](){};
 
     bool _transition(Transition* transition){

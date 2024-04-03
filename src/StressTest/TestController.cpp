@@ -51,7 +51,6 @@
     void TestController::Reset(){
         if(this->state_machine.triggerEvent(StateTrigger::TEST_RESET)){
             this->burn_timer.Reset();
-            this->nextState=TestState::TEST_IDLE;
             this->currentSet-false;
             this->savedStateLoaded=false;
         }

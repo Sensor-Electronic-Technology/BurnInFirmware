@@ -28,7 +28,7 @@
                     break;
                 }
             }
-            for(int i=0;i<PROBE_COUNT;i++){
+            for(uint8_t i=0;i<PROBE_COUNT;i++){
                 this->testTimer.probeRunTimes[i]=0ul;
             }
             this->testTimer.elapsed_secs=0;
@@ -106,7 +106,7 @@
             auto millis_t=millis();
             if(millis_t-this->testTimer.lastCheck>=(TIMER_PERIOD*TIMER_FACTOR)){
                 this->testTimer.lastCheck=millis_t;
-                for(int i=0;i<PROBE_COUNT;i++){
+                for(uint8_t i=0;i<PROBE_COUNT;i++){
                     if(probeOkay[i]){
                         this->testTimer.probeRunTimes[i]++;
                     }

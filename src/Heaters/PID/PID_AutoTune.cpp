@@ -1,6 +1,6 @@
 #include "PID_AutoTune.hpp"
 
-    PID_AutoTune::PID_AutoTune(double *in,double *out,double sp,unsigned long period,int cyc=10){
+    PID_AutoTune::PID_AutoTune(float *in,float *out,float sp,unsigned long period,int cyc=10){
         this->input=in;
         this->outputValue=out;
         this->setPoint=sp;
@@ -8,7 +8,7 @@
         this->cycles=cyc;
     }
 
-    void PID_AutoTune::Setup(double *in,double *out,double sp,unsigned long period,int cyc=10){
+    void PID_AutoTune::Setup(float *in,float *out,float sp,unsigned long period,int cyc=10){
         this->input=in;
         this->outputValue=out;
         this->setPoint=sp;
@@ -16,11 +16,10 @@
         this->cycles=cyc;
     }
 
-    void PID_AutoTune::SetOutputRange(double _min,double _max){
+    void PID_AutoTune::SetOutputRange(float _min,float _max){
         this->maxOut=_max;
         this->minOut=_min;
     }
-
 
     void PID_AutoTune::StartTuning(){
         this->cycleCount=0;
@@ -37,8 +36,8 @@
     bool PID_AutoTune::Tune(){
         auto now=micros();
         if(now-lastTime>=sampleTime){
-            double in=*input;
-            double out=*outputValue;
+            float in=*input;
+            float out=*outputValue;
             max=(max>in) ? max:in;
             min=(min<in) ? min:in;
 
@@ -58,8 +57,8 @@
 
                 //Caluculate Ku(gain) Ku=4d/pi*a
                 //d=output amplitude, a=input amplitude
-                double ku=(4.0*((maxOut-minOut)/2.0))/(M_PI*(max-min)/2.0);
-                double tu=tLow+tHigh;
+                float ku=(4.0*((maxOut-minOut)/2.0))/(M_PI*(max-min)/2.0);
+                float tu=tLow+tHigh;
 
                 //Calculate gains
                 // Kp = 0.6Ku = Kc
@@ -74,9 +73,9 @@
                  * 
                  * Kp=0.2Ku,Ti=0.5Tu,Td=0.33Tu,Ki=0.66Ku/Tu,Kd=0.11KuTu
                  * */
-                double kpConstant = 0.2;
-                double tiConstant = 0.5;
-                double tdConstant = 0.33;
+                float kpConstant = 0.2;
+                float tiConstant = 0.5;
+                float tdConstant = 0.33;
 
                 //Calculate Gains
                 kp=kpConstant*ku; 
@@ -107,25 +106,25 @@
         return output;
     }
 
-    // double GetKpRunning(){
+    // float GetKpRunning(){
     //     return pAvg/(cycleCount-1);
     // }
-    // double GetKdRunning(){
+    // float GetKdRunning(){
     //     return dAvg/(cycleCount-1);
     // }
-    // double GetkiRunning(){
+    // float GetkiRunning(){
     //     return iAvg/(cycleCount-1);
     // }
     
-    double PID_AutoTune::GetKp(){
+    float PID_AutoTune::GetKp(){
         return this->kp;
     }
 
-    double PID_AutoTune::GetKd(){
+    float PID_AutoTune::GetKd(){
         return this->kd;
     }
 
-    double PID_AutoTune::GetKi(){
+    float PID_AutoTune::GetKi(){
         return this->ki;
     }
 

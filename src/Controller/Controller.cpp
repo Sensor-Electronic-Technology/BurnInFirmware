@@ -11,11 +11,11 @@ Controller::Controller():Component(){
         this->TestFinished();
     };
 
-    for(int i=0;i<PROBE_COUNT;i++){
+    for(uint8_t i=0;i<PROBE_COUNT;i++){
         this->probeResults[i]=ProbeResult();
     }
 
-    for(int i=0;i<HEATER_COUNT;i++){
+    for(uint8_t i=0;i<HEATER_COUNT;i++){
         this->heaterResults[i]=HeaterResult();
     }   
     //this->mode_run[StationMode::NORMAL]=&Controller::NormalRun;
@@ -130,11 +130,11 @@ void Controller::CheckSavedState(){
 }
 
 void Controller::UpdateSerialData(){
-    for(int i=0;i<PROBE_COUNT;i++){
+    for(uint8_t i=0;i<PROBE_COUNT;i++){
         this->probeResults[i].current=random(148,151);
         this->probeResults[i].voltage=random(60,65);
     }
-    for(int i=0;i<HEATER_COUNT;i++){
+    for(uint8_t i=0;i<HEATER_COUNT;i++){
         this->heaterResults[i].temperature=random(82,85);
         this->heaterResults[i].tempOkay=true;
         this->heaterResults[i].state=(bool)random(0,1);
@@ -189,7 +189,7 @@ void Controller::HandleCommand(StationCommand command){
             //     }
             //     break;
             // }
-            StationLogger::Log(LogLevel::ERROR,true,false,SystemMessage::TEST_RUN_MODESW_ERR_MSG);
+            //StationLogger::Log(LogLevel::ERROR,true,false,SystemMessage::TEST_RUN_MODESW_ERR_MSG);
             break;
         }
         case StationCommand::CHANGE_MODE_NORMAL:{
@@ -207,7 +207,7 @@ void Controller::HandleCommand(StationCommand command){
             //     StationLogger::Log(LogLevel::INFO,true,false,SystemMessage::PID_ATUNE_START_MSG);
             //     break;
             // }
-            StationLogger::Log(LogLevel::ERROR,true,false,SystemMessage::PID_ATUNE_MODE_ERR_MSG);
+            //StationLogger::Log(LogLevel::ERROR,true,false,SystemMessage::PID_ATUNE_MODE_ERR_MSG);
             break;
         }
         case StationCommand::STOP_TUNE:{
@@ -216,7 +216,7 @@ void Controller::HandleCommand(StationCommand command){
             //     StationLogger::Log(LogLevel::INFO,true,false,SystemMessage::PID_ATUNE_STOP_MSG);
             //     break;
             // }
-            StationLogger::Log(LogLevel::ERROR,true,false,SystemMessage::PID_ATUNE_MODE_ERR_MSG);
+            //StationLogger::Log(LogLevel::ERROR,true,false,SystemMessage::PID_ATUNE_MODE_ERR_MSG);
             break;
         }
         case StationCommand::RESET:{
@@ -248,7 +248,7 @@ void Controller::Reset(){
 
 bool* Controller::CheckCurrents(){
     bool checks[PROBE_COUNT]={false};
-    for(int i=0;i<PROBE_COUNT;i++){
+    for(uint8_t i=0;i<PROBE_COUNT;i++){
         checks[i]=this->probeResults[i].okay;
     }
     return checks;

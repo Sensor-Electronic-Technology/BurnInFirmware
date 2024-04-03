@@ -11,13 +11,13 @@ public:
 	VoltageSensor(const VoltageSensorConfig& config);
 	VoltageSensor();
 	void Setup(const VoltageSensorConfig& config);
-	double ReadVoltage();
+	float ReadVoltage();
 	float GetVoltage();
 private:
-	AnalogInput voltageIn;
-    VoltageSensorConfig configuration;
-	double voltage;
-    double fWeight;
+	//AnalogInput voltageIn;
+	uint8_t voltageIn;
+	float voltage;
+    float fWeight;
 
 	void privateLoop() {
 		//this->ReadVoltage();
