@@ -4,6 +4,8 @@
 #include "../Serializable.hpp"
 
 
+#define read_msg_table(msg) ((const char *)pgm_read_ptr(&(message_table[msg])))
+
 typedef components::Function<void(void)> TransitionActionHandler;
 
 #define HEATER_COUNT                    3
@@ -23,27 +25,26 @@ struct HeaterTuneResult:Serializable{
     }
 
     virtual void Serialize(JsonObject *packet,bool initialize){
-        if(initialize){
-            (*packet)[F("HeaterNumber")]=this->heaterNumber;
-            (*packet)[F("kp")]=this->kp;
-            (*packet)[F("ki")]=this->ki;
-            (*packet)[F("kd")]=this->kd;
-        }else{
-            this->heaterNumber=(*packet)[F("HeaterNumber")];
-            this->kp=(*packet)[F("kp")];
-            this->ki=(*packet)[F("ki")];
-            this->kd=(*packet)[F("kd")];
-        }
+        (*packet)[F("HeaterNumber")]=this->heaterNumber;
+        (*packet)[F("kp")]=this->kp;
+        (*packet)[F("ki")]=this->ki;
+        (*packet)[F("kd")]=this->kd;
     }
+
     virtual void Serialize(JsonDocument *doc,bool initialize)override{
-
+        JsonObject heaterTune;
+        if(initialize){
+            heaterTune=(*doc)[F("HeaterTune")].to<JsonObject>();
+        }else{
+            heaterTune=(*doc)[F("HeaterTune")].as<JsonObject>();
+        }
+        heaterTune[F("HeaterNumber")]=this->heaterNumber;
+        heaterTune[F("kp")]=this->kp;
+        heaterTune[F("ki")]=this->ki;
+        heaterTune[F("kd")]=this->kd;
     }
-    virtual void Deserialize(JsonDocument &doc) override{
-
-    }
-    virtual void Deserialize(JsonObject &packet)override{
-
-    }
+    virtual void Deserialize(JsonDocument &doc)  override{   }
+    virtual void Deserialize(JsonObject &packet) override{   }
 };
 
 enum TuneState:uint8_t{
@@ -76,15 +77,16 @@ enum TuneTrigger:uint8_t{
     TUNE_START,     //Start Tuning
     TUNE_FINISHED,  //Tuning Complete
     TUNE_STOP,      //Stop Tuning->cancel before complete
-    TUNE_SAVE,     //Save Tuning Results
-    TUNE_CANCEL   //Discard Tuning Results
+    TUNE_SAVED,     //Save Tuning Results
+    TUNE_CANCELED   //Discard Tuning Results
 };
 
 enum TuneTransition:uint8_t{
-    TUNE_IDLE_TO_RUNNING,  //Start Tuning
-    TUNE_RUNNING_TO_IDLE,  //cancel tuning
-    TUNE_RUNNING_TO_COMPLETE,  //Tuning Complete
-    TUNE_COMPLETE_TO_IDLE  //Save or discard tune results
+    TUNE_IDLE_TO_RUNNING=0,  //Start Tuning
+    TUNE_RUNNING_TO_IDLE=1,  //cancel tuning
+    TUNE_RUNNING_TO_COMPLETE=2,  //Tuning Complete
+    TUNE_COMPLETE_TO_IDLE=3,  //Save or discard tune results
+    TUNE_EXIT_MODE=4
 };
 
 enum HeaterMode:uint8_t{

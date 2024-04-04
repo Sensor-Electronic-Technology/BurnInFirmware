@@ -8,10 +8,6 @@ HeaterController::HeaterController(const HeaterControllerConfig& config)
         this->HeaterRunCompleteHandler(result);
     };
 
-    ComHandler::MapHeaterResponseCallback([&](Response response){
-        this->HandleResponse(response);
-    });
-
     for(uint8_t i=0;i<HEATER_COUNT;i++){ 
         //Heater heater(config.heaterConfigs[i]);
         this->heaters[i]=Heater(config.heaterConfigs[i]);
@@ -30,11 +26,6 @@ HeaterController::HeaterController():Component(){
     this->tuningCompleteCbk=[&](HeaterTuneResult result){
         this->HeaterRunCompleteHandler(result);
     };
-
-    ComHandler::MapHeaterResponseCallback([&](Response response){
-        this->HandleResponse(response);
-    });
-
 }
 
 void HeaterController::Setup(const HeaterControllerConfig& config){
@@ -52,7 +43,6 @@ void HeaterController::Setup(const HeaterControllerConfig& config){
 void HeaterController::Initialize(){
     for(uint8_t i=0;i<HEATER_COUNT;i++){ 
         this->heaters[i].Initialize();
-        
     }
     for(uint8_t i=0;i<100;i++){
         this->ReadTemperatures();
@@ -92,30 +82,34 @@ void HeaterController::ToggleHeaters(){
         this->TurnOn();
     }
 }
+void HeaterController::SaveTuning(){
+    for(uint8_t i=0;i<HEATER_COUNT;i++){
+        auto newPid=this->tuningResults.results[i];
+        this->configuration.UpdateHeaterPid(newPid);
+        this->heaters[newPid.heaterNumber-1].UpdatePid(newPid);
+        auto saveResult=FileManager::SaveConfig(&this->configuration);
+        if(saveResult==FileResult::SAVED){
+            ComHandler::SendSystemMessage(SystemMessage::TUNING_RESULT_SAVED,MessageType::NOTIFY);
+            this->tuningStateMachine.triggerEvent(TuneTrigger::TUNE_SAVED);
+            //Send new config to PC!  ComHandler::SendConfig(&config);  //I thought i had this already
+        }
+    }
+}
+
+void HeaterController::CancelTuning(){
+    this->tuningResults.clear();
+    this->tuningStateMachine.triggerEvent(TuneTrigger::TUNE_CANCELED);
+}
 #pragma endregion
 
 #pragma region StateMachineTuning
 
-void HeaterController::HandleResponse(Response response){
-    if(response==Response::HEATER_SAVE){
-        //update and save configuration
-        //then request restart
-        for(uint8_t i=0;i<HEATER_COUNT;i++){
-            auto newPid=this->tuningResults.results[i];
-            this->configuration.UpdateHeaterPid(newPid);
-            this->heaters[newPid.heaterNumber-1].UpdatePid(newPid);
-            FileManager::Save(&this->configuration,PacketType::HEATER_CONFIG);
-            //Send new config to PC!  ComHandler::SendConfig(&config);  //I thought i had this already
-        }
-    }else if(response==Response::HEATER_CANCEL){
-        //clear tuning results
-        //wait for mode change
-        this->tuningResults.clear();
-    }
+void HeaterController::OnCancelTuning(){
+    this->modeStateMachine.triggerEvent(ModeTrigger::HEATING_START);
 }
+
 void HeaterController::HeaterRunCompleteHandler(HeaterTuneResult result){
     if(result.heaterNumber<HEATER_COUNT && result.heaterNumber>-1){
-        //TODO: replace this->tuningResults with HeaterTunePacket
         this->tuningResults.set(result.heaterNumber-1,result);
         bool tuningComplete=true;
         for(uint8_t i=0;i<HEATER_COUNT;i++){
@@ -129,9 +123,7 @@ void HeaterController::HeaterRunCompleteHandler(HeaterTuneResult result){
             this->tuningStateMachine.triggerEvent(TUNE_COMPLETE);
         }else{
             if(result.complete){
-                StationLogger::Log(LogLevel::INFO,true,false,
-                        "Heater %d tuning complete. Please wait for other heaters to finish tuning \n New Values: kp: %f ki: %f kd: %f",
-                        result.heaterNumber,result.kp,result.ki,result.kd);
+                ComHandler::MsgPacketSerializer(result,PacketType::HEATER_NOTIFY);
             }
         }
     }
@@ -164,7 +156,17 @@ void HeaterController::TuningRun(){
 #pragma endregion
 
 #pragma region StateMachineHeating
+void HeaterController::RunOn(){
+    for(uint8_t i=0;i<HEATER_COUNT;i++){
+        this->heaters[i].RunPid();
+    }
+}
 
+void HeaterController::WarmupRun(){
+    if(this->TempOkay()){
+        this->heatersStateMachine.triggerEvent(HeaterTrigger::TEMP_REACHED);
+    }
+}
 #pragma endregion
 
 #pragma region StateMachineModes
@@ -192,18 +194,7 @@ void HeaterController::RunHeating(){
 }
 #pragma endregion
 
-void HeaterController::RunOn(){
-    for(uint8_t i=0;i<HEATER_COUNT;i++){
-        this->heaters[i].RunPid();
-    }
-}
-
-void HeaterController::WarmupRun(){
-    if(this->TempOkay()){
-        this->heatersStateMachine.triggerEvent(HeaterTrigger::TEMP_REACHED);
-    }
-}
-
+#pragma region Misc
 void HeaterController::ReadTemperatures(){
     for(uint8_t i=0;i<HEATER_COUNT;i++){
         results[i]=heaters[i].Read();
@@ -234,3 +225,5 @@ void HeaterController::Print(){
 void HeaterController::privateLoop(){
     this->modeStateMachine.Run();
 }
+#pragma endregion
+

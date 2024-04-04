@@ -25,11 +25,14 @@ inline char FirmwareVersion[8];
 #define ID_ADDR     10
 #define VER_ADDR    64
 
-#define read_msg_table(msg) ((const char *)pgm_read_ptr(&(message_table[msg])))
-#define read_log_prefix(pre) ((const char *)pgm_read_ptr(&(log_level_prefixes[pre])))
-#define read_packet_prefix(pre) ((const char *)pgm_read_ptr(&(prefixes[pre])))
-#define read_filename(pType) ((const char *)pgm_read_ptr(&(json_filenames[pType])))
-#define read_log_file() ((const char *)pgm_read_ptr(&(log_file)))
+
+#define read_file_message(msg)   ((const char *)pgm_read_ptr(&(file_result_messages[msg])))
+#define read_system_message(msg) ((const char *)pgm_read_ptr(&(system_message_table[msg])))
+#define read_system_error(msg)   ((const char *)pgm_read_ptr(&(system_error_table[msg])))
+
+#define read_log_prefix(pre)      ((const char *)pgm_read_ptr(&(log_level_prefixes[pre])))
+#define read_packet_prefix(pre)   ((const char *)pgm_read_ptr(&(prefixes[pre])))
+#define read_filename(pType)      ((const char *)pgm_read_ptr(&(json_filenames[pType])))
 
 //Timer
 #define TIMER_PERIOD                   1
@@ -56,6 +59,27 @@ inline char FirmwareVersion[8];
 #define ADC_MIN                         0
 #define ADC_MAX                         1023
 
+enum FileResult:uint8_t{
+    DOES_NOT_EXIST,
+    FAILED_TO_OPEN,
+    DESERIALIZE_FAILED,
+    LOADED,
+    SAVED,
+    FAILED_TO_SERIALIZE,
+    FAILED_TO_SAVE,
+    SD_NOT_INITIALIZED
+};
+
+const char* const file_result_messages[] PROGMEM={
+    "File does not exist",
+    "File failed to open",
+    "Deserialization Failed",
+    "File loaded",
+    "File saved",
+    "Serialization failed",
+    "File save failed"
+};
+
 enum StationCommand:uint8_t{
     START=0,
     PAUSE=1,
@@ -67,8 +91,9 @@ enum StationCommand:uint8_t{
     CHANGE_MODE_NORMAL=7,
     START_TUNE=8,
     STOP_TUNE=9,
-    SAVE_ATUNE_RESULT=10,
-    RESET=11
+    SAVE_TUNE=10,
+    CANCEL_TUNE=11,
+    RESET=12
 };
 
 enum PacketType:uint8_t{
@@ -76,20 +101,19 @@ enum PacketType:uint8_t{
     PROBE_CONFIG=1,
     SYSTEM_CONFIG=2,
     SAVE_STATE=3,
-    MESSAGE=4,
+    MESSAGE=4,         //general message->not critical for the user to see
     DATA=5,
     COMMAND=6,
     ID_RECEIVE=7,     //Set station id
     ID_REQUEST=8,     //Request station id-Send to PC
     VER_RECIEVE=9,
     VER_REQUEST=10,
-    INIT=11,
-    TEST_START_STATUS=12, //Notify PC that test has started
-    TEST_COMPLETED=13,    //Notify PC that test has completed
-    TEST_LOAD_START=14,   //Notify PC that test is starting from a load state
-    HEATER_NOTIFY=15,
-    HEATER_TUNE_COMPLETE=16,
-    HEATER_TUNE_RESPONSE=17,
+    TEST_START_STATUS=11, //Notify PC that test has started
+    TEST_COMPLETED=12,    //Notify PC that test has completed
+    TEST_LOAD_START=13,   //Notify PC that test is starting from a load state
+    HEATER_NOTIFY=14,
+    HEATER_TUNE_COMPLETE=15,
+    ERROR=16,
 };
 
 const char* const prefixes[] PROGMEM = {
@@ -104,13 +128,12 @@ const char* const prefixes[] PROGMEM = {
     "IDREQ",   //8
     "VERREC",  //9
     "VERREQ",  //10
-    "INIT",     //11
-    "TSTAT",     //12
-    "TCOMP",     //13
-    "TLOAD"      //14
-    "HNOTIFY"    //15
-    "HTUNED"     //16 
-    "HRESP"    //17
+    "TSTAT",     //11
+    "TCOMP",     //12
+    "TLOAD",     //13
+    "HNOTIFY",    //14
+    "HTUNED",     //15
+    "ERR",        //16
 };
 
 
@@ -153,30 +176,108 @@ typedef components::Function<void(Response)> ResponseCallback;
 #define PROBE_CONFIG_INDEX      1
 #define SYSTEM_CONFIG_INDEX     2
 
-enum SystemMessage:uint8_t{
-    PID_ATUNE_START_MSG,
-    PID_ATUNE_STOP_MSG,
-    PID_ATUNE_MODE_ERR_MSG,
-    STATION_MODE_ATUNE_MSG,
-    STATION_MODE_NORM_MSG,
-    STATION_MODE_PROBE_MSG,
-    TEST_RUN_MODESW_ERR_MSG,
+enum MessageType:uint8_t{
+    GENERAL,
+    INIT,
+    NOTIFY,
+    ERROR
 };
 
-// const char* const message_table[] PROGMEM={
-//     "PID Auto-tune started",
-//     "PID Auto-tune stopped",
-//     "Station not in PID Auto-tune mode, switch modes then try again",
-//     "Station mode switched to PID Autotune",
-//     "Station mode switched to Normal",
-//     "Station mode switch to Probe Testing",
-//     "Modes cannot be switched while a test is running, reset or wait for test to finish",
+enum SystemMessage:uint8_t{
+    BEFORE_FREE_MEM=0,//
+    FIRMWARE_INIT=1,  //
+    LOAD_CONFIG=2,   //
+    AFTER_FREE_MEM=3, //
+    CONFIG_LOADED=4, //
+    COMPONENT_INIT=5, //
+    HEATERS_INIT=6,
+    PROBES_INIT=7,
+    REG_COMPONENTS=8,
+    COMPONENTS_INIT_COMPLETE=9,
+    TIMER_INIT=10,
+    TIMER_INIT_COMPLETE=11,
+    CHECK_SAVED_STATE=12,
+    STATE_LOADED=13,
+    NO_SAVED_STATE=14,
+    FIRMWARE_INIT_COMPLETE=15,
+    TUNING_RESULT_SAVED=16,
+    TUNING_CANCELD=17,
+    DELETE_SAVED_STATE=18,
+    SAVED_STATE_DELETED=19,
+    RESETTING_CONTROLLER=20,
+    SD_INIT=21,
+    TEST_STATE_TRANSITION=22,
+    TEST_STATE_COMPLETED=23
+};
 
-// };
+const char* const system_message_table[] PROGMEM={
+    "------Before Loading Free Memory: %d----------",  //0
+    "------Firmware Initialization Starting--------",  //1
+    "Loading configuration files...................",  //2
+    "After Loading Free Memory: %d.................",  //3
+    "Configuration Files Loaded....................",  //4
+    "--------Components Initalizing Starting-------",  //5
+    "Heaters initialized...........................",  //6
+    "Probes initialized............................",  //7
+    "Registering Components........................",  //8
+    "--------Components Initalized-----------------",  //9
+    "-------------Initalizing Timers---------------", //10
+    "-------Timer Initialization Complete----------", //11
+    "Check for saved state, Free Memory: %d",//12
+    "Saved state found, state loaded. Resuming from saved state",//13
+    "No saved state found, continuing to normal operation",//14
+    "------ Firmware Initialization Complete-------", //15
+    "Tuning results saved", //16
+    "Tuning canceled" //17,
+    "Deleting saved state" //18
+    "Saved state deleted", //19
+    "Controller resetting, please wait.......",  //20,
+    "SD Card Initialized", //21
+    "TestController Transition from StateId %d from StateId %d", //22
+    "Test Completed",//23
+};
 
-// const char* const log_file PROGMEM={"log.txt"};
+enum SystemError:uint8_t{
+    CONFIG_LOAD_FAILED=0,
+    CONFIG_LOAD_FAILED_FILE=1,
+    CONFIG_SAVE_FAILED=2,
+    CONFIG_SAVE_FAILED_FILE=3,
+    SD_INIT_FAILED=4,
+    HEATER_SAVE_FAILED=5,
+    SAVED_STATE_FAILED=6,
+    STATE_DELETE_FAILED=7,
+    INVALID_COMMAND=8,
+    FAILED_DESERIALIZE=9,
+    FAILED_SERIALIZE=10,
+    INVALID_PREFIX=11,
+    PREFIX_NOT_FOUND=12,
+    TEST_STATE_TRANSITION_ERR=13,
+    START_ALREADY_RUNNING=14,
+    START_NOT_SET=15,
+    PAUSE_ALREADY_PAUSED=16,
+    CONTINUE_NOT_PAUSED=17
+};
 
-
+const char* const system_error_table[] PROGMEM={
+/*0*/   "Failed to load configuration files. Please contact administrator",
+/*1*/   "Failed to load configuration file: %s. Defaults will be loaded. \n Please contact administarator",
+/*2*/   "Failed to save configuration files.  Please contact administrator",
+/*3*/   "Failed to save configuration file: %s. Changes will be lost on reset. Please contact administrator",
+/*4*/   "SD card failed to initialize!! Defaults will be loaded. \n If you continue no changes to the configuration will be saved. Please check connections and contact administrator",
+/*5*/   "Failed to save heater tuning results!! Please contact administrator",
+/*6*/   "Failed to load saved state, station will continue to normal operation. Please contact administrator",
+/*7*/   "Failed to delete saved state! Please contact administrator",
+/*8*/   "Invalid command recieved! Please contact administrator",
+/*9*/   "Failed to deserialize data: %s. Please contact administrator",
+/*10*/  "Failed to serialize data: %s. Please contact administrator",
+/*11*/  "Invalid message packet prefix recieved: %s."
+/*12*/  "Prefix not found in message packet",
+/*13*/  "Failed to transition to idle from running state, test is being hard stopped. \n restart controller before starting another test",
+/*14*/  "Failed to start, test is already running",
+/*15*/  "Failed to start, current or saveState was not set",
+/*16*/  "Failed to pause, test is already paused",
+/*17*/  "Failed to continue, test is not paused",
+};
 
 // enum PacketType:uint8_t{
 //     HEATER_CONFIG=0,

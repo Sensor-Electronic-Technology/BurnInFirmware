@@ -4,41 +4,6 @@
         this->_finishedCallback=callback;
     }
 
-    // void TestController::Tick(bool probesOkay[PROBE_COUNT]){
-    //     if(this->currentState!=this->nextState){
-    //         switch(this->nextState){
-    //             case TestState::TEST_IDLE:{
-    //                 if(this->currentState==TestState::TEST_RUNNING){
-    //                     this->OnRunningToIdle();
-    //                 }else if(this->currentState==TestState::TEST_PAUSED){
-    //                     this->OnPausedToIdle();
-    //                 }
-    //                 break;
-    //             }
-    //             case TestState::TEST_RUNNING:{
-    //                 if(this->currentState==TestState::TEST_IDLE){
-    //                     this->OnIdleToRunning();
-    //                 }else if(this->currentState==TestState::TEST_PAUSED){
-    //                     this->OnPausedToRunning();
-    //                 }
-    //                 break;
-    //             }
-    //             case TestState::TEST_PAUSED:{
-    //                 if(this->currentState==TestState::TEST_RUNNING){
-    //                     this->OnRunningToPaused();
-    //                 }
-    //                 break;
-    //             }
-    //         }
-    //         this->currentState=this->nextState;
-    //     }
-    //     if(this->currentState==TestState::TEST_RUNNING){
-    //         this->Running(probesOkay);
-    //     }
-    //     //this->burn_timer.Increment(probesOkay);
-    //     // this->state_machine.run(500);
-    // }
-
     void TestController::Tick(bool probesOkay[PROBE_COUNT]){
         this->burn_timer.Increment(probesOkay);
     }
@@ -67,7 +32,7 @@
     void TestController::Running(){
         if(this->burn_timer.IsDone()){
             if(!this->state_machine.triggerEvent(StateTrigger::STRESS_TEST_DONE)){
-                StationLogger::Log(LogLevel::CRITICAL_ERROR,true,false,F("Failed to transition to idle from running state, test is being hard stopped. \n restart controller before starting another test"));
+                ComHandler::SendErrorMessage(SystemError::TEST_STATE_TRANSITION_ERR);
                 this->_finishedCallback();
             }
         }
@@ -89,12 +54,12 @@
 
     bool TestController::CanStart(){
         if(this->burn_timer.IsRunning()){
-            StationLogger::Log(LogLevel::WARNING,true,false,F("Failed to start, test is already running"));
+            ComHandler::SendErrorMessage(SystemError::START_ALREADY_RUNNING);
             return false;
         }
         
         if(!this->currentSet && !this->savedStateLoaded){
-            StationLogger::Log(LogLevel::CRITICAL_ERROR,true,false,F("Failed to start, current or saveState was not set"));
+            ComHandler::SendErrorMessage(SystemError::START_NOT_SET);
             return false;
         }
         //return !this->burn_timer.IsRunning() && (this->currentSet || this->savedStateLoaded);
@@ -113,7 +78,7 @@
 
     bool TestController::CanPause(){
         if(this->burn_timer.IsPaused()){
-            StationLogger::Log(LogLevel::WARNING,true,false,F("Failed to pause, test is already paused"));
+            ComHandler::SendErrorMessage(SystemError::PAUSE_ALREADY_PAUSED);
             return false;
         }
         return true;
@@ -127,7 +92,7 @@
 
     bool TestController::CanContinue(){
         if(!this->burn_timer.IsPaused()){
-            StationLogger::Log(LogLevel::WARNING,true,false,F("Failed to continue, test is not paused"));
+            ComHandler::SendErrorMessage(SystemError::CONTINUE_NOT_PAUSED);
             return false;
         }
         return true;
@@ -137,6 +102,7 @@
 #pragma region TransitionHandlers
 
     void TestController::OnRunningToIdle(){
+        ComHandler::SendSystemMessage(SystemMessage::TEST_STATE_COMPLETED,MessageType::NOTIFY);
         this->Reset();
         this->_finishedCallback();
     }

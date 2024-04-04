@@ -49,7 +49,7 @@ public:
         this->state_machine.SetOnTransitionHandler([&](){
             auto from=this->state_machine.GetPreviousStateId();
             auto to=this->state_machine.GetCurrentStateId();
-            StationLogger::Log(LogLevel::INFO,true,false,F("Test Controller Transition from StateId %d from StateId %d"),(int)from,(int)to);
+            ComHandler::SendSystemMessage(SystemMessage::TEST_STATE_TRANSITION,MessageType::GENERAL,from,to);
         });
     }
 
@@ -58,7 +58,7 @@ public:
         this->state_machine.SetOnTransitionHandler([&](){
             auto from=this->state_machine.GetPreviousStateId();
             auto to=this->state_machine.GetCurrentStateId();
-            StationLogger::Log(LogLevel::INFO,true,false,F("Test Controller Transition from StateId %d from StateId %d"),(int)from,(int)to);
+            ComHandler::SendSystemMessage(SystemMessage::TEST_STATE_TRANSITION,MessageType::GENERAL,from,to);
         });
 
     }
@@ -111,9 +111,6 @@ private:
     bool                    savedStateLoaded=false;
     TestFinsihedCallback    _finishedCallback=[](){_NOP();}; 
 
-    
-    
-    
     State states[STATE_COUNT]={
         State(StateId::TEST_IDLE),
         State(StateId::TEST_RUNNING,[&](){this->Running();}),

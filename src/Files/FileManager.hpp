@@ -15,15 +15,7 @@ using namespace components;
 typedef Function<void(HeaterControllerConfig)> HeaterControlCallback;
 typedef Function<void(ProbeControllerConfig)>  ProbeControlCallback;
 
-enum FileResult{
-    DOES_NOT_EXIST,
-    FAILED_TO_OPEN,
-    DESERIALIZE_FAILED,
-    LOADED,
-    SAVED,
-    FAILED_TO_SERIALIZE,
-    FAILED_TO_SAVE
-};
+
 
 class FileManager{
 public:
@@ -33,25 +25,33 @@ public:
         }
         return instance;
     }
-
-    static void Initialize(){
+    static void SetInitialized(bool sdInit){
         auto instance=FileManager::Instance();
-        instance->InstanceInitialize();
+        instance->sdInitialized=sdInit;
     }
     
     static void Load(Serializable* config,PacketType configType){
         auto instance=FileManager::Instance();
-        instance->InstanceLoadConfig(config,configType);
+        if(instance->sdInitialized){
+            instance->InstanceLoadConfig(config,configType);
+        }
     }
 
     static FileResult LoadState(Serializable* sysState){
         auto instance=FileManager::Instance();
-        return instance->InstanceLoadState(sysState);
+        if(instance->sdInitialized){
+            return instance->InstanceLoadState(sysState);
+        }
+        return FileResult::SD_NOT_INITIALIZED;
     }
 
     static bool ClearState(){
-        auto filename=read_filename(PacketType::SAVE_STATE);
-        return SD.remove(filename);
+        auto instance=FileManager::Instance();
+        if(instance->sdInitialized){
+            auto filename=read_filename(PacketType::SAVE_STATE);
+            return SD.remove(filename);
+        }
+        return false;
     }
     /**
      * @brief 
@@ -61,19 +61,24 @@ public:
      */
     static void Save(Serializable* config,PacketType configType){
         auto instance=FileManager::Instance();
-        instance->InstanceSaveConfigLog(config,configType);
+        if(instance->sdInitialized){
+            instance->InstanceSaveConfigLog(config,configType);
+        }
     }
 
-    static void SaveConfig(Serializable* sysState){
+    static bool SaveConfig(Serializable* sysState){
         auto instance=FileManager::Instance();
-        instance->InstanceSaveConfig(sysState,PacketType::SAVE_STATE);
+        if(instance->sdInitialized){
+            return instance->InstanceSaveConfig(sysState,PacketType::SAVE_STATE);
+        }
+        return false;
     }
 private:
-    void InstanceInitialize();
     void InstanceLoadConfig(Serializable* config,PacketType configType);
-    FileResult InstanceSaveConfig(Serializable* config,PacketType configType);
+    bool InstanceSaveConfig(Serializable* config,PacketType configType);
     void InstanceSaveConfigLog(Serializable* config,PacketType configType);
     FileResult InstanceLoadState(Serializable* config);
 private:
     static FileManager* instance;
+    bool sdInitialized=false;
 };

@@ -23,10 +23,11 @@ Controller::Controller():Component(){
 }
 
 void Controller::LoadConfigurations(){
-    StationLogger::LogInit(LogLevel::INFO,true,F("Before Loading Free Memory: %d"),FreeSRAM());
-    StationLogger::LogInit(LogLevel::INFO,true,F("--------Firmware Initialization Starting--------"));
+    ComHandler::SendSystemMessage(SystemMessage::BEFORE_FREE_MEM,MessageType::INIT,FreeRam());
+    ComHandler::SendSystemMessage(SystemMessage::FIRMWARE_INIT,MessageType::INIT);
 
-    StationLogger::LogInit(LogLevel::INFO,true,F("Loading configuration files..."));
+    ComHandler::SendSystemMessage(SystemMessage::LOAD_CONFIG,MessageType::INIT);
+
 
     FileManager::Load(&heatersConfig,PacketType::HEATER_CONFIG);
     FileManager::Load(&probesConfig,PacketType::PROBE_CONFIG);
@@ -47,26 +48,26 @@ void Controller::LoadConfigurations(){
     this->updateInterval=controllerConfig.updateInterval;
     this->logInterval=controllerConfig.logInterval;
     this->versionInterval=controllerConfig.versionInterval;
-    StationLogger::LogInit(LogLevel::INFO,true,F("After Loading Free Memory: %d"),FreeSRAM());
-    StationLogger::LogInit(LogLevel::INFO,true,F("--------Configuration Files Loaded--------"));
+    ComHandler::SendSystemMessage(SystemMessage::AFTER_FREE_MEM,MessageType::INIT,FreeRam());   
+    ComHandler::SendSystemMessage(SystemMessage::CONFIG_LOADED,MessageType::INIT);
 }
 
 void Controller::SetupComponents(){
-    StationLogger::LogInit(LogLevel::INFO,true,F("-------Initalizing Components-------"));
-    //Send messages
+    ComHandler::SendSystemMessage(SystemMessage::COMPONENT_INIT,MessageType::INIT);
 
-    this->heaterControl.Initialize();
     this->probeControl.Initialize();
     this->probeControl.TurnOffSrc();
-
-    StationLogger::LogInit(LogLevel::INFO,true,F("Reading intitial values..."));
     this->probeControl.GetProbeResults(this->probeResults);
+    ComHandler::SendSystemMessage(SystemMessage::PROBES_INIT,MessageType::INIT);
+    
+    this->heaterControl.Initialize();
     this->heaterControl.GetResults(this->heaterResults);
 
-    StationLogger::LogInit(LogLevel::INFO,true,F("Setting up timers..."));
+    ComHandler::SendSystemMessage(SystemMessage::HEATERS_INIT,MessageType::INIT);
+
+    ComHandler::SendSystemMessage(SystemMessage::TIMER_INIT,MessageType::INIT); 
 
     this->testTimer.onInterval([&](){
-        
         this->testController.Tick(this->probeChecks);
     },250);
 
@@ -81,34 +82,29 @@ void Controller::SetupComponents(){
         this->UpdateSerialData();
         this->comData.Set(this->probeResults,this->heaterResults,*(this->testController.GetBurnTimer()));
         ComHandler::MsgPacketSerializer(this->comData,PacketType::DATA);
-        Serial.print(F("Free SRAM"));
-        Serial.println(FreeSRAM());
     },this->comInterval);
 
     this->updateTimer.onInterval([&](){
         this->probeControl.GetProbeResults(this->probeResults);
         this->heaterControl.GetResults(this->heaterResults);
     },this->updateInterval);
-
-    StationLogger::LogInit(LogLevel::INFO,true,F("Registering Components..."));
+    ComHandler::SendSystemMessage(SystemMessage::TIMER_INIT_COMPLETE,MessageType::INIT); 
+    ComHandler::SendSystemMessage(SystemMessage::REG_COMPONENTS,MessageType::INIT);
     //RegisterChild(this->heaterControl);
     //RegisterChild(this->probeControl);
     RegisterChild(this->testTimer);
     RegisterChild(this->stateLogTimer);
     RegisterChild(this->comTimer);
     RegisterChild(this->updateTimer);
-    StationLogger::LogInit(LogLevel::INFO,true,F("Checking for saved state"));
-    StationLogger::LogInit(LogLevel::INFO,true,F("Free Memory: %d"),FreeSRAM());
-    this->CheckSavedState();
-    StationLogger::LogInit(LogLevel::INFO,true,F("-------Initalization Complete-------"));
-    
+    ComHandler::SendSystemMessage(SystemMessage::CHECK_SAVED_STATE,MessageType::INIT,FreeSRAM());
+    this->CheckSavedState();    
 }
 
 void Controller::CheckSavedState(){
     FileResult result=FileManager::LoadState(&this->saveState);
     switch(result){
         case FileResult::LOADED:{
-            StationLogger::Log(LogLevel::INFO,true,false,F("Saved State Found! Continuing Test"));
+            ComHandler::SendSystemMessage(SystemMessage::STATE_LOADED,MessageType::INIT);
             if(this->testController.StartTest(this->saveState.currentTimes)){
                 this->probeControl.SetCurrent(this->saveState.setCurrent);
                 this->heaterControl.ChangeSetPoint(this->saveState.setTemperature);
@@ -118,15 +114,16 @@ void Controller::CheckSavedState(){
             break;
         }
         case FileResult::DOES_NOT_EXIST:{
-            StationLogger::Log(LogLevel::INFO,true,false,F("No Saved State found, continuing normal operation"));
+            ComHandler::SendSystemMessage(SystemMessage::NO_SAVED_STATE,MessageType::INIT);
             break;
         }
         case FileResult::DESERIALIZE_FAILED:
         case FileResult::FAILED_TO_OPEN:{
-            StationLogger::Log(LogLevel::ERROR,true,false,F("Failed to load saved state"));
+            ComHandler::SendErrorMessage(SystemError::SAVED_STATE_FAILED,MessageType::ERROR);
             break;
         }
     }
+    ComHandler::SendSystemMessage(SystemMessage::COMPONENTS_INIT_COMPLETE,MessageType::INIT);
 }
 
 void Controller::UpdateSerialData(){
@@ -167,7 +164,6 @@ void Controller::HandleCommand(StationCommand command){
             break;
         }
         case StationCommand::PROBE_TEST:{
-            StationLogger::Log(LogLevel::INFO,true,false,F("Probe Test Command Recieved!"));
             break;
         }
         case StationCommand::CYCLE_CURRENT:{
@@ -183,55 +179,38 @@ void Controller::HandleCommand(StationCommand command){
             break;
         }
         case StationCommand::CHANGE_MODE_ATUNE:{
-            // if(!this->burnTimer->IsRunning()){
-            //     if(this->heaterControl.GetMode()==HeaterMode::PID_RUN){
-            //         this->heaterControl.ChangeMode(HeaterMode::ATUNE_RUN);
-            //     }
-            //     break;
-            // }
-            //StationLogger::Log(LogLevel::ERROR,true,false,SystemMessage::TEST_RUN_MODESW_ERR_MSG);
             break;
         }
         case StationCommand::CHANGE_MODE_NORMAL:{
-            // if(this->heaterControl.GetMode()==HeaterMode::ATUNE_RUN){
-            //     this->heaterControl.ChangeMode(HeaterMode::PID_RUN);
-            //     StationLogger::Log(LogLevel::INFO,true,false,SystemMessage::STATION_MODE_NORM_MSG);
-                
-            //     break;
-            // }
             break;
         }
         case StationCommand::START_TUNE:{
-            // if(this->heaterControl.GetMode()==HeaterMode::ATUNE_RUN){
-            //     this->heaterControl.StartTuning();
-            //     StationLogger::Log(LogLevel::INFO,true,false,SystemMessage::PID_ATUNE_START_MSG);
-            //     break;
-            // }
-            //StationLogger::Log(LogLevel::ERROR,true,false,SystemMessage::PID_ATUNE_MODE_ERR_MSG);
             break;
         }
         case StationCommand::STOP_TUNE:{
-            // if(this->heaterControl.GetMode()==HeaterMode::ATUNE_RUN){
-            //     this->heaterControl.StopTuning();
-            //     StationLogger::Log(LogLevel::INFO,true,false,SystemMessage::PID_ATUNE_STOP_MSG);
-            //     break;
-            // }
-            //StationLogger::Log(LogLevel::ERROR,true,false,SystemMessage::PID_ATUNE_MODE_ERR_MSG);
+            //TODO: Add stop tune->this only stops the tuning and puts the heaters in Tuning Idle state
+            break;
+        }
+        case StationCommand::CANCEL_TUNE:{
+            //TODO add cancel tune->this stops the tuning and resets the heaters to heating state
+            break;
+        }
+        case StationCommand::SAVE_TUNE:{
             break;
         }
         case StationCommand::RESET:{
-            StationLogger::Log(LogLevel::WARNING,true,false,F("Deleting saved state"));
+            
             if(FileManager::ClearState()){
-                StationLogger::Log(LogLevel::INFO,true,false,F("Saved State Deleted"));
+                ComHandler::SendSystemMessage(SystemMessage::SAVED_STATE_DELETED,MessageType::GENERAL);
             }else{
-                StationLogger::Log(LogLevel::WARNING,true,false,F("Failed to clear saved state"));
+                ComHandler::SendErrorMessage(SystemError::STATE_DELETE_FAILED,MessageType::ERROR);
             }
-            StationLogger::Log(LogLevel::WARNING,true,false,F("Controller Resetting, please wait..."));
+            ComHandler::SendSystemMessage(SystemMessage::RESETTING_CONTROLLER,MessageType::GENERAL);
             this->Reset();
             break;
         }
         default:{
-            StationLogger::Log(LogLevel::CRITICAL_ERROR,true,false,F("Invalid Command Recieved"));
+            ComHandler::SendErrorMessage(SystemError::INVALID_COMMAND);
             break;
         }
     }
@@ -257,5 +236,4 @@ bool* Controller::CheckCurrents(){
 void Controller::TestFinished(){
     this->probeControl.TurnOffSrc();
     this->heaterControl.TurnOff();
-
 }

@@ -69,6 +69,8 @@ public:
     void CancelTuning();
     void OnTuningToComplete();
     void OnCompleteToIdle();
+    void OnSaveTuning();
+    void OnCancelTuning();
 
 
 private:
@@ -90,32 +92,29 @@ private:
     virtual void privateLoop() override;
 
     State heaterStates[HEATER_STATE_COUNT]={
-		State(HeaterState::HEATER_OFF,[&](){_NOP();}),
-		State(HeaterState::HEATER_WARMUP,[&](){this->WarmupRun();}),
-		State(HeaterState::HEATER_ON,[&](){this->RunOn();})
-	};
-	Transition heaterTransitions[HEATER_TRANSITION_COUNT]={
-		Transition(&heaterStates[HEATER_OFF],&heaterStates[HEATER_WARMUP],
-                HeaterTransition::HEATER_OFF_TO_WARMUP,
-                HeaterTrigger::START_HEATERS,
-                [&](){this->TurnOn();},
-                [](){return true;}),
-		Transition(&heaterStates[HEATER_WARMUP],&heaterStates[HEATER_ON],
-                HeaterTransition::HEATER_WARMUP_TO_ON,
-                HeaterTrigger::TEMP_REACHED,
-                [](){_NOP();},
-                [](){return true;}),
-		Transition(&heaterStates[HEATER_ON],&heaterStates[HEATER_OFF],
-                HeaterTransition::HEATER_ON_TO_OFF,
-                HeaterTrigger::STOP_HEATERS,
-                [](){this->TurnOff();},
-                [](){return true;}),
-		Transition(&heaterStates[HEATER_WARMUP],&heaterStates[HEATER_OFF],
-                HeaterTransition::HEATER_WARMUP_TO_OFF,
-                HeaterTrigger::STOP_HEATERS,
-                [&](){this->TurnOff();},
-                [](){return true;}),
-	};
+        State(HeaterState::HEATER_OFF,[&](){_NOP();}),
+        State(HeaterState::HEATER_WARMUP,[&](){this->WarmupRun();}),
+        State(HeaterState::HEATER_ON,[&](){this->RunOn();})
+    };
+
+    Transition heaterTransitions[HEATER_TRANSITION_COUNT]={
+        Transition(&heaterStates[HEATER_OFF],&heaterStates[HEATER_WARMUP],
+            HeaterTransition::HEATER_OFF_TO_WARMUP,
+            HeaterTrigger::START_HEATERS,
+            [&](){this->TurnOn();}),
+        Transition(&heaterStates[HEATER_WARMUP],&heaterStates[HEATER_ON],
+            HeaterTransition::HEATER_WARMUP_TO_ON,
+            HeaterTrigger::TEMP_REACHED,
+            [](){_NOP();}),
+        Transition(&heaterStates[HEATER_ON],&heaterStates[HEATER_OFF],
+            HeaterTransition::HEATER_ON_TO_OFF,
+            HeaterTrigger::STOP_HEATERS,
+            [&](){this->TurnOff();}),
+        Transition(&heaterStates[HEATER_WARMUP],&heaterStates[HEATER_OFF],
+            HeaterTransition::HEATER_WARMUP_TO_OFF,
+            HeaterTrigger::STOP_HEATERS,
+            [&](){this->TurnOff();}),
+    };
 
 	State tuneStates[TUNE_STATE_COUNT]={
 		State(TuneState::TUNE_IDLE,[&](){this->TuningIdle();}),
@@ -123,37 +122,30 @@ private:
 		State(TuneState::TUNE_COMPLETE,[&](){this->TuningComplete();})
 	};
 
-	Transition tuneTransitions[TUNE_TRANSITION_COUNT]={
-		Transition(&tuneStates[TuneState::TUNE_IDLE],&tuneStates[TuneState::TUNE_RUNNING],
+    Transition tuneTransitions[TUNE_TRANSITION_COUNT]={
+        Transition(&tuneStates[TuneState::TUNE_IDLE],&tuneStates[TuneState::TUNE_RUNNING],
                 TuneTransition::TUNE_IDLE_TO_RUNNING,
                 TuneTrigger::TUNE_START,
-                [&](){this->StartTuning();},
-                [](){return true;}),
-
-		Transition(&tuneStates[TuneState::TUNE_RUNNING],&tuneStates[TuneState::TUNE_COMPLETE],
+                [&](){this->StartTuning();}),
+        Transition(&tuneStates[TuneState::TUNE_RUNNING],&tuneStates[TuneState::TUNE_COMPLETE],
                 TuneTransition::TUNE_RUNNING_TO_IDLE,
                 TuneTrigger::TUNE_FINISHED,
-                [&](){this->StopTuning();},
-                [](){return true;}),
-
-		Transition(&tuneStates[TuneState::TUNE_COMPLETE],&tuneStates[TuneState::TUNE_IDLE],
+                [&](){this->StopTuning();}),
+        Transition(&tuneStates[TuneState::TUNE_COMPLETE],&tuneStates[TuneState::TUNE_IDLE],
                 TuneTransition::TUNE_COMPLETE_TO_IDLE,
                 TuneTrigger::TUNE_SAVE,
-                [](){},
-                [](){return true;}),
-
-		Transition(&tuneStates[TuneState::TUNE_COMPLETE],&tuneStates[TuneState::TUNE_IDLE],
+                [](){}),
+        Transition(nullptr,nullptr,
                 TuneTransition::TUNE_COMPLETE_TO_IDLE,
-                TuneTrigger::TUNE_CANCEL,
-                [](){},
-                [](){return true;}),
-
-		Transition(&tuneStates[TuneState::TUNE_RUNNING],&tuneStates[TuneState::TUNE_IDLE],
+                TuneTrigger::TUNE_CANCELED,
+                [&](){
+                    this->modeStateMachine.triggerEvent(ModeTrigger::HEATING_START);
+                }),
+        Transition(&tuneStates[TuneState::TUNE_RUNNING],&tuneStates[TuneState::TUNE_IDLE],
                 TuneTransition::TUNE_RUNNING_TO_IDLE,
                 TuneTrigger::TUNE_STOP,
-                [](){},
-                [](){return true;})
-	};
+                [](){})
+    };
 
     State modes[2]={
         State(HeaterMode::HEATING,[&](){this->RunHeating();}),

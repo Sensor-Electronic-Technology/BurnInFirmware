@@ -7,10 +7,12 @@
 #include "../Controller/ControllerConfiguration.hpp"
 #include "../Serializable.hpp"
 #include "../constants.h"
+#include "SystemMessagePacket.hpp"
 #include "avr/pgmspace.h"
 
 #define ARDUINOJSON_DEFAULT_NESTING_LIMIT       50
 #define BUFFER_SIZE                             255
+
 
 class ComHandler{
 public:
@@ -52,17 +54,40 @@ public:
         instance->_commandCallback=cbk;
     }
 
-    static void MapHeaterResponseCallback(ResponseCallback cbk){
-        auto instance=ComHandler::Instance();
-        instance->heaterResponseCb=cbk;
-    }
-
     static void SendStartResponse(bool success,const __FlashStringHelper* msg){
         auto instance=ComHandler::Instance();
         char buffer[BUFFER_SIZE];
         PGM_P msgMem=reinterpret_cast<PGM_P>(msg);
         strcpy_P(buffer,msgMem);
         instance->InstanceSendStartResponse(success,buffer);
+    }
+
+    static void SendSystemMessage(SystemMessage msgIndex,MessageType msgType,...){
+        auto instance=ComHandler::Instance();
+        char buffer[BUFFER_SIZE];
+        SystemMessagePacket msgPacket;
+        auto format=read_system_message(msgIndex);
+        va_list(args);
+        va_start(args,format);
+        vsnprintf(buffer,sizeof(buffer),format,args);
+        va_end(args);
+        msgPacket.message=buffer;
+        msgPacket.messageType=msgType;
+        ComHandler::MsgPacketSerializer(msgPacket,PacketType::MESSAGE);
+    }
+
+    static void SendErrorMessage(SystemError errIndex,...){
+        auto instance=ComHandler::Instance();
+        char buffer[BUFFER_SIZE];
+        SystemMessagePacket msgPacket;
+        auto format=read_system_error(errIndex);
+        va_list(args);
+        va_start(args,format);
+        vsnprintf(buffer,sizeof(buffer),format,args);
+        va_end(args);
+        msgPacket.message=buffer;
+        msgPacket.messageType=MessageType::ERROR;
+        instance->InstanceMsgPacketSerializer(msgPacket,PacketType::MESSAGE);
     }
 
     static void SendStartFromLoad(bool success,const __FlashStringHelper* msg){
@@ -110,26 +135,6 @@ public:
         instance->serial->println();
     }
 
-    template <typename T> 
-    static void SendRequest(PacketType packetType,const char* request,const T& data) {
-        auto instance=ComHandler::Instance();
-        instance->InstanceSendRequest(packetType,request,data);
-    }
-
-    static void SendMessage(const char* message){
-        auto instance=ComHandler::Instance();
-        instance->InstanceSendMessage(message);
-    }
-
-    static void SendInitMessage(const char* message){
-        auto instance=ComHandler::Instance();
-        instance->InstanceSendInitMessage(message);
-    }
-
-    static void SendHeaterNotify(const HeaterTuneResult& result){
-        
-    }
-
 private:
     void MsgPacketDeserialize();
     void ResponseDeserializer(JsonDocument& doc);
@@ -147,15 +152,15 @@ private:
     void InstanceMsgPacketSerializer(const T& data,PacketType packetType);
     template <typename T> 
     void InstanceSendRequest(PacketType packetType,const char* request,const T& data);
-    void InstanceSendMessage(const char* message);
+    // void InstanceSendMessage(const char* message);
     void SendId();
     void ReceiveId(const JsonDocument& serialEventDoc);
     void SendVersion();
     void ReceiveVersion(const JsonDocument& serialEventDoc);
-    void InstanceSendInitMessage(const char* message);
     void InstanceSendStartResponse(bool success,const char* message);
     void InstanceSendTestStartFromLoad(bool success,const char* message);
     void InstanceSendTestCompleted(const char* message);
+
 
 private:
     static ComHandler* instance;
@@ -163,8 +168,4 @@ private:
     Stream* serial=nullptr;
     bool serialEventEnabled;
     CommandCallback _commandCallback=[](StationCommand){};
-    ResponseCallback heaterResponseCb=[](Response){};
-    // ResponseCallback testResponseCb=[](Response){};
-
-
 };

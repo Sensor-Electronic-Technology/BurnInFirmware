@@ -24,18 +24,17 @@ void setup(){
     randomSeed(analogRead(0));
     ComHandler::SetSerial(&Serial);
     StationLogger::InitSerial();
+    bool sdInit=false;
     if(!SD.begin(SS)){
-        StationLogger::Log(LogLevel::CRITICAL_ERROR,true,true,F("Failed to open SD card. Configurations cannot be read"));
-        while(true){ }
+        ComHandler::SendErrorMessage(SystemError::SD_INIT_FAILED);
+        sdInit=true;
     }
-    StationLogger::LogInit(LogLevel::INFO,true,F("SD Opened"));
-    StationLogger::LogInit(LogLevel::INFO,true,F("Connected, send data"));
-    lastCheck=millis();
+    FileManager::SetInitialized(sdInit);
+    // lastCheck=millis();
     controller.LoadConfigurations();
     controller.SetupComponents();
     ComHandler::EnableSerialEvent();
-    //String sid=id;
-    //StationLogger::LogInit(LogLevel::INFO,true,F("StationId: %s"),StationId);
+
 }
 
 void loop(){

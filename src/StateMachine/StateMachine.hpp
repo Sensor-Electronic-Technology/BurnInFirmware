@@ -104,7 +104,7 @@ public:
     bool triggerEvent(uint8_t eventId){
         for(uint8_t i=0;i<N;i++){
             if(transitions[i].eventId==eventId){
-                if(this->currentState==transitions[i].from){
+                if(this->transitions[i].from==nullptr || this->currentState==transitions[i].from){
                     return this->_transition(&transitions[i]);
                 }
             }
