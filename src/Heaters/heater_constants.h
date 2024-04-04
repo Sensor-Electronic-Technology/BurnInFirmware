@@ -10,7 +10,7 @@ typedef components::Function<void(void)> TransitionActionHandler;
 #define TEMP_INTERVAL                   100ul 
 #define DEFAULT_TEMP_DEV                0.1
 
-struct HeaterTuneResult{
+struct HeaterTuneResult:Serializable{
     int heaterNumber=-1;
     bool complete=false;
     float kp=0,ki=0,kd=0;
@@ -21,23 +21,29 @@ struct HeaterTuneResult{
         this->ki=0;
         this->kd=0;
     }
-};
 
-struct HeaterTunePacket:Serializable{
-    HeaterTuneResult results[HEATER_COUNT];
-    void clear(){
-        for(uint8_t i=0;i<3;i++){
-            this->results[i].clear();
+    virtual void Serialize(JsonObject *packet,bool initialize){
+        if(initialize){
+            (*packet)[F("HeaterNumber")]=this->heaterNumber;
+            (*packet)[F("kp")]=this->kp;
+            (*packet)[F("ki")]=this->ki;
+            (*packet)[F("kd")]=this->kd;
+        }else{
+            this->heaterNumber=(*packet)[F("HeaterNumber")];
+            this->kp=(*packet)[F("kp")];
+            this->ki=(*packet)[F("ki")];
+            this->kd=(*packet)[F("kd")];
         }
     }
-    void set(uint8_t index,const HeaterTuneResult& result){
-        this->results[index]=result;
+    virtual void Serialize(JsonDocument *doc,bool initialize)override{
+
     }
-    
-    virtual void Deserialize(JsonObject &packet);
-    virtual void Deserialize(JsonDocument &doc);
-    virtual void Serialize(JsonDocument *doc,bool initialize);
-    virtual void Serialize(JsonObject *packet,bool initialize);
+    virtual void Deserialize(JsonDocument &doc) override{
+
+    }
+    virtual void Deserialize(JsonObject &packet)override{
+
+    }
 };
 
 enum TuneState:uint8_t{

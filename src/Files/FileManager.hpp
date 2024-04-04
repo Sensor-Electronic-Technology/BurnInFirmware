@@ -61,12 +61,18 @@ public:
      */
     static void Save(Serializable* config,PacketType configType){
         auto instance=FileManager::Instance();
-        instance->InstanceSaveConfig(config,configType);
+        instance->InstanceSaveConfigLog(config,configType);
+    }
+
+    static void SaveConfig(Serializable* sysState){
+        auto instance=FileManager::Instance();
+        instance->InstanceSaveConfig(sysState,PacketType::SAVE_STATE);
     }
 private:
     void InstanceInitialize();
     void InstanceLoadConfig(Serializable* config,PacketType configType);
-    void InstanceSaveConfig(Serializable* config,PacketType configType);
+    FileResult InstanceSaveConfig(Serializable* config,PacketType configType);
+    void InstanceSaveConfigLog(Serializable* config,PacketType configType);
     FileResult InstanceLoadState(Serializable* config);
 private:
     static FileManager* instance;

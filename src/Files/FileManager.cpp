@@ -63,11 +63,10 @@ FileResult FileManager::InstanceLoadState(Serializable* sysState){
     return FileResult::LOADED;
 }
 
-void FileManager::InstanceSaveConfig(Serializable* config,PacketType configType){
+void FileManager::InstanceSaveConfigLog(Serializable* config,PacketType configType){
     JsonDocument doc;
     File file;
     WriteBufferingStream fileWriteBuffer{file, 64};
-
     SD.remove(read_filename(configType));//overwrite file
     file=SD.open(read_filename(configType),FILE_WRITE);
     if(!file){
@@ -81,6 +80,7 @@ void FileManager::InstanceSaveConfig(Serializable* config,PacketType configType)
         StationLogger::Log(LogLevel::CRITICAL_ERROR,true,false,
                 F("Configuration save failed. Changed will be lost on restart.\n Suggest manually enter changes"));
         file.close();
+        return;
     }
     switch(configType){
         case PacketType::HEATER_CONFIG:{
@@ -99,6 +99,26 @@ void FileManager::InstanceSaveConfig(Serializable* config,PacketType configType)
             StationLogger::Log(LogLevel::INFO,true,false,F("File Saved"));
             break;
         }
+    }
+    fileWriteBuffer.flush();
+    file.close();
+    doc.clear();
+}
+
+FileResult FileManager::InstanceSaveConfig(Serializable* config,PacketType configType){
+    JsonDocument doc;
+    File file;
+    WriteBufferingStream fileWriteBuffer{file, 64};
+    SD.remove(read_filename(configType));//overwrite file
+    file=SD.open(read_filename(configType),FILE_WRITE);
+    if(!file){
+        return FileResult::FAILED_TO_OPEN;
+    }
+    doc.clear();
+    config->Serialize(&doc,true);
+    if(serializeJsonPretty(doc,fileWriteBuffer)==0){
+        file.close();
+        return FileResult::DESERIALIZE_FAILED;
     }
     fileWriteBuffer.flush();
     file.close();

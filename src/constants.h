@@ -87,8 +87,9 @@ enum PacketType:uint8_t{
     TEST_START_STATUS=12, //Notify PC that test has started
     TEST_COMPLETED=13,    //Notify PC that test has completed
     TEST_LOAD_START=14,   //Notify PC that test is starting from a load state
-    HEATER_TUNE_COMPLETE=15,
-    HEATER_TUNE_RESPONSE=16,
+    HEATER_NOTIFY=15,
+    HEATER_TUNE_COMPLETE=16,
+    HEATER_TUNE_RESPONSE=17,
 };
 
 const char* const prefixes[] PROGMEM = {
@@ -107,8 +108,9 @@ const char* const prefixes[] PROGMEM = {
     "TSTAT",     //12
     "TCOMP",     //13
     "TLOAD"      //14
-    "HTD"     //15 
-    "HTR"    //16
+    "HNOTIFY"    //15
+    "HTUNED"     //16 
+    "HRESP"    //17
 };
 
 

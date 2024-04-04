@@ -126,9 +126,9 @@ public:
         instance->InstanceSendInitMessage(message);
     }
 
-    // static void SendHeaterTuneResult(const HeaterTuneResult& result){
-    //     ComHandler::MsgPacketSerializer(result,PacketType::HEATER_TUNE_RESULT);
-    // }
+    static void SendHeaterNotify(const HeaterTuneResult& result){
+        
+    }
 
 private:
     void MsgPacketDeserialize();

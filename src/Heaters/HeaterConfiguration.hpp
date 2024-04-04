@@ -8,12 +8,21 @@
 class AutoTuneResults:public Serializable{
 public:
     HeaterTuneResult results[HEATER_COUNT];
-    
-    void Clear(){
+    AutoTuneResults(){
+        for(uint8_t i=0;i<HEATER_COUNT;i++){
+            this->results[i]=HeaterTuneResult();
+        }
+    }
+    void clear(){
         for(uint8_t i=0;i<HEATER_COUNT;i++){
             this->results[i].clear();
         }
     }
+
+    void set(uint8_t index,const HeaterTuneResult& result){
+        this->results[index]=result;
+    }
+
     virtual void Serialize(JsonObject *packet,bool initialize){
         if(initialize){
             JsonArray turnResultsJson=(*packet)[F("AutoTuneResults")].to<JsonArray>();
