@@ -66,7 +66,8 @@ public:
         auto instance=ComHandler::Instance();
         char buffer[BUFFER_SIZE];
         SystemMessagePacket msgPacket;
-        auto format=read_system_message(msgIndex);
+        char format[BUFFER_SIZE];
+        strcpy_P(format,read_system_message(msgIndex));
         va_list(args);
         va_start(args,format);
         vsnprintf(buffer,sizeof(buffer),format,args);
@@ -80,7 +81,9 @@ public:
         auto instance=ComHandler::Instance();
         char buffer[BUFFER_SIZE];
         SystemMessagePacket msgPacket;
-        auto format=read_system_error(errIndex);
+        char format[BUFFER_SIZE];
+        strcpy_P(format,read_system_error(errIndex));
+        //auto format=read_system_error(errIndex);
         va_list(args);
         va_start(args,format);
         vsnprintf(buffer,sizeof(buffer),format,args);
@@ -113,11 +116,13 @@ public:
             instance->serialEventEnabled=false;
             auto error=deserializeJson(serialEventDoc,*instance->serial);
             if(error){
+                Serial.print(F("Deserialization Failed.. Reason: \n"));
+                Serial.println(error.c_str());
                 //StationLogger::Log(LogLevel::CRITICAL_ERROR,true,false,F("Deserialization Failed.. Reason: \n %s",error.c_str());
                 instance->serialEventEnabled=true;
                 return;
             }
-            instance->MsgPacketDeserialize();
+            instance->MsgPacketDeserialize(serialEventDoc);
             instance->serialEventEnabled=true;
         }
     }
@@ -128,7 +133,9 @@ public:
         auto instance=ComHandler::Instance();
         Derived_from<T,Serializable>();
         serializerDoc.clear();
-        serializerDoc[F("Prefix")]=read_packet_prefix(packetType);
+        char packetStr[BUFFER_SIZE];
+        strcpy_P(packetStr,read_packet_prefix(packetType));
+        serializerDoc[F("Prefix")]=packetStr;
         JsonObject packet=serializerDoc[F("Packet")].to<JsonObject>();
         data.Serialize(&packet,true);
         serializeJson(serializerDoc,*instance->serial);
@@ -136,7 +143,7 @@ public:
     }
 
 private:
-    void MsgPacketDeserialize();
+    void MsgPacketDeserialize(JsonDocument& serialEventDoc);
     void ResponseDeserializer(JsonDocument& doc);
     /**
      * Serializes objects derived from ControllerConfiguration.

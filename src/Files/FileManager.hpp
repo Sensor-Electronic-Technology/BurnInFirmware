@@ -8,6 +8,7 @@
 #include "../Heaters/HeaterConfiguration.hpp"
 #include "../Probes/ProbeConfiguration.hpp"
 #include "../constants.h"
+#include "../Communication/ComHandler.hpp"
 
 
 using namespace components;

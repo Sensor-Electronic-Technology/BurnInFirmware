@@ -7,7 +7,6 @@
 #include "../Probes/probes_include.h"
 #include "../Communication/ComHandler.hpp"
 #include "../Communication/SerialData.hpp"
-#include "../Logging/StationLogger.hpp"
 #include "../Files/FileManager.hpp"
 #include "SaveState.hpp"
 #include "../StressTest/TestController.hpp"

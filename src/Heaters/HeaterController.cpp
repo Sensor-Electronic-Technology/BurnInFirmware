@@ -96,6 +96,14 @@ void HeaterController::SaveTuning(){
     }
 }
 
+void HeaterController::TuningIdle(){
+ //TODO: Implement
+}
+
+void HeaterController::TuningComplete(){
+    //TODO  Implement
+}
+
 void HeaterController::CancelTuning(){
     this->tuningResults.clear();
     this->tuningStateMachine.triggerEvent(TuneTrigger::TUNE_CANCELED);

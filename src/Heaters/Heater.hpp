@@ -4,7 +4,6 @@
 #include "TemperatureSensor.hpp"
 #include "HeaterConfiguration.hpp"
 #include "../StateMachine/StateMachine.hpp"
-#include "../Logging/StationLogger.hpp"
 #include "./PID/PID.hpp"
 #include "./PID/PID_AutoTune.hpp"
 

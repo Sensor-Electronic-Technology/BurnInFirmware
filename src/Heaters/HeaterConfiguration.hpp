@@ -56,8 +56,6 @@ public:
     }
 };
 
-
-
 class NtcConfig{
 public:
 	float aCoeff,bCoeff,cCoeff;

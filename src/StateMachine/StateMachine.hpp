@@ -7,10 +7,6 @@ typedef components::Function<void(void*)> StateActionHandlerWithParam;
 typedef components::Function<bool(void)> GuardConditionHandler;
 typedef components::Function<void(void)> OnTransitionHandler;
 
-
-
-
-
 class State{
     template<uint8_t N>friend class StateMachine;
 public:

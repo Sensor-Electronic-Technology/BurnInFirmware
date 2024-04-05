@@ -13,9 +13,7 @@ TemperatureSensor::TemperatureSensor(const NtcConfig& config)
     fWeight(config.fWeight){
         pinMode(this->inputPin,INPUT);
     }
-
-
-
+    
 float TemperatureSensor::Read(){
     float aValue = analogRead(this->inputPin);
     float ntc_res=R_REF/(ADC_MAX/aValue-1);

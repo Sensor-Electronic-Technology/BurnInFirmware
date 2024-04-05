@@ -1,5 +1,4 @@
 #include "FileManager.hpp"
-#include "../Logging/StationLogger.hpp"
 
 FileManager* FileManager::instance=nullptr;
 

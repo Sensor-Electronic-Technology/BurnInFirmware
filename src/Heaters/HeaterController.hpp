@@ -5,7 +5,6 @@
 #include "Heater.hpp"
 #include "../StateMachine/StateMachine.hpp"
 #include "../Files/FileManager.hpp"
-#include "../Logging/StationLogger.hpp"
 #include "heater_constants.h"
 
 #define HEATER_DEBUG 				1
@@ -60,7 +59,6 @@ public:
     void StartTuning();
     void StopTuning();
     //Tuning Callbacks
-    void HandleResponse(Response response);
     void HeaterRunCompleteHandler(HeaterTuneResult result);
     //Tune Transitions
     //void OnIdleToTuning();
@@ -85,7 +83,6 @@ private:
 
     HeaterControllerConfig configuration;
     TuningCompleteCallback tuningCompleteCbk=[](HeaterTuneResult){};
-    ResponseCallback responseCbk=[](Response){};
     unsigned long readInterval;
     bool isTuning=false;
     bool tuningCompleted=false;
@@ -133,7 +130,7 @@ private:
                 [&](){this->StopTuning();}),
         Transition(&tuneStates[TuneState::TUNE_COMPLETE],&tuneStates[TuneState::TUNE_IDLE],
                 TuneTransition::TUNE_COMPLETE_TO_IDLE,
-                TuneTrigger::TUNE_SAVE,
+                TuneTrigger::TUNE_SAVED,
                 [](){}),
         Transition(nullptr,nullptr,
                 TuneTransition::TUNE_COMPLETE_TO_IDLE,

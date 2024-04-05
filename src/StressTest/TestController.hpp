@@ -1,7 +1,6 @@
 #pragma once
 #include <Arduino.h>
 #include "../StateMachine/StateMachine.hpp"
-#include "../Logging/StationLogger.hpp"
 #include "../Probes/probe_constants.h"
 #include "../TestTimer/burn_timer_includes.h"
 #include "../Communication/ComHandler.hpp"
