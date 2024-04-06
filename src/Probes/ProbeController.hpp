@@ -19,6 +19,7 @@ public:
     void TurnOnSrc();
     void TurnOffSrc();
     void CycleCurrent();
+    void StartProbeTest();
     CurrentValue GetSetCurrent();
     void SetCurrent(CurrentValue current);
     void GetProbeResults(ProbeResult* results);
@@ -27,9 +28,11 @@ private:
     Probe           probes[PROBE_COUNT];
     ProbeResult     results[PROBE_COUNT];
     CurrentSelector currentSelector;
+    CurrentValue    savedCurrent;
     CurrentValue    testCurrent;
-    uint8_t           currentPercent;
-    Timer           readTimer;
+    int             currentPercent;
+    Timer           readTimer,probeTestTimer;
+    int             probeTestTime;
     void privateLoop(){ }
 
 

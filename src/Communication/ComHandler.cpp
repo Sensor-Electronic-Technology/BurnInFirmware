@@ -8,27 +8,6 @@ void ComHandler::MsgPacketDeserialize(JsonDocument& serialEventDoc) {
     const char* prefix=serialEventDoc[F("Prefix")].as<const char*>();
     bool found=false;
      PacketType packetType;
-/*    
-    uint8_t first = 0;
-    uint8_t last = PREFIX_COUNT-1;
-    uint8_t middle;
-    do {
-        char target[BUFFER_SIZE];
-        strcpy_P(target,read_packet_prefix(middle));
-        middle = (first + last)/2;
-        if (strcmp(prefix,(const char*)target)==0){
-            found=true;
-            packetType=(PacketType)middle;
-            break;
-        }
-        if (strcmp(prefix,(const char*)target) > 0){
-            first = middle+1;    
-            continue;
-        }else{
-            last = middle-1;
-        }
-            
-    } while( first <= last ); */
     for(uint8_t i=0;i<15;i++){
         char target[BUFFER_SIZE];
         strcpy_P(target,read_packet_prefix(i));

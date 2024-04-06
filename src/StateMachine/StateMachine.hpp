@@ -86,17 +86,6 @@ public:
         this->previousState=nullptr;
     }
 
-    bool CanTransition(uint8_t eventId){
-        for(uint8_t i=0;i<N;i++){
-            if(transitions[i].eventId==eventId){
-                if(this->currentState==transitions[i].from){
-                    return transitions[i].CanTransition();
-                }
-            }
-        }
-        return false;
-    }
-
     bool triggerEvent(uint8_t eventId){
         for(uint8_t i=0;i<N;i++){
             if(transitions[i].eventId==eventId){
@@ -130,8 +119,8 @@ private:
 
     bool _transition(Transition* transition){
         if(transition->CanTransition()){
+            this->currentState=(transition->to==nullptr) ? this->initialState : transition->to;
             this->previousState=this->currentState;
-            this->currentState=transition->to;
             this->onTransition();
             transition->OnTransition();
             return true;

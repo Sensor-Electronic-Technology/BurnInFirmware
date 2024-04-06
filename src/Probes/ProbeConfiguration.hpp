@@ -17,6 +17,7 @@ struct CurrentSelectorConfig{
         this->SetCurrent=(CurrentValue)configJson[F("SetCurrent")];
         this->switchEnabled=configJson[F("SwitchEnabled")];
     }
+    
     void Serialize(JsonObject* configJson){
         (*configJson)[F("CurrentPin")]=this->currentPin;
         (*configJson)[F("Pin120mA")]=this->pin120mA;
@@ -100,9 +101,10 @@ struct ProbeConfig{
 
 class ProbeControllerConfig:public Serializable{
 public:
-	uint8_t readInterval=PROBE_READINTERVAL;
+	int readInterval=PROBE_READINTERVAL;
+    int probeTestTime=PROBE_TESTTIME;
     CurrentValue probeTestCurrent;
-    uint8_t probeCurrentPercent;
+    int probeCurrentPercent;
     CurrentSelectorConfig   currentSelectConfig;
     
 	ProbeConfig	probeConfigs[PROBE_COUNT]={
@@ -137,6 +139,7 @@ public:
         (*doc)[F("ReadInterval")] = this->readInterval;
         (*doc)[F("CurrentPercent")]=this->probeCurrentPercent;
         (*doc)[F("ProbeTestCurrent")]=this->probeTestCurrent;
+        (*doc)[F("ProbeTestTime")]=this->probeTestTime;
         //(*doc).shrinkToFit();
     }    
     
@@ -163,6 +166,7 @@ public:
         (*packet)[F("CurrentPercent")]=this->probeCurrentPercent;
         (*packet)[F("ProbeTestCurrent")]=this->probeTestCurrent;
         (*packet)[F("ReadInterval")] = this->readInterval;
+        (*packet)[F("ProbeTestTime")]=this->probeTestTime;
     }
 
     virtual void Deserialize(JsonDocument &doc) override{
@@ -176,6 +180,7 @@ public:
         this->readInterval=doc[F("ReadInterval")];
         this->probeCurrentPercent=doc[F("CurrentPercent")];
         this->probeTestCurrent=doc[F("ProbeTestCurrent")];
+        this->probeTestTime=doc[F("ProbeTestTime")];
     }
 
     virtual void Deserialize(JsonObject &packet) override{
@@ -189,5 +194,6 @@ public:
         this->readInterval=packet[F("ReadInterval")];
         this->probeCurrentPercent=packet[F("CurrentPercent")];
         this->probeTestCurrent=packet[F("ProbeTestCurrent")];
+        this->probeTestTime=packet[F("ProbeTestTime")];
     }
 };

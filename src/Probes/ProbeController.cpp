@@ -4,8 +4,8 @@ ProbeController::ProbeController(const ProbeControllerConfig& config)
     :Component(),
     currentSelector(config.currentSelectConfig),
     testCurrent(config.probeTestCurrent),
-    currentPercent(config.probeCurrentPercent)
-{
+    currentPercent(config.probeCurrentPercent),
+    probeTestTime(config.probeTestTime){
     for(uint8_t i=0;i<PROBE_COUNT;i++){
         this->probes[i]=Probe(config.probeConfigs[i]);
         RegisterChild(this->probes[i]);
@@ -35,6 +35,7 @@ void ProbeController::Setup(const ProbeControllerConfig& config){
     this->readTimer.onInterval([&]{
         this->Read();
     },config.readInterval);
+
     RegisterChild(this->readTimer);
 }
 
@@ -43,6 +44,16 @@ void ProbeController::Initialize(){
     for(uint8_t i=0;i<100;i++){
         this->Read();
     }
+}
+
+void ProbeController::StartProbeTest(){
+    this->savedCurrent=this->currentSelector.GetSetCurrent();
+    this->currentSelector.SetCurrent(this->testCurrent);
+    this->currentSelector.TurnOn();
+    probeTestTimer.setTimeout([&]{
+        this->TurnOffSrc();
+        this->currentSelector.SetCurrent(this->savedCurrent);
+    },this->probeTestTime);
 }
 
 void ProbeController::CycleCurrent(){

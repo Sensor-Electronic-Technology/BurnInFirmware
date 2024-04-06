@@ -22,11 +22,6 @@ template <class T> int EEPROM_read(int addr, T& value) {
     return newAddr;
 }//End read any value/type
 
-inline static const char* read_pgm(const char* str){
-    char buffer[strlen_P(str)+1];
-    strcpy_P(buffer,str);
-    return buffer;
-}
 
 #pragma region Globals
     inline char StationId[4];
@@ -105,33 +100,31 @@ inline static const char* read_pgm(const char* str){
     };
 #pragma endregion
 
-
 #pragma region Callbacks
     typedef components::Function<void(void)> RestartRequiredCallback;
     typedef components::Function<void(StationCommand)> CommandCallback;
     typedef components::Function<void(void)> TestFinsihedCallback;
 #pragma endregion
 
-
-#pragma region FileNames
+#pragma region PrefixDefinitions
     #define PREFIX_COUNT    15
     enum PacketType:uint8_t{
-        HEATER_CONFIG=0,
-        PROBE_CONFIG=1,
-        SYSTEM_CONFIG=2,
-        SAVE_STATE=3,
-        MESSAGE=4,         //general message->not critical for the user to see
-        DATA=5,
-        COMMAND=6,
-        ID_RECEIVE=7,     //Set station id
-        ID_REQUEST=8,     //Request station id-Send to PC
-        VER_RECIEVE=9,
-        VER_REQUEST=10,
-        TEST_START_STATUS=11, //Notify PC that test has started
-        TEST_COMPLETED=12,    //Notify PC that test has completed
-        TEST_LOAD_START=13,   //Notify PC that test is starting from a load state
-        HEATER_NOTIFY=14,
-        HEATER_TUNE_COMPLETE=15,
+        HEATER_CONFIG=0,            //PC to Station config
+        PROBE_CONFIG=1,             //PC to stattion config
+        SYSTEM_CONFIG=2,            //PC to station config
+        SAVE_STATE=3,               //???
+        MESSAGE=4,                  //outgoing->message of speficied type
+        DATA=5,                     //outgoing-> readings and state data
+        COMMAND=6,                  //incoming-> route to Controller
+        ID_RECEIVE=7,               //Set station id
+        ID_REQUEST=8,               //Request station id-Send to PC
+        VER_RECIEVE=9,              //incoming-> new firmware version
+        VER_REQUEST=10,             //
+        TEST_START_STATUS=11,       //outgoing->Notify PC that test has started
+        TEST_COMPLETED=12,          //outgoing->Notify PC that test has completed
+        TEST_LOAD_START=13,         //outgoing->Notify PC that test is starting from a load state
+        HEATER_NOTIFY=14,           //Outgoing->Notify PC of a single heater tuning results
+        HEATER_TUNE_COMPLETE=15,    //Outgoing->notfiy PC that all heaters have been tuned
     };
 
     const char strPre_01[] PROGMEM="CH";   //0
@@ -168,6 +161,10 @@ inline static const char* read_pgm(const char* str){
         strPre_14,   //13
         strPre_15    //14
     };
+#pragma endregion
+
+#pragma region FileNames
+
 
     const char strFile_01[] PROGMEM="/hConfigs.txt";  //0
     const char strFile_02[] PROGMEM="/pConfigs.txt";  //1
@@ -184,7 +181,6 @@ inline static const char* read_pgm(const char* str){
 
 
 #pragma endregion
-
 
 #pragma region SystemMessages
     enum MessageType:uint8_t{
@@ -218,7 +214,9 @@ inline static const char* read_pgm(const char* str){
         RESETTING_CONTROLLER=20,
         SD_INIT=21,
         TEST_STATE_TRANSITION=22,
-        TEST_STATE_COMPLETED=23
+        TEST_STATE_COMPLETED=23,
+        HEATER_MODE_ATUNE=24,
+        HEATER_MODE_HEATING=25,
     };
 
     const char str_01[] PROGMEM=    "------Before Loading Free Memory: %d----------";  //0
@@ -245,6 +243,8 @@ inline static const char* read_pgm(const char* str){
     const char str_22[] PROGMEM=    "SD Card Initialized"; //21
     const char str_23[] PROGMEM=    "TestController Transition from StateId %d from StateId %d"; //22
     const char str_24[] PROGMEM=    "Test Completed";//23
+    const char str_25[] PROGMEM=    "Heater mode switched to auto tune";//23
+    const char str_26[] PROGMEM=    "Heater mode switched to heating";//23
 
     const char* const system_message_table[] PROGMEM={
         str_01,
@@ -270,12 +270,13 @@ inline static const char* read_pgm(const char* str){
         str_21,
         str_22,
         str_23,
-        str_24
+        str_24,
+        str_25,
+        str_26
     };
 
 
 #pragma endregion
-
 
 #pragma region SystemErrorMessages
 
@@ -297,47 +298,65 @@ inline static const char* read_pgm(const char* str){
         START_ALREADY_RUNNING=14,
         START_NOT_SET=15,
         PAUSE_ALREADY_PAUSED=16,
-        CONTINUE_NOT_PAUSED=17
+        CONTINUE_NOT_PAUSED=17,
+        TUNE_STOP_ERR=18,
+        TUNE_START_ERR=19,
+        TUNE_SAVE_CMD_ERR=20,
+        TUNE_DISCARD_CMD_ERR=21,
+        TUNE_TRANSISITON_ERR=22,
+        HEATER_TRANSITION_ERR=23,
     };
 
-    const char str_25[] PROGMEM="Failed to load configuration files. Please contact administrator";
-    const char str_26[] PROGMEM="Failed to load configuration file: %s. Defaults will be loaded. \n Please contact administarator";
-    const char str_27[] PROGMEM="Failed to save configuration files.  Please contact administrator";
-    const char str_28[] PROGMEM="Failed to save configuration file: %s. Changes will be lost on reset. Please contact administrator";
-    const char str_29[] PROGMEM="SD card failed to initialize!! Defaults will be loaded. \n If you continue no changes to the configuration will be saved. Please check connections and contact administrator";
-    const char str_30[] PROGMEM="Failed to save heater tuning results!! Please contact administrator";
-    const char str_31[] PROGMEM="Failed to load saved state, station will continue to normal operation. Please contact administrator";
-    const char str_32[] PROGMEM="Failed to delete saved state! Please contact administrator";
-    const char str_33[] PROGMEM="Invalid command recieved! Please contact administrator";
-    const char str_34[] PROGMEM="Failed to deserialize data: %s. Please contact administrator";
-    const char str_35[] PROGMEM="Failed to serialize data: %s. Please contact administrator";
-    const char str_36[] PROGMEM="Invalid message packet prefix recieved: %s.";
-    const char str_37[] PROGMEM="Prefix not found in message packet";
-    const char str_38[] PROGMEM="Failed to transition to idle from running state, test is being hard stopped. \n restart controller before starting another test";
-    const char str_39[] PROGMEM="Failed to start, test is already running";
-    const char str_40[] PROGMEM="Failed to start, current or saveState was not set";
-    const char str_41[] PROGMEM= "Failed to pause, test is already paused";
-    const char str_42[] PROGMEM="Failed to continue, test is not paused";
+    const char strErr_01[] PROGMEM="Failed to load configuration files. Please contact administrator";
+    const char strErr_02[] PROGMEM="Failed to load configuration file: %s. Defaults will be loaded. \n Please contact administarator";
+    const char strErr_03[] PROGMEM="Failed to save configuration files.  Please contact administrator";
+    const char strErr_04[] PROGMEM="Failed to save configuration file: %s. Changes will be lost on reset. Please contact administrator";
+    const char strErr_05[] PROGMEM="SD card failed to initialize!! Defaults will be loaded. \n If you continue no changes to the configuration will be saved. Please check connections and contact administrator";
+    const char strErr_06[] PROGMEM="Failed to save heater tuning results!! Please contact administrator";
+    const char strErr_07[] PROGMEM="Failed to load saved state, station will continue to normal operation. Please contact administrator";
+    const char strErr_08[] PROGMEM="Failed to delete saved state! Please contact administrator";
+    const char strErr_09[] PROGMEM="Invalid command recieved! Please contact administrator";
+    const char strErr_10[] PROGMEM="Failed to deserialize data: %s. Please contact administrator";
+    const char strErr_11[] PROGMEM="Failed to serialize data: %s. Please contact administrator";
+    const char strErr_12[] PROGMEM="Invalid message packet prefix recieved: %s.";
+    const char strErr_13[] PROGMEM="Prefix not found in message packet";
+    const char strErr_14[] PROGMEM="Failed to transition to idle from running state, test is being hard stopped. \n restart controller before starting another test";
+    const char strErr_15[] PROGMEM="Failed to start, test is already running";
+    const char strErr_16[] PROGMEM="Failed to start, current or saveState was not set";
+    const char strErr_17[] PROGMEM= "Failed to pause, test is already paused";
+    const char strErr_18[] PROGMEM="Failed to continue, test is not paused";
+    const char strErr_19[] PROGMEM="Failed to stop tuning, tuning is either in idle or complete state.";
+    const char strErr_20[] PROGMEM="Failed to start tuning, tuning is running or complete state.";
+    const char strErr_21[] PROGMEM="Failed to save tuning results, tuning is not in complete state";
+    const char strErr_22[] PROGMEM="Failed to discard tuning, tuning is not in complete state";
+    const char strErr_23[] PROGMEM="Error: Not in Tuning Mode, Switch modes to start tuning";
+    const char strErr_24[] PROGMEM="Error: Not in Heating Mode, Switch modes to Turn On/Off Heaters";
 
     const char* const system_error_table[] PROGMEM={
-        str_25,
-        str_26,
-        str_27,
-        str_28,
-        str_29,
-        str_30,
-        str_31,
-        str_32,
-        str_33,
-        str_34,
-        str_35,
-        str_36,
-        str_37,
-        str_38,
-        str_39,
-        str_40,
-        str_41,
-        str_42
+        strErr_01,
+        strErr_02,
+        strErr_03,
+        strErr_04,
+        strErr_05,
+        strErr_06,
+        strErr_07,
+        strErr_08,
+        strErr_09,
+        strErr_10,
+        strErr_11,
+        strErr_12,
+        strErr_13,
+        strErr_14,
+        strErr_15,
+        strErr_16,
+        strErr_17,
+        strErr_18,
+        strErr_19,
+        strErr_20,
+        strErr_21,
+        strErr_22,
+        strErr_23,
+        strErr_24
     };
 
 #pragma endregion

@@ -9,6 +9,7 @@ enum CurrentValue:uint8_t{
 
 #define PROBE_COUNT                     6
 #define PROBE_READINTERVAL              100ul
+#define PROBE_TESTTIME                 5000
 
 #define PIN_PROBE1_VOLT			       A0
 #define PIN_PROBE2_VOLT			       A1

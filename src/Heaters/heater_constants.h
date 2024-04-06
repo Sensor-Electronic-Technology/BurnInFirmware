@@ -78,7 +78,7 @@ enum TuneTrigger:uint8_t{
     TUNE_FINISHED,  //Tuning Complete
     TUNE_STOP,      //Stop Tuning->cancel before complete
     TUNE_SAVED,     //Save Tuning Results
-    TUNE_CANCELED   //Discard Tuning Results
+    TUNE_DISCARD   //Discard Tuning Results
 };
 
 enum TuneTransition:uint8_t{
