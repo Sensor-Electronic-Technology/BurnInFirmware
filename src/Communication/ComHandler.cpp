@@ -183,7 +183,7 @@ void ComHandler::InstanceSendRequest(PacketType packetType,const char* request,c
 void ComHandler::InstanceSendStartResponse(bool success,const char* message){
     JsonDocument serializerDoc;
     char packetStr[BUFFER_SIZE];
-    strcpy_P(packetStr,read_system_message(PacketType::TEST_START_STATUS));
+    strcpy_P(packetStr,read_packet_prefix(PacketType::TEST_START_STATUS));
     serializerDoc[F("Prefix")]=packetStr;
     JsonObject packet=serializerDoc[F("Packet")].to<JsonObject>();
     packet[F("Status")]=success;

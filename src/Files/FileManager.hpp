@@ -26,21 +26,17 @@ public:
         }
         return instance;
     }
-    static void SetInitialized(bool sdInit){
-        auto instance=FileManager::Instance();
-        instance->sdInitialized=sdInit;
-    }
     
     static void Load(Serializable* config,PacketType configType){
         auto instance=FileManager::Instance();
-        if(instance->sdInitialized){
+         if(sdInitialized){
             instance->InstanceLoadConfig(config,configType);
         }
     }
 
     static FileResult LoadState(Serializable* sysState){
         auto instance=FileManager::Instance();
-        if(instance->sdInitialized){
+        if(sdInitialized){
             return instance->InstanceLoadState(sysState);
         }
         return FileResult::SD_NOT_INITIALIZED;
@@ -48,9 +44,8 @@ public:
 
     static bool ClearState(){
         auto instance=FileManager::Instance();
-        if(instance->sdInitialized){
-            auto filename=read_filename(PacketType::SAVE_STATE);
-            return SD.remove(filename);
+        if(sdInitialized){
+            return instance->InstanceClearState();
         }
         return false;
     }
@@ -62,14 +57,14 @@ public:
      */
     static void Save(Serializable* config,PacketType configType){
         auto instance=FileManager::Instance();
-        if(instance->sdInitialized){
+        if(sdInitialized){
             instance->InstanceSaveConfigLog(config,configType);
         }
     }
 
     static bool SaveConfig(Serializable* sysState){
         auto instance=FileManager::Instance();
-        if(instance->sdInitialized){
+        if(sdInitialized){
             return instance->InstanceSaveConfig(sysState,PacketType::SAVE_STATE);
         }
         return false;
@@ -78,8 +73,8 @@ private:
     void InstanceLoadConfig(Serializable* config,PacketType configType);
     bool InstanceSaveConfig(Serializable* config,PacketType configType);
     void InstanceSaveConfigLog(Serializable* config,PacketType configType);
+    bool InstanceClearState();
     FileResult InstanceLoadState(Serializable* config);
 private:
     static FileManager* instance;
-    bool sdInitialized=false;
 };

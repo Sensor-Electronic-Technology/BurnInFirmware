@@ -20,9 +20,27 @@ HeaterController::HeaterController(const HeaterControllerConfig& config)
         this->heaters[i].MapTurningComplete(this->tuningCompleteCbk);
         RegisterChild(this->heaters[i]);
     }
-    this->modeStateMachine.Setup(&this->modes[HeaterMode::HEATING],this->modeTransitions);
+/*  this->modeStateMachine.Setup(&this->modes[HeaterMode::HEATING],this->modeTransitions);
     this->heatersStateMachine.Setup(&this->heaterStates[HeaterState::HEATER_OFF],this->heaterTransitions);
     this->tuningStateMachine.Setup(&this->tuneStates[TuneState::TUNE_IDLE],this->tuneTransitions);
+    this->modeStateMachine.SetOnTransitionHandler([&](){
+        auto from=this->modeStateMachine.GetPreviousStateId();
+        auto to=this->modeStateMachine.GetCurrentStateId();
+        Serial.print("Mode Transition: ");Serial.print(from);Serial.print(" -> ");Serial.println(to);
+        //ComHandler::SendSystemMessage(SystemMessage::TEST_STATE_TRANSITION,MessageType::GENERAL,from,to);
+    });
+    this->heatersStateMachine.SetOnTransitionHandler([&](){
+        auto from=this->heatersStateMachine.GetPreviousStateId();
+        auto to=this->heatersStateMachine.GetCurrentStateId();
+        Serial.print("Heating Transition: ");Serial.print(from);Serial.print(" -> ");Serial.println(to);
+        //ComHandler::SendSystemMessage(SystemMessage::TEST_STATE_TRANSITION,MessageType::GENERAL,from,to);
+    });
+    this->tuningStateMachine.SetOnTransitionHandler([&](){
+        auto from=this->tuningStateMachine.GetPreviousStateId();
+        auto to=this->tuningStateMachine.GetCurrentStateId();
+        Serial.print("Tuning Transition: ");Serial.print(from);Serial.print(" -> ");Serial.println(to);
+        //ComHandler::SendSystemMessage(SystemMessage::TEST_STATE_TRANSITION,MessageType::GENERAL,from,to);
+    });  */       
 }
 
 HeaterController::HeaterController():Component(){
@@ -44,12 +62,31 @@ void HeaterController::Setup(const HeaterControllerConfig& config){
     this->modeStateMachine.Setup(&this->modes[HeaterMode::HEATING],this->modeTransitions);
     this->heatersStateMachine.Setup(&this->heaterStates[HeaterState::HEATER_OFF],this->heaterTransitions);
     this->tuningStateMachine.Setup(&this->tuneStates[TuneState::TUNE_IDLE],this->tuneTransitions);
+        this->modeStateMachine.SetOnTransitionHandler([&](){
+        auto from=this->modeStateMachine.GetPreviousStateId();
+        auto to=this->modeStateMachine.GetCurrentStateId();
+        Serial.print("Mode Transition: ");Serial.print(from);Serial.print(" -> ");Serial.println(to);
+        //ComHandler::SendSystemMessage(SystemMessage::TEST_STATE_TRANSITION,MessageType::GENERAL,from,to);
+    });
+    this->heatersStateMachine.SetOnTransitionHandler([&](){
+        auto from=this->heatersStateMachine.GetPreviousStateId();
+        auto to=this->heatersStateMachine.GetCurrentStateId();
+        Serial.print("Heating Transition: ");Serial.print(from);Serial.print(" -> ");Serial.println(to);
+        //ComHandler::SendSystemMessage(SystemMessage::TEST_STATE_TRANSITION,MessageType::GENERAL,from,to);
+    });
+    this->tuningStateMachine.SetOnTransitionHandler([&](){
+        auto from=this->tuningStateMachine.GetPreviousStateId();
+        auto to=this->tuningStateMachine.GetCurrentStateId();
+        Serial.print("Tuning Transition: ");Serial.print(from);Serial.print(" -> ");Serial.println(to);
+        //ComHandler::SendSystemMessage(SystemMessage::TEST_STATE_TRANSITION,MessageType::GENERAL,from,to);
+    });     
 }
 
 void HeaterController::Initialize(){
     for(uint8_t i=0;i<HEATER_COUNT;i++){ 
         this->heaters[i].Initialize();
     }
+    this->heaterState=HeatState::Off;
     for(uint8_t i=0;i<100;i++){
         this->ReadTemperatures();
     }
@@ -57,7 +94,6 @@ void HeaterController::Initialize(){
     // this->printTimer.onInterval([&]{
     //     this->Print();
     // },2500);
-    Serial.println(F("Heater Controller Initialize Timer Setup"));
     this->readTimer.onInterval([&]{
         this->ReadTemperatures();
     },this->readInterval);
@@ -68,17 +104,11 @@ void HeaterController::Initialize(){
 
 #pragma region Commands
 void HeaterController::TurnOn(){
-    this->heaterState=HeatState::On;
-    for(uint8_t i=0;i<HEATER_COUNT;i++){
-        this->heaters[i].TurnOn();
-    }
+    this->heatersStateMachine.triggerEvent(HeaterTrigger::START_HEATERS);
 }
 
 void HeaterController::TurnOff(){
-    this->heaterState=HeatState::Off;
-    for(uint8_t i=0;i<HEATER_COUNT;i++){
-        this->heaters[i].TurnOff();
-    }
+    this->heatersStateMachine.triggerEvent(HeaterTrigger::STOP_HEATERS);
 }
 
 bool HeaterController::StartTuning(){
@@ -98,7 +128,7 @@ bool HeaterController::StopTuning(){
 }
 
 void HeaterController::ToggleHeaters(){
-    if(this->heaterState==HeatState::On){
+    if(this->heaterState==HeatState::Off){
         this->heatersStateMachine.triggerEvent(HeaterTrigger::START_HEATERS);
     }else{
         this->heatersStateMachine.triggerEvent(HeaterTrigger::STOP_HEATERS);
@@ -158,20 +188,20 @@ bool HeaterController::CanTuningTransition(){
 }
 
 void HeaterController::HeaterRunCompleteHandler(HeaterTuneResult result){
-    if(result.heaterNumber<HEATER_COUNT && result.heaterNumber>-1){
+    if(result.heaterNumber>-1){
         this->tuningResults.set(result.heaterNumber-1,result);
         bool tuningComplete=true;
         for(uint8_t i=0;i<HEATER_COUNT;i++){
             tuningComplete&=this->tuningResults.results[i].complete;
         }
+        if(result.complete){
+            ComHandler::MsgPacketSerializer(result,PacketType::HEATER_NOTIFY);
+        }
         if(tuningComplete){
             //Send values
             this->tuningCompleted=true;
             ComHandler::MsgPacketSerializer(this->tuningResults,PacketType::HEATER_TUNE_COMPLETE);
-        }else{
-            if(result.complete){
-                ComHandler::MsgPacketSerializer(result,PacketType::HEATER_NOTIFY);
-            }
+
         }
     }
 }
@@ -182,14 +212,15 @@ void HeaterController::ChangeSetPoint(uint8_t setPoint){
 }
 
 void HeaterController::TuningRun(){
-    this->isTuning=true;
+    // this->isTuning=true;
     for(uint8_t i=0;i<HEATER_COUNT;i++){
-        this->heaters[i].RunAutoTune();
-        this->isTuning&=this->heaters[i].IsTuning();
+        //this->heaters[i].RunAutoTune();
+        //this->isTuning&=this->heaters[i].IsComplete();
     }
-    if(!this->isTuning){
-        this->tuningStateMachine.triggerEvent(TuneTrigger::TUNE_FINISHED);
-    }
+    // if(this->isTuning){
+    //     this->isTuning=false;
+    //     this->tuningStateMachine.triggerEvent(TuneTrigger::TUNE_FINISHED);
+    // }
 }
 
 void HeaterController::OnIdleToTuning(){
@@ -199,7 +230,7 @@ void HeaterController::OnIdleToTuning(){
     }
 }
 
-void HeaterController::OnAnyToIdle(){
+void HeaterController::OnStopTuning(){
     this->isTuning=false;
     for(uint8_t i=0;i<HEATER_COUNT;i++){
         this->heaters[i].StopTuning();
@@ -259,12 +290,14 @@ bool HeaterController::SwitchToAutoTune(){
     return this->modeStateMachine.triggerEvent(ModeTrigger::ATUNE_START);
 }
 void HeaterController::OnHeatingToAutoTune(){
-    this->TurnOff();
+    this->OnTurnOff();
     this->tuningStateMachine.Reset();
+    this->heatersStateMachine.Reset();
 }
 
 void HeaterController::OnAutoTuneToHeating(){
-    this->StopTuning();
+    this->OnStopTuning();
+    this->tuningStateMachine.Reset();
     this->heatersStateMachine.Reset();
 }
 void HeaterController::RunAutoTune(){

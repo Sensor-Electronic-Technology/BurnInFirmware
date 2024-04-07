@@ -1,21 +1,28 @@
 #pragma once
 #include "../HeaterController.hpp"
+#include "../HeaterConfiguration.hpp"
 
-class HeaterTests{
+
+
+/* class HeaterTests{
 public:
-    HeaterTests(HeaterController *_controller):controller(_controller){   }
+    //HeaterTests(HeaterController *_controller):controller(_controller){   }
 
     void setup_pid(){
+        FileManager::Load(&config,PacketType::HEATER_CONFIG);
         Serial.begin(38400);
         while(!Serial){}
+        ComHandler::SetSerial(&Serial);
         Serial.println("Initializing");
-        controller->Initialize();
+        controller.Setup(config);
+        controller.Initialize();
+        controller.SwitchToAutoTune();
         //Serial.println("Press s to start Tuning and t to manually stop");
         Serial.println("Press s to start heating and t to manually stop");
     }
 
     void loop_pid(){
-        controller->loop();
+        controller.loop();
     }
 
     void handleSerial_pid(){
@@ -24,11 +31,13 @@ public:
             Serial.flush();  
             if(b=='s'){
                 Serial.println("Heater Output On");
-                controller->TurnOn();
+                controller.TurnOn();
             }else if(b=='t'){
                 Serial.println("Heater Output Off");
-                controller->TurnOff();
-            }
+                controller.TurnOff();
+            }else if(b=='a'){
+                Serial.println("Switching to AutoTune");
+                controller.SwitchToAutoTune();
         }
     }
 
@@ -47,6 +56,7 @@ public:
     }
 
 private:
-    //HeaterControllerConfig config;
-    HeaterController *controller;
-};
+    HeaterController controller;
+    HeaterControllerConfig config;
+
+}; */

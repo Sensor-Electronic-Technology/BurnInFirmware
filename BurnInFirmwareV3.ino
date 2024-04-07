@@ -15,13 +15,13 @@
 Controller controller;
 void setup(){
     Serial.begin(38400);
-    bool sdInit=false;
     ComHandler::SetSerial(&Serial);
+    sdInitialized=true;
     if(!SD.begin(SS)){
         ComHandler::SendErrorMessage(SystemError::SD_INIT_FAILED);
-        sdInit=true;
+        sdInitialized=false;
     }
-    FileManager::SetInitialized(sdInit);
+    ComHandler::SendSystemMessage(SystemMessage::SD_INIT,MessageType::GENERAL);
     Serial.print(F("Free SRAM: "));
     Serial.println(FreeSRAM());
     //EEPROM_write(VER_ADDR,"V1.0.0");

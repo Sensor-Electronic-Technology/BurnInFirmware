@@ -51,6 +51,7 @@ void Heater::SetConfiguration(const HeaterConfig& config){
     digitalWrite(this->relayPin,LOW);
     this->run[HeaterMode::HEATING]=&Heater::RunPid;
     this->run[HeaterMode::ATUNE]=&Heater::RunAutoTune;
+    
 }
 
 void Heater::Initialize(){
@@ -72,39 +73,32 @@ void Heater::TurnOff(){
 }
 
 void Heater::StartTuning(){
-    this->autoTuner.StartTuning();
+    //this->autoTuner.StartTuning();
+    this->isComplete=false;
+    timer.setTimeout([&](){
+        this->isTuning=false;
+        this->isComplete=true;
+        this->PrintTuning(true);
+    },2000);
+    RegisterChild(timer);
     this->isTuning=true;
 }
 
 void Heater::StopTuning(){
     this->isTuning=false;
-    this->PrintTuning(false);
+    //this->PrintTuning(false);
     this->TurnOff();
 }
-
-// void Heater::SwitchMode(HeaterMode nextMode){
-//     if(this->mode!=nextMode){
-//         switch(nextMode){
-//             case HeaterMode::HEATING:{
-//                 this->TurnOff();
-//                 this->StopTuning();
-//                 break;
-//             }
-//             case HeaterMode::ATUNE:{
-//                 this->TurnOff();
-//                 break;
-//             }
-//             this->mode=nextMode;
-//         }
-//     }
-// }
 
 void Heater::PrintTuning(bool completed){
     if(completed){
         HeaterTuneResult result;
-        result.kd=this->autoTuner.GetKd();
-        result.ki=this->autoTuner.GetKi();
-        result.kp=this->autoTuner.GetKp();
+        // result.kd=this->autoTuner.GetKd();
+        // result.ki=this->autoTuner.GetKi();
+        // result.kp=this->autoTuner.GetKp();
+        result.kd=this->kd;
+        result.ki=this->ki;
+        result.kp=this->kp;
         result.complete=completed;
         result.heaterNumber=this->id;
         this->tuningCompleteCb(result);
@@ -123,6 +117,10 @@ void Heater::PrintTuning(bool completed){
 
 bool Heater::IsTuning(){
     return this->isTuning;
+}
+
+bool Heater::IsComplete(){
+    return this->isComplete;
 }
 
 void Heater::RunPid(){
@@ -159,12 +157,13 @@ void Heater::RunAutoTune(){
         }
         this->OutputAction(now);
         if(this->autoTuner.Finished()){
+            this->isComplete=true;
             this->isTuning=false;
             HeaterTuneResult result;
             result.kd=this->autoTuner.GetKd();
             result.ki=this->autoTuner.GetKi();
             result.kp=this->autoTuner.GetKp();
-            result.ki=true;
+            result.complete=true;
             result.heaterNumber=this->id;
             this->tuningCompleteCb(result);
             //this->PrintTuning(true); //debugging

@@ -75,7 +75,7 @@ private:
     SerialDataOutput       comData;
     HeaterControllerConfig heatersConfig;
     ProbeControllerConfig  probesConfig;
-    bool                    probeChecks[PROBE_COUNT]={true};
+    bool                   probeChecks[PROBE_COUNT]={true,true,true,true,true,true};
     ControllerConfig       controllerConfig;
     void privateLoop() override;
 };

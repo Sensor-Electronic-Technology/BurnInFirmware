@@ -33,7 +33,6 @@ void Controller::LoadConfigurations(){
     FileManager::Load(&probesConfig,PacketType::PROBE_CONFIG);
     FileManager::Load(&controllerConfig,PacketType::SYSTEM_CONFIG);
 
-
     // ComHandler::MsgPacketSerializer(heatersConfig,PacketType::HEATER_CONFIG);
     // ComHandler::MsgPacketSerializer(probesConfig,PacketType::PROBE_CONFIG);
     // ComHandler::MsgPacketSerializer(controllerConfig,PacketType::SYSTEM_CONFIG);
@@ -81,7 +80,14 @@ void Controller::SetupComponents(){
     this->comTimer.onInterval([&](){
         this->UpdateSerialData();
         this->comData.Set(this->probeResults,this->heaterResults,*(this->testController.GetBurnTimer()));
-        ComHandler::MsgPacketSerializer(this->comData,PacketType::DATA);
+        Serial.print("Data: ");
+        for(int i=0;i<PROBE_COUNT;i++){
+            Serial.print("["+String(i)+"]:");
+            Serial.print(this->comData.probeRuntimes[i]);
+            Serial.print(", ");
+        }
+        Serial.println(" Free RAM"+String(FreeRam()));
+        //ComHandler::MsgPacketSerializer(this->comData,PacketType::DATA);
     },this->comInterval);
 
     this->updateTimer.onInterval([&](){
@@ -96,12 +102,17 @@ void Controller::SetupComponents(){
     RegisterChild(this->stateLogTimer);
     RegisterChild(this->comTimer);
     RegisterChild(this->updateTimer);
-    ComHandler::SendSystemMessage(SystemMessage::CHECK_SAVED_STATE,MessageType::INIT,FreeSRAM());
+
+    RegisterChild(this->heaterControl);
+    RegisterChild(this->probeControl);
+    
     this->CheckSavedState();    
 }
 
 void Controller::CheckSavedState(){
+    ComHandler::SendSystemMessage(SystemMessage::CHECK_SAVED_STATE,MessageType::INIT,FreeSRAM());
     FileResult result=FileManager::LoadState(&this->saveState);
+    Serial.println("FileResult: "+String(result));
     switch(result){
         case FileResult::LOADED:{
             ComHandler::SendSystemMessage(SystemMessage::STATE_LOADED,MessageType::INIT);
@@ -165,6 +176,15 @@ void Controller::HandleCommand(StationCommand command){
             }
             break;
         }
+        case StationCommand::TOGGLE_HEAT:{
+            Serial.println("Toggle Heat");
+            if(!this->testController.IsRunning()){
+                this->heaterControl.ToggleHeaters();
+            }else{
+                //ComHandler::SendErrorMessage(SystemError::TEST_RUNNING,MessageType::ERROR);
+            }
+            break;
+        }
         case StationCommand::PROBE_TEST:{
             if(!this->testController.IsRunning()){
                 this->probeControl.StartProbeTest();
@@ -176,14 +196,6 @@ void Controller::HandleCommand(StationCommand command){
         case StationCommand::CYCLE_CURRENT:{
             if(!this->testController.IsRunning()){
                 this->probeControl.CycleCurrent();
-            }else{
-                //ComHandler::SendErrorMessage(SystemError::TEST_RUNNING,MessageType::ERROR);
-            }
-            break;
-        }
-        case StationCommand::TOGGLE_HEAT:{
-            if(!this->testController.IsRunning()){
-                this->heaterControl.ToggleHeaters();
             }else{
                 //ComHandler::SendErrorMessage(SystemError::TEST_RUNNING,MessageType::ERROR);
             }

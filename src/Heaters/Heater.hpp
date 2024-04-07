@@ -45,6 +45,7 @@ public:
 	void TurnOff();
 	
 	bool IsTuning();
+	bool IsComplete();
 	bool TempOkay();
 	
 	HeaterResult Read();
@@ -82,11 +83,13 @@ private:
 	float temperature=0;
 	bool tempOk = false;
 	bool isTuning=false;
+	bool isComplete=false;
 	bool relayState=false;
 	int id=-1;
 	HeaterMode mode,nextMode;
 	HeatState heaterState=HeatState::Off;
 	RunFunc run[2];
+	Timer timer;
 	TuningCompleteCallback tuningCompleteCb=[](HeaterTuneResult){};
 	virtual void privateLoop()override;
 };

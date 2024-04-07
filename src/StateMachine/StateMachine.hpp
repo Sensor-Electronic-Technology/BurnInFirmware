@@ -94,7 +94,8 @@ public:
                 }
             }
         }
-        Serial.println("No Transition Found");
+        Serial.print("Invalid transition from state: ");
+        Serial.println(this->currentState->id);
         return false;
     }
 
@@ -115,12 +116,12 @@ private:
     State* currentState=nullptr;
     State* previousState=nullptr;
     State* initialState=nullptr;
-    OnTransitionHandler onTransition=[](){};
+    OnTransitionHandler onTransition=[](){_NOP();};
 
     bool _transition(Transition* transition){
         if(transition->CanTransition()){
-            this->currentState=(transition->to==nullptr) ? this->initialState : transition->to;
             this->previousState=this->currentState;
+            this->currentState=transition->to;
             this->onTransition();
             transition->OnTransition();
             return true;

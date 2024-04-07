@@ -42,8 +42,6 @@ class TestController:public Component{
 public:
 
     TestController(const BurnTimerConfig timerConfig):Component(),burn_timer(timerConfig){
-        // this->burn_timer=new BurnInTimer(timerConfig);
-        //this->BuildFSM();
         this->state_machine.Setup(&states[StateId::TEST_IDLE],this->transitions);
         this->state_machine.SetOnTransitionHandler([&](){
             auto from=this->state_machine.GetPreviousStateId();

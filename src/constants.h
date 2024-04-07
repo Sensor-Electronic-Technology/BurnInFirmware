@@ -26,6 +26,7 @@ template <class T> int EEPROM_read(int addr, T& value) {
 #pragma region Globals
     inline char StationId[4];
     inline char FirmwareVersion[8];
+    inline bool sdInitialized=false;
 #pragma endregion
 
 #define ID_ADDR     10
