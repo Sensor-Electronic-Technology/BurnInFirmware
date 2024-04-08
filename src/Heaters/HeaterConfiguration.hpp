@@ -64,7 +64,7 @@ public:
 	NtcConfig(uint8_t pin=0,float a=0,float b=0,float c=0,float fweight=DEFAULT_FWEIGHT)
 			:Pin(pin),aCoeff(a),bCoeff(b),cCoeff(c),fWeight(fweight){
 	}
-    void Deserialize(JsonObject config){
+    void Deserialize(JsonObject& config){
         this->aCoeff = config[F("ACoeff")];
         this->bCoeff = config[F("BCoeff")];
         this->cCoeff = config[F("CCoeff")];
@@ -88,8 +88,9 @@ public:
 	float kp,kd,ki;
 	unsigned long windowSize;
 
-    PidConfig(float _kp=KP_DEFAULT,float _ki=KI_DEFAULT,float _kd=KD_DEFAULT,unsigned long window=DEFAULT_WINDOW)
-    :kp(_kp),ki(_ki),kd(_kd),windowSize(window){  }
+    PidConfig(float _kp=0,float _ki=0,float _kd=0,unsigned long window=DEFAULT_WINDOW)
+    :kp(_kp),ki(_ki),kd(_kd),windowSize(window){  
+    }
 
     void Serialize(JsonObject *pidJson){
         (*pidJson)[F("Kp")] = this->kp;
@@ -98,7 +99,7 @@ public:
         (*pidJson)[F("WindowSizeMs")] = this->windowSize;
     }
 
-    void Deserialize(JsonObject pidJson){
+    void Deserialize(JsonObject& pidJson){
         this->kp=pidJson[F("Kp")];
         this->ki=pidJson[F("Ki")];
         this->kd=pidJson[F("Kd")];
@@ -121,7 +122,7 @@ public:
         uint8_t id=0,
         uint8_t pin=0,
 		float tempDev=DEFAULT_TEMP_DEV)
-			:HeaterId(id),Pin(pin),pidConfig(pidConfig),ntcConfig(ntc_config),
+			:HeaterId(id),Pin(pin),pidConfig(pid_config),ntcConfig(ntc_config),
 			tempDeviation(tempDev){	}
 
     void UpdatePid(HeaterTuneResult newPid){
@@ -168,9 +169,9 @@ class HeaterControllerConfig:public Serializable{
 public:
 	unsigned long readInterval=TEMP_INTERVAL;
 	HeaterConfig heaterConfigs[HEATER_COUNT]={
-		HeaterConfig(NtcConfig(PIN_HEATER1_TEMP,NTC1_A,NTC1_B,NTC1_C),PidConfig(242.21,1868.81,128.49,DEFAULT_WINDOW),1,PIN_HEATER1_HEATER),
-		HeaterConfig(NtcConfig(PIN_HEATER2_TEMP,NTC2_A,NTC2_B,NTC2_C),PidConfig(765.77,1345.82,604.67,DEFAULT_WINDOW),2,PIN_HEATER2_HEATER),
-		HeaterConfig(NtcConfig(PIN_HEATER3_TEMP,NTC3_A,NTC3_B,NTC3_C),PidConfig(179.95,2216.84,81.62,DEFAULT_WINDOW),3,PIN_HEATER3_HEATER)
+		HeaterConfig(NtcConfig(PIN_HEATER1_TEMP,NTC1_A,NTC1_B,NTC1_C),PidConfig(242.21f,1868.81f,128.49f,DEFAULT_WINDOW),1,PIN_HEATER1_HEATER),
+		HeaterConfig(NtcConfig(PIN_HEATER2_TEMP,NTC2_A,NTC2_B,NTC2_C),PidConfig(765.77f,1345.82f,604.67f,DEFAULT_WINDOW),2,PIN_HEATER2_HEATER),
+		HeaterConfig(NtcConfig(PIN_HEATER3_TEMP,NTC3_A,NTC3_B,NTC3_C),PidConfig(179.95f,2216.84f,81.62f,DEFAULT_WINDOW),3,PIN_HEATER3_HEATER)
 	};
 
     void UpdateHeaterPid(HeaterTuneResult newPid){

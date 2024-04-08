@@ -60,35 +60,6 @@ enum HeaterState:uint8_t{
 
 };
 
-enum HeaterTransition:uint8_t{
-    HEATER_OFF_TO_WARMUP=0,  //Start Warmup
-    HEATER_WARMUP_TO_ON=1,  //TempOkay=true
-    HEATER_ON_TO_OFF=2,    //Turn Off
-    HEATER_WARMUP_TO_OFF=3 //Turn Off
-};
-
-enum HeaterTrigger:uint8_t{
-    START_HEATERS,
-    TEMP_REACHED,
-    STOP_HEATERS
-};
-
-enum TuneTrigger:uint8_t{
-    TUNE_START,     //Start Tuning
-    TUNE_FINISHED,  //Tuning Complete
-    TUNE_STOP,      //Stop Tuning->cancel before complete
-    TUNE_SAVED,     //Save Tuning Results
-    TUNE_DISCARD   //Discard Tuning Results
-};
-
-enum TuneTransition:uint8_t{
-    TUNE_IDLE_TO_RUNNING=0,  //Start Tuning
-    TUNE_RUNNING_TO_IDLE=1,  //cancel tuning
-    TUNE_RUNNING_TO_COMPLETE=2,  //Tuning Complete
-    TUNE_COMPLETE_TO_IDLE=3,  //Save or discard tune results
-    TUNE_EXIT_MODE=4
-};
-
 enum HeaterMode:uint8_t{
     HEATING=0,      //Normal Heater Mode
     ATUNE=1     //AutoTune Mode
@@ -99,15 +70,7 @@ enum ModeTrigger:uint8_t{
     HEATING_START
 };
 
-enum ModeTransition:uint8_t{
-    MODE_HEATING_TO_ATUNE=0,  //Start AutoTune,
-    MODE_ATUNE_TO_HEATING=1  //Stop AutoTune, Start Heating
-};
 
-union HeaterStateSelector{
-    HeaterState    pidState;
-    TuneState   tuneState;
-};
 
 
 

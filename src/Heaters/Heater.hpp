@@ -40,7 +40,6 @@ public:
 	void SetConfiguration(const HeaterConfig& config);
 	void Initialize();
 	void UpdatePid(HeaterTuneResult newPid);
-	void SwitchMode(HeaterMode nextMode);
 	void TurnOn();
 	void TurnOff();
 	
@@ -51,7 +50,6 @@ public:
 	HeaterResult Read();
 	HeaterResult GetHeaterResult();
 	void ChangeSetpoint(int setPoint);
-
 
 	void StartTuning();
 	void StopTuning();
@@ -88,8 +86,7 @@ private:
 	int id=-1;
 	HeaterMode mode,nextMode;
 	HeatState heaterState=HeatState::Off;
-	RunFunc run[2];
-	Timer timer;
+	TimerOneShot timer;
 	TuningCompleteCallback tuningCompleteCb=[](HeaterTuneResult){};
 	virtual void privateLoop()override;
 };

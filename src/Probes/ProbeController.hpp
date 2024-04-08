@@ -25,7 +25,7 @@ public:
     void GetProbeResults(ProbeResult* results);
 
 private:
-    Probe           probes[PROBE_COUNT];
+    Probe*           probes[PROBE_COUNT];
     ProbeResult     results[PROBE_COUNT];
     CurrentSelector currentSelector;
     CurrentValue    savedCurrent;

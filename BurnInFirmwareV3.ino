@@ -10,10 +10,17 @@
 #include "src/Controller/Controller.hpp"
 #include "src/StressTest/TestController.hpp" 
 #include "src/free_memory.h"
+#include "src/Heaters/HeaterTests.hpp"
 
 
 Controller controller;
+// HeaterTests heaterTesting;
 void setup(){
+
+/*     heaterTesting.setup_pid();
+    Serial.print(F("Free SRAM: "));
+    Serial.println(FreeSRAM()); */
+
     Serial.begin(38400);
     ComHandler::SetSerial(&Serial);
     sdInitialized=true;
@@ -36,11 +43,13 @@ void setup(){
 }
 
 void loop(){
+    //heaterTesting.loop_pid();
     controller.loop();
 }
 
 void serialEvent(){
     if(Serial.available()){
         ComHandler::HandleSerial();
-    }   
+    }
+    //heaterTesting.handleSerial();
 }

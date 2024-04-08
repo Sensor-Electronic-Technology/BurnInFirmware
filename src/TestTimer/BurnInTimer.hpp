@@ -1,5 +1,5 @@
 #pragma once
-//#include <ArduinoComponents.h>
+#include <ArduinoComponents.h>
 #include "../constants.h"
 #include "../Probes/probe_constants.h"
 #include "../Serializable.hpp"
@@ -61,6 +61,7 @@ private:
     unsigned long durSec60mA;
     unsigned long durSec120mA;
     unsigned long durSec150mA;
+    TestFinsihedCallback _finishedCallback=[](){_NOP();}; 
 
 public:
     TimerData testTimer;
@@ -68,8 +69,13 @@ public:
     BurnInTimer(const BurnTimerConfig& config);
 
     BurnInTimer(){
-        
+
     }
+
+    void SetCallback(TestFinsihedCallback callback){
+        this->_finishedCallback=callback;
+    }
+
     void SetConfig(const BurnTimerConfig& config);
 
     const TimerData& GetTimerData();
@@ -77,8 +83,6 @@ public:
     bool Start(CurrentValue current);
 
     bool Start(const TimerData& savedState);
-   
-    // void SetStartFrom(const TimerData& savedState);
    
     void Stop();
 

@@ -41,9 +41,6 @@
     }
 
     bool BurnInTimer::Start(const TimerData& savedState){
-        // if(this->testTimer.running){
-        //     return false;
-        // }
         this->testTimer=savedState;
         this->testTimer.running=true;
         this->testTimer.paused=false;
@@ -51,13 +48,6 @@
         return true;
     }
 
-    // void BurnInTimer::SetStartFrom(const TimerData& savedTimerState){
-    //     this->testTimer=savedTimerState;
-    //     this->startFromSaved=true;
-    //     this->testTimer.running=false;
-    //     this->testTimer.paused=false;
-    // }
-   
     void BurnInTimer::Stop(){
         this->testTimer.running=false;
         this->testTimer.paused=false;
@@ -114,6 +104,9 @@
                 this->testTimer.elapsed_secs++;
                 bool done=(this->testTimer.elapsed_secs*TIMER_PERIOD)>=this->testTimer.duration_secs;
                 this->testTimer.running=!done;
+                if(done){
+                    this->_finishedCallback();
+                }
             }
         }
     }

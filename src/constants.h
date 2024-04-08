@@ -128,39 +128,40 @@ template <class T> int EEPROM_read(int addr, T& value) {
         HEATER_TUNE_COMPLETE=15,    //Outgoing->notfiy PC that all heaters have been tuned
     };
 
-    const char strPre_01[] PROGMEM="CH";   //0
-    const char strPre_02[] PROGMEM="CP";   //1
-    const char strPre_03[] PROGMEM="CS";   //2
-    const char strPre_04[] PROGMEM="ST";   //3
-    const char strPre_05[] PROGMEM="M";    //4
-    const char strPre_06[] PROGMEM="D";    //5
-    const char strPre_07[] PROGMEM="COM";  //6
-    const char strPre_08[] PROGMEM="IDREC";  //7
-    const char strPre_09[] PROGMEM="IDREQ";   //8
-    const char strPre_10[] PROGMEM="VERREC";  //9
-    const char strPre_11[] PROGMEM="VERREQ";  //10
-    const char strPre_12[] PROGMEM="TSTAT";     //11
-    const char strPre_13[] PROGMEM="TCOMP";     //12
-    const char strPre_14[] PROGMEM="TLOAD";     //13
-    const char strPre_15[] PROGMEM="HNOTIFY";    //14
-    const char strPre_16[] PROGMEM="HTUNED";     //15
+    const char strPre_00[] PROGMEM="CH";   //0
+    const char strPre_01[] PROGMEM="CP";   //1
+    const char strPre_02[] PROGMEM="CS";   //2
+    const char strPre_03[] PROGMEM="ST";   //3
+    const char strPre_04[] PROGMEM="M";    //4
+    const char strPre_05[] PROGMEM="D";    //5
+    const char strPre_06[] PROGMEM="COM";  //6
+    const char strPre_07[] PROGMEM="IDREC";  //7
+    const char strPre_08[] PROGMEM="IDREQ";   //8
+    const char strPre_09[] PROGMEM="VERREC";  //9
+    const char strPre_10[] PROGMEM="VERREQ";  //10
+    const char strPre_11[] PROGMEM="TSTAT";     //11
+    const char strPre_12[] PROGMEM="TCOMP";     //12
+    const char strPre_13[] PROGMEM="TLOAD";     //13
+    const char strPre_14[] PROGMEM="HNOTIFY";    //14
+    const char strPre_15[] PROGMEM="HTUNED";     //15
 
     const char* const prefixes[] PROGMEM = {
-        strPre_01,   //0
-        strPre_02,   //1
-        strPre_03,   //2
-        strPre_04,   //3
-        strPre_05,   //4
-        strPre_06,   //5
-        strPre_07,   //6
-        strPre_08,   //7
-        strPre_09,   //8
-        strPre_10,   //9
-        strPre_11,   //10
-        strPre_12,   //11
-        strPre_13,   //12
-        strPre_14,   //13
-        strPre_15    //14
+        strPre_00,
+        strPre_01,
+        strPre_02,
+        strPre_03,
+        strPre_04,
+        strPre_05,
+        strPre_06,
+        strPre_07,
+        strPre_08,
+        strPre_09,
+        strPre_10,
+        strPre_11,
+        strPre_12,
+        strPre_13,
+        strPre_14,
+        strPre_15
     };
 #pragma endregion
 
@@ -218,6 +219,7 @@ template <class T> int EEPROM_read(int addr, T& value) {
         TEST_STATE_COMPLETED=23,
         HEATER_MODE_ATUNE=24,
         HEATER_MODE_HEATING=25,
+        HEATER_STATE_TRANSITION=26
     };
 
     const char str_01[] PROGMEM=    "------Before Loading Free Memory: %d----------";  //0
@@ -246,6 +248,7 @@ template <class T> int EEPROM_read(int addr, T& value) {
     const char str_24[] PROGMEM=    "Test Completed";//23
     const char str_25[] PROGMEM=    "Heater mode switched to auto tune";//23
     const char str_26[] PROGMEM=    "Heater mode switched to heating";//23
+    const char str_27[] PROGMEM=    "TestController Transition from StateId %d from StateId %d"; //22
 
     const char* const system_message_table[] PROGMEM={
         str_01,
@@ -273,7 +276,8 @@ template <class T> int EEPROM_read(int addr, T& value) {
         str_23,
         str_24,
         str_25,
-        str_26
+        str_26,
+        str_27
     };
 
 

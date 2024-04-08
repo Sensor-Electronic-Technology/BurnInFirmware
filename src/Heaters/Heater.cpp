@@ -16,9 +16,14 @@ Heater::Heater(const HeaterConfig& config)
     this->pid.SetOutputRange(0,this->WindowSize,true);
     this->autoTuner.Setup(&this->temperature,&this->pidOutput,this->tempSetPoint,this->pid.GetSampleTime(),15);
     this->autoTuner.SetOutputRange(0,this->WindowSize);
-    this->run[HeaterMode::HEATING]=&Heater::RunPid;
-    this->run[HeaterMode::ATUNE]=&Heater::RunAutoTune;
     pinMode(this->relayPin,OUTPUT);
+    digitalWrite(this->relayPin,LOW);
+    timer.setTimeout([&](){
+        this->isTuning=false;
+        this->isComplete=true;
+        this->PrintTuning(true);
+    },2000);
+    //RegisterChild(timer);
 }
 
 Heater::Heater(){
@@ -26,12 +31,10 @@ Heater::Heater(){
     this->pid.SetOutputRange(0,this->WindowSize,true);
     this->autoTuner.Setup(&this->temperature,&this->pidOutput,this->tempSetPoint,this->pid.GetSampleTime(),15);
     this->autoTuner.SetOutputRange(0,this->WindowSize);
-    this->run[HeaterMode::HEATING]=&Heater::RunPid;
-    this->run[HeaterMode::ATUNE]=&Heater::RunAutoTune;
 }
 
 void Heater::SetConfiguration(const HeaterConfig& config){
-    Serial.println(F("Heater Configuration Set"));
+    //Serial.println(F("Heater Configuration Set"));
     this->id=config.HeaterId;
     this->ntc.Setup(config.ntcConfig);
     this->relayPin=config.Pin;
@@ -49,8 +52,11 @@ void Heater::SetConfiguration(const HeaterConfig& config){
     this->autoTuner.SetOutputRange(0,this->WindowSize);
     pinMode(this->relayPin,OUTPUT);
     digitalWrite(this->relayPin,LOW);
-    this->run[HeaterMode::HEATING]=&Heater::RunPid;
-    this->run[HeaterMode::ATUNE]=&Heater::RunAutoTune;
+    timer.setTimeout([&](){
+        this->isTuning=false;
+        this->isComplete=true;
+        this->PrintTuning(true);
+    },2000);
     
 }
 
@@ -75,13 +81,9 @@ void Heater::TurnOff(){
 void Heater::StartTuning(){
     //this->autoTuner.StartTuning();
     this->isComplete=false;
-    timer.setTimeout([&](){
-        this->isTuning=false;
-        this->isComplete=true;
-        this->PrintTuning(true);
-    },2000);
-    RegisterChild(timer);
     this->isTuning=true;
+    this->timer.Start();
+    //Serial.println("Heater "+String(this->id)+" Started Tuning");
 }
 
 void Heater::StopTuning(){
@@ -101,6 +103,7 @@ void Heater::PrintTuning(bool completed){
         result.kp=this->kp;
         result.complete=completed;
         result.heaterNumber=this->id;
+        //Serial.println("Sending Tuning Results for Heater "+String(this->id));
         this->tuningCompleteCb(result);
         //HeatersController notifys PC
         //StationLogger::Log(LogLevel::INFO,true,false,F("Heater %d Tuning Complete"),this->id);
@@ -217,4 +220,5 @@ bool Heater::TempOkay(){
 
 void Heater::privateLoop(){
     //(this->*run[this->mode])();
+    this->timer.loop();
 }

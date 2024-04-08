@@ -112,7 +112,7 @@ void Controller::SetupComponents(){
 void Controller::CheckSavedState(){
     ComHandler::SendSystemMessage(SystemMessage::CHECK_SAVED_STATE,MessageType::INIT,FreeSRAM());
     FileResult result=FileManager::LoadState(&this->saveState);
-    Serial.println("FileResult: "+String(result));
+    //Serial.println("FileResult: "+String(result));
     switch(result){
         case FileResult::LOADED:{
             ComHandler::SendSystemMessage(SystemMessage::STATE_LOADED,MessageType::INIT);
@@ -177,7 +177,7 @@ void Controller::HandleCommand(StationCommand command){
             break;
         }
         case StationCommand::TOGGLE_HEAT:{
-            Serial.println("Toggle Heat");
+            //Serial.println("Toggle Heat");
             if(!this->testController.IsRunning()){
                 this->heaterControl.ToggleHeaters();
             }else{

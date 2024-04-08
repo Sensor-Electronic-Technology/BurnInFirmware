@@ -133,7 +133,6 @@ void ComHandler::InstanceSendTestStartFromLoad(bool success,const char* message)
     serializerDoc.clear();
 }
 
-
 void ComHandler::ReceiveVersion(const JsonDocument& serialEventDoc){
     auto version=serialEventDoc[F("Packet")].as<const char*>();
     sprintf(FirmwareVersion,version);
@@ -151,10 +150,9 @@ void ComHandler::ReceiveVersion(const JsonDocument& serialEventDoc){
  * @return void
  */
 template <typename T> 
-void ComHandler::InstanceMsgPacketSerializer(const T& data,PacketType packetType) {
-    JsonDocument serializerDoc;
+void ComHandler::InstanceMsgPacketSerializer(const T& data,PacketType packetType) { 
     Derived_from<T,Serializable>();
-    serializerDoc.clear();
+    JsonDocument serializerDoc;
     char packetStr[BUFFER_SIZE];
     strcpy_P(packetStr,read_packet_prefix(packetType));
     serializerDoc[F("Prefix")]=packetStr;
@@ -192,28 +190,4 @@ void ComHandler::InstanceSendStartResponse(bool success,const char* message){
     this->serial->println();
 }
 
-// void ComHandler::InstanceSendMessage(const char* message){
-//     JsonDocument serializerDoc;
-//     serializerDoc.clear();
-//     serializerDoc[F("Prefix")]=read_packet_prefix(PacketType::MESSAGE);
-//     auto packetJson=serializerDoc[F("Packet")].to<JsonObject>();
-//     packetJson[F("Message")]=message;
-//     serializeJson(serializerDoc,*this->serial);
-//     this->serial->println();
-//     serializerDoc.clear();
-// }
-
-// void ComHandler::InstanceSendInitMessage(const char* message){
-//     JsonDocument serializerDoc;
-//     SystemMessagePacket packet;
-//     serializerDoc.clear();
-//     serializerDoc[F("Prefix")]=read_packet_prefix(PacketType::MESSAGE);
-//     packet.message=message;
-//     packet.messageType=MessageType::INIT;
-//     this->InstanceMsgPacketSerializer(packet,PacketType::MESSAGE);
-
-//     serializeJson(serializerDoc,*this->serial);
-//     this->serial->println();
-//     serializerDoc.clear();
-// }
 

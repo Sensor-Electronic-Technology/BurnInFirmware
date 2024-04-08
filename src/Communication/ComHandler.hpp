@@ -1,6 +1,5 @@
 #pragma once
 #include <SD.h>
-
 #include <ArduinoJson.h>
 #include "../Heaters/HeaterConfiguration.hpp"
 #include "../Probes/ProbeConfiguration.hpp"
@@ -12,7 +11,6 @@
 
 #define ARDUINOJSON_DEFAULT_NESTING_LIMIT       50
 #define BUFFER_SIZE                             255
-
 
 class ComHandler{
 public:
@@ -74,7 +72,7 @@ public:
         va_end(args);
         msgPacket.message=buffer;
         msgPacket.messageType=msgType;
-        ComHandler::MsgPacketSerializer(msgPacket,PacketType::MESSAGE);
+        instance->InstanceMsgPacketSerializer(msgPacket,PacketType::MESSAGE);
     }
 
     static void SendErrorMessage(SystemError errIndex,...){
@@ -83,13 +81,26 @@ public:
         SystemMessagePacket msgPacket;
         char format[BUFFER_SIZE];
         strcpy_P(format,read_system_error(errIndex));
-        //auto format=read_system_error(errIndex);
         va_list(args);
         va_start(args,format);
         vsnprintf(buffer,sizeof(buffer),format,args);
         va_end(args);
         msgPacket.message=buffer;
         msgPacket.messageType=MessageType::ERROR;
+        instance->InstanceMsgPacketSerializer(msgPacket,PacketType::MESSAGE);
+    }
+
+    static void SendCustomMessage(__FlashStringHelper* format,MessageType msgType,...){
+        auto instance=ComHandler::Instance();
+        SystemMessagePacket msgPacket;
+        char buffer[BUFFER_SIZE];
+        PGM_P pointer=reinterpret_cast<PGM_P>(format);
+        va_list(args);
+        va_start(args,format);
+        vsnprintf_P(buffer,sizeof(buffer),pointer,args);
+        va_end(args);
+        msgPacket.message=buffer;
+        msgPacket.messageType=msgType;
         instance->InstanceMsgPacketSerializer(msgPacket,PacketType::MESSAGE);
     }
 
@@ -109,6 +120,12 @@ public:
         instance->InstanceSendTestCompleted(buffer);
     }
 
+    template<typename...Args>
+    static void SendCustomMessage(const __FlashStringHelper* format,MessageType msgType,Args...args){
+        auto instance=ComHandler::Instance();
+        instance->SendCustomMessage(format,msgType,args...);
+    }
+
     static void HandleSerial(){
         auto instance=ComHandler::Instance();
         JsonDocument serialEventDoc;
@@ -116,9 +133,6 @@ public:
             instance->serialEventEnabled=false;
             auto error=deserializeJson(serialEventDoc,*instance->serial);
             if(error){
-                Serial.print(F("Deserialization Failed.. Reason: \n"));
-                Serial.println(error.c_str());
-                //StationLogger::Log(LogLevel::CRITICAL_ERROR,true,false,F("Deserialization Failed.. Reason: \n %s",error.c_str());
                 instance->serialEventEnabled=true;
                 return;
             }
@@ -129,10 +143,9 @@ public:
 
     template<typename T> 
     static void MsgPacketSerializer(const T& data,PacketType packetType){
-        JsonDocument serializerDoc;
         auto instance=ComHandler::Instance();
+        JsonDocument serializerDoc;
         Derived_from<T,Serializable>();
-        serializerDoc.clear();
         char packetStr[BUFFER_SIZE];
         strcpy_P(packetStr,read_packet_prefix(packetType));
         serializerDoc[F("Prefix")]=packetStr;

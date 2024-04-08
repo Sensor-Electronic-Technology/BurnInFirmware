@@ -19,6 +19,7 @@ void FileManager::InstanceLoadConfig(Serializable* config,PacketType configType)
         file.close();
         return;
     }
+    
     config->Deserialize(doc);
     file.close();
     doc.clear();
@@ -30,10 +31,10 @@ FileResult FileManager::InstanceLoadState(Serializable* sysState){
     char filename[BUFFER_SIZE];
     strcpy_P(filename,read_filename(PacketType::SAVE_STATE));
      if(!SD.exists(filename)){
-        Serial.println(F("File does not exist"));
+        //Serial.println(F("File does not exist"));
         return FileResult::DOES_NOT_EXIST;
     }
-    Serial.println(F("File exists"));
+    //Serial.println(F("File exists"));
     file=SD.open(filename);
     if(!file){
         return FileResult::FAILED_TO_OPEN;
