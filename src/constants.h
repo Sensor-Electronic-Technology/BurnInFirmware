@@ -67,6 +67,7 @@ template <class T> int EEPROM_read(int addr, T& value) {
     #define UPDATE_INTERVAL                 500ul  //500ms
     #define DEFAULT_CURRENT                 CurrentValue::c150
     #define DEFAULT_FWEIGHT                 0.1
+    #define TIME_OFF_PERCENT                98.5f
 
     #define ADC_MIN                         0
     #define ADC_MAX                         1023
@@ -97,7 +98,8 @@ template <class T> int EEPROM_read(int addr, T& value) {
         STOP_TUNE=9,
         SAVE_TUNE=10,
         CANCEL_TUNE=11,
-        RESET=12
+        RESET=12,
+        START_ACKNOWLEDGE=13
     };
 #pragma endregion
 
@@ -125,7 +127,7 @@ template <class T> int EEPROM_read(int addr, T& value) {
         TEST_COMPLETED=12,          //outgoing->Notify PC that test has completed
         TEST_LOAD_START=13,         //outgoing->Notify PC that test is starting from a load state
         HEATER_NOTIFY=14,           //Outgoing->Notify PC of a single heater tuning results
-        HEATER_TUNE_COMPLETE=15,    //Outgoing->notfiy PC that all heaters have been tuned
+        HEATER_TUNE_COMPLETE=15,    //Outgoing->notfiy PC that all heaters have been tuned,
     };
 
     const char strPre_00[] PROGMEM="CH";   //0
@@ -219,7 +221,10 @@ template <class T> int EEPROM_read(int addr, T& value) {
         TEST_STATE_COMPLETED=23,
         HEATER_MODE_ATUNE=24,
         HEATER_MODE_HEATING=25,
-        HEATER_STATE_TRANSITION=26
+        HEATER_STATE_TRANSITION=26,
+        PROBE_TEST_START=27,
+        PROBE_TEST_END=28,
+        CURRENT_CHANGED=29
     };
 
     const char str_01[] PROGMEM=    "------Before Loading Free Memory: %d----------";  //0
@@ -249,6 +254,9 @@ template <class T> int EEPROM_read(int addr, T& value) {
     const char str_25[] PROGMEM=    "Heater mode switched to auto tune";//23
     const char str_26[] PROGMEM=    "Heater mode switched to heating";//23
     const char str_27[] PROGMEM=    "TestController Transition from StateId %d from StateId %d"; //22
+    const char str_28[] PROGMEM=    "Probe Test Started,Current: %d"; //23
+    const char str_29[] PROGMEM=    "Probe Test Completed,Current Restored to %d"; //24
+    const char str_30[] PROGMEM=    "Current Changed to %d"; //24
 
     const char* const system_message_table[] PROGMEM={
         str_01,
@@ -277,7 +285,10 @@ template <class T> int EEPROM_read(int addr, T& value) {
         str_24,
         str_25,
         str_26,
-        str_27
+        str_27,
+        str_28,
+        str_29,
+        str_30
     };
 
 
@@ -309,7 +320,7 @@ template <class T> int EEPROM_read(int addr, T& value) {
         TUNE_SAVE_CMD_ERR=20,
         TUNE_DISCARD_CMD_ERR=21,
         TUNE_TRANSISITON_ERR=22,
-        HEATER_TRANSITION_ERR=23,
+        HEATER_TRANSITION_ERR=23
     };
 
     const char strErr_01[] PROGMEM="Failed to load configuration files. Please contact administrator";
@@ -323,7 +334,7 @@ template <class T> int EEPROM_read(int addr, T& value) {
     const char strErr_09[] PROGMEM="Invalid command recieved! Please contact administrator";
     const char strErr_10[] PROGMEM="Failed to deserialize data: %s. Please contact administrator";
     const char strErr_11[] PROGMEM="Failed to serialize data: %s. Please contact administrator";
-    const char strErr_12[] PROGMEM="Invalid message packet prefix recieved: %s.";
+    const char strErr_12[] PROGMEM="Invalid message packet prefix recieved: %s";
     const char strErr_13[] PROGMEM="Prefix not found in message packet";
     const char strErr_14[] PROGMEM="Failed to transition to idle from running state, test is being hard stopped. \n restart controller before starting another test";
     const char strErr_15[] PROGMEM="Failed to start, test is already running";

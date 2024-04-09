@@ -11,12 +11,14 @@ struct ControllerConfig:public Serializable{
     unsigned long           updateInterval=UPDATE_INTERVAL;
     unsigned long           logInterval=LOG_INTERVAL;
     unsigned long           versionInterval=VER_CHECK_INTERVAL;
+    float                   timeOffPercent=0.0f;
 
     virtual void Deserialize(JsonDocument &doc)override{
         JsonObject timeJson=doc[F("BurnTimerConfig")].as<JsonObject>();
         this->burnTimerConfig.time60mASecs=timeJson[F("Time60mASec")];
         this->burnTimerConfig.time120mASecs=timeJson[F("Time120mASec")];
         this->burnTimerConfig.time150mASecs=timeJson[F("Time150mASec")];
+        this->burnTimerConfig.timeOffPercent=timeJson[F("TimeOffPercent")];
         this->comInterval=doc[F("ComInterval")];
         this->updateInterval=doc[F("UpdateInterval")];
         this->logInterval=doc[F("LogInterval")];
@@ -28,6 +30,7 @@ struct ControllerConfig:public Serializable{
         this->burnTimerConfig.time60mASecs=timeJson[F("Time60mASec")];
         this->burnTimerConfig.time120mASecs=timeJson[F("Time120mASec")];
         this->burnTimerConfig.time150mASecs=timeJson[F("Time150mASec")];
+        this->burnTimerConfig.timeOffPercent=timeJson[F("TimeOffPercent")];
         this->comInterval=packet[F("ComInterval")];
         this->updateInterval=packet[F("UpdateInterval")];
         this->logInterval=packet[F("LogInterval")];
@@ -45,6 +48,7 @@ struct ControllerConfig:public Serializable{
         timeJson[F("Time60mASec")]=this->burnTimerConfig.time60mASecs;
         timeJson[F("Time120mASec")]=this->burnTimerConfig.time120mASecs;
         timeJson[F("Time150mASec")]=this->burnTimerConfig.time150mASecs;
+        timeJson[F("TimeOffPercent")]=this->burnTimerConfig.timeOffPercent;
 
         (*doc)[F("ComInterval")]=this->comInterval;
         (*doc)[F("UpdateInterval")]=this->updateInterval;
@@ -62,6 +66,7 @@ struct ControllerConfig:public Serializable{
         timeJson[F("Time60mASec")]=this->burnTimerConfig.time60mASecs;
         timeJson[F("Time120mASec")]=this->burnTimerConfig.time120mASecs;
         timeJson[F("Time150mASec")]=this->burnTimerConfig.time150mASecs;
+        timeJson[F("TimeOffPercent")]=this->burnTimerConfig.timeOffPercent;
 
         (*packet)[F("ComInterval")]=this->comInterval;
         (*packet)[F("UpdateInterval")]=this->updateInterval;

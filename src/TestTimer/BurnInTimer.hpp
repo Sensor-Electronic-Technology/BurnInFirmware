@@ -14,6 +14,22 @@ struct TimerData{
     unsigned long   lastCheck=0ul;
     unsigned long   duration_secs=0ul;
     //unsigned long   timeOnSecs=0;
+    unsigned long Remaining(){
+        return this->duration_secs-this->elapsed_secs;
+    }
+    void incrementProbe(uint8_t probeIndex){
+        this->probeRunTimes[probeIndex]++;
+    }
+
+    void operator++(int){
+        this->elapsed_secs++;
+    }
+
+    bool is_done(){
+        bool done=(this->elapsed_secs*TIMER_PERIOD)>=this->duration_secs;
+        this->running=!done;
+        return done;
+    }
 
     void Reset(){
         this->running=false;
@@ -47,7 +63,6 @@ struct TimerData{
         this->paused=timerJson[F("Paused")];
         this->elapsed_secs=timerJson[F("ElapsedSecs")];
         this->duration_secs=timerJson[F("DurationSecs")];
-        //this->timeOnSecs=timerJson[F("TimeOnSecs")];
         for(uint8_t i=0;i<PROBE_COUNT;i++){
             this->probeRunTimes[i]=timerJson[F("ProbeRuntimes")][i];
         }
@@ -58,9 +73,12 @@ struct TimerData{
 class BurnInTimer{
 private:  
     //TimerData testTimer;
-    unsigned long durSec60mA;
-    unsigned long durSec120mA;
-    unsigned long durSec150mA;
+    unsigned long durSec60mA=TIME_SECS_60mA;
+    unsigned long durSec120mA=TIME_SECS_120mA;
+    unsigned long durSec150mA=TIME_SECS_150mA;
+    bool probeRunTimeOkay[PROBE_COUNT]={true,true,true,true,true,true};
+    float timeOffPercent=TIME_OFF_PERCENT;
+    unsigned long minTimeOn=0ul;
     TestFinsihedCallback _finishedCallback=[](){_NOP();}; 
 
 public:
@@ -99,6 +117,12 @@ public:
     bool IsRunning();
     
     unsigned long GetElapsed();
+
+    void GetProbeTimeOkay(bool *probeRtOkay){
+        for(uint8_t i=0;i<PROBE_COUNT;i++){
+            probeRtOkay[i]=this->probeRunTimeOkay[i];
+        }
+    }
     
     void Increment(bool probeOkay[PROBE_COUNT]);
 

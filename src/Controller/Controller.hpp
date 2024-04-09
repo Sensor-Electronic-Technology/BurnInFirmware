@@ -11,6 +11,7 @@
 #include "SaveState.hpp"
 #include "../StressTest/TestController.hpp"
 #include "../TestTimer/burn_timer_includes.h"
+#include "../StationTImer.hpp"
 #include "../constants.h"
 
 using namespace components;
@@ -71,7 +72,7 @@ private:
     unsigned long          logInterval=LOG_INTERVAL;
     unsigned long          versionInterval=VER_CHECK_INTERVAL;
     SaveState              saveState;
-    Timer                  comTimer,updateTimer,testTimer,versionTimer,stateLogTimer;
+    StationTimer           comTimer,updateTimer,testTimer,stateLogTimer;
     SerialDataOutput       comData;
     HeaterControllerConfig heatersConfig;
     ProbeControllerConfig  probesConfig;

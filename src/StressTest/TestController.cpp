@@ -35,16 +35,21 @@ bool TestController::StartTest(CurrentValue current){
     }
     this->currentSet=true;
     this->stressCurrent=current;
-    ComHandler::SendStartResponse(true,F("Test Started"));
     this->burn_timer.Start(this->stressCurrent);
-
+    ComHandler::SendStartResponse(true,F("Test Started"));
+    this->ackTimer.onInterval([&](){
+        ComHandler::SendStartResponse(true,F("Test Started"));
+    },10000,true);
 }
 
 bool TestController::StartTest(const TimerData& savedState){
     this->savedState=savedState;
     this->savedStateLoaded=true;
-    ComHandler::SendStartResponse(true,F("Test Started"));
+    ComHandler::SendStartFromLoad(true,F("Test Started"));
     this->burn_timer.Start(this->savedState);
+    this->ackTimer.onInterval([&](){
+        ComHandler::SendStartFromLoad(true,F("Test Started"));
+    },10000,true);
 }
 
 bool TestController::IsRunning(){

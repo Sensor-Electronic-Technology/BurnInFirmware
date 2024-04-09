@@ -82,7 +82,7 @@ void Heater::StartTuning(){
     //this->autoTuner.StartTuning();
     this->isComplete=false;
     this->isTuning=true;
-    this->timer.Start();
+    this->timer.start();
     //Serial.println("Heater "+String(this->id)+" Started Tuning");
 }
 

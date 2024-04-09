@@ -29,9 +29,9 @@ void Controller::LoadConfigurations(){
     ComHandler::SendSystemMessage(SystemMessage::LOAD_CONFIG,MessageType::INIT);
 
 
-    FileManager::Load(&heatersConfig,PacketType::HEATER_CONFIG);
-    FileManager::Load(&probesConfig,PacketType::PROBE_CONFIG);
-    FileManager::Load(&controllerConfig,PacketType::SYSTEM_CONFIG);
+    //FileManager::Load(&heatersConfig,PacketType::HEATER_CONFIG);
+    //FileManager::Load(&probesConfig,PacketType::PROBE_CONFIG);
+    //FileManager::Load(&controllerConfig,PacketType::SYSTEM_CONFIG);
 
     // ComHandler::MsgPacketSerializer(heatersConfig,PacketType::HEATER_CONFIG);
     // ComHandler::MsgPacketSerializer(probesConfig,PacketType::PROBE_CONFIG);
@@ -67,7 +67,8 @@ void Controller::SetupComponents(){
     ComHandler::SendSystemMessage(SystemMessage::TIMER_INIT,MessageType::INIT); 
 
     this->testTimer.onInterval([&](){
-        this->testController.Tick(this->probeChecks);
+        bool probeChecks[PROBE_COUNT]={true,true,false,true,true,true};
+        this->testController.Tick(probeChecks);
     },250);
 
     this->stateLogTimer.onInterval([&](){
@@ -79,25 +80,29 @@ void Controller::SetupComponents(){
 
     this->comTimer.onInterval([&](){
         this->UpdateSerialData();
-        this->comData.Set(this->probeResults,this->heaterResults,*(this->testController.GetBurnTimer()));
-        Serial.print("Data: ");
+        bool probeRtOkay[PROBE_COUNT]={false,false,false,false,false,false};
+        this->testController.GetProbeRunTimeOkay(probeRtOkay);
+        this->comData.Set(this->probeResults,this->heaterResults,probeRtOkay,*(this->testController.GetBurnTimer()));
+/*         Serial.print("Data: ");
+
         for(int i=0;i<PROBE_COUNT;i++){
             Serial.print("["+String(i)+"]:");
-            Serial.print(this->comData.probeRuntimes[i]);
+            Serial.print(probeRtOkay[i] ? F("{ Okay,"):F("{ Fail,"));
+            Serial.print(String(this->testController.GetTimerData().probeRunTimes[i])+"}");
+            
             Serial.print(", ");
-        }
-        Serial.println(" Free RAM"+String(FreeRam()));
-        //ComHandler::MsgPacketSerializer(this->comData,PacketType::DATA);
+        } */
+        ComHandler::MsgPacketSerializer(this->comData,PacketType::DATA);
+        Serial.println(" Free RAM: "+String(FreeRam()));
     },this->comInterval);
 
     this->updateTimer.onInterval([&](){
         this->probeControl.GetProbeResults(this->probeResults);
         this->heaterControl.GetResults(this->heaterResults);
     },this->updateInterval);
+
     ComHandler::SendSystemMessage(SystemMessage::TIMER_INIT_COMPLETE,MessageType::INIT); 
     ComHandler::SendSystemMessage(SystemMessage::REG_COMPONENTS,MessageType::INIT);
-    //RegisterChild(this->heaterControl);
-    //RegisterChild(this->probeControl);
     RegisterChild(this->testTimer);
     RegisterChild(this->stateLogTimer);
     RegisterChild(this->comTimer);
@@ -105,6 +110,7 @@ void Controller::SetupComponents(){
 
     RegisterChild(this->heaterControl);
     RegisterChild(this->probeControl);
+    RegisterChild(this->testController);
     
     this->CheckSavedState();    
 }
@@ -154,7 +160,11 @@ void Controller::HandleCommand(StationCommand command){
         case StationCommand::START:{
             auto tempOkay=this->heaterControl.TempOkay();
             if(tempOkay=true){//TODO: undo bypass for testing
-                if(this->testController.StartTest(this->probeControl.GetSetCurrent())){
+/*                 if(this->testController.StartTest(this->probeControl.GetSetCurrent())){
+                    this->probeControl.TurnOnSrc();
+                    this->heaterControl.TurnOn();
+                } */
+                if(this->testController.StartTest(CurrentValue::c060)){
                     this->probeControl.TurnOnSrc();
                     this->heaterControl.TurnOn();
                 }
@@ -251,6 +261,10 @@ void Controller::HandleCommand(StationCommand command){
             }
             break;
         }
+        case StationCommand::START_ACKNOWLEDGE:{
+            this->testController.AcknowledgeTestStart();   
+            break;
+        }
         case StationCommand::RESET:{
             
             if(FileManager::ClearState()){
@@ -290,4 +304,6 @@ bool* Controller::CheckCurrents(){
 void Controller::TestFinished(){
     this->probeControl.TurnOffSrc();
     this->heaterControl.TurnOff();
+    FileManager::ClearState();
+    ComHandler::SendTestCompleted(F("Test Completed"));
 }

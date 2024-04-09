@@ -6,6 +6,7 @@
 #include "../StateMachine/StateMachine.hpp"
 #include "./PID/PID.hpp"
 #include "./PID/PID_AutoTune.hpp"
+#include "../StationTimer.hpp"
 
 using namespace components;
 
@@ -86,7 +87,7 @@ private:
 	int id=-1;
 	HeaterMode mode,nextMode;
 	HeatState heaterState=HeatState::Off;
-	TimerOneShot timer;
+	StationTimer timer;
 	TuningCompleteCallback tuningCompleteCb=[](HeaterTuneResult){};
 	virtual void privateLoop()override;
 };

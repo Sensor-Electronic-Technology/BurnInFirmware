@@ -5,6 +5,8 @@
 #include "ProbeConfiguration.hpp"
 #include "CurrentSelector.hpp"
 #include "probe_constants.h"
+#include "../StationTimer.hpp"
+#include "../Communication/ComHandler.hpp"
 
 using namespace components;
 
@@ -22,7 +24,7 @@ public:
     void StartProbeTest();
     CurrentValue GetSetCurrent();
     void SetCurrent(CurrentValue current);
-    void GetProbeResults(ProbeResult* results);
+    void GetProbeResults(ProbeResult* fill);
 
 private:
     Probe*           probes[PROBE_COUNT];
@@ -30,10 +32,9 @@ private:
     CurrentSelector currentSelector;
     CurrentValue    savedCurrent;
     CurrentValue    testCurrent;
-    int             currentPercent;
-    Timer           readTimer,probeTestTimer;
+    float           currentPercent;
+    Timer           readTimer;
+    StationTimer    probeTestTimer;
     int             probeTestTime;
     void privateLoop(){ }
-
-
 };

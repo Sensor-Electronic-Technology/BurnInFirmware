@@ -12,8 +12,8 @@ typedef struct ProbeResult{
 	float current=0;
 	bool okay=false;
 
-	void check(int currentPercent){
-		okay=(current>=(current*((float)currentPercent/100.0f)));
+	void check(float currentPercent){
+		okay=(current>=(current*(currentPercent/100.0f)));
 	}
 
 	ProbeResult operator=(const ProbeResult& rhs){

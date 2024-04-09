@@ -103,8 +103,8 @@ class ProbeControllerConfig:public Serializable{
 public:
 	int readInterval=PROBE_READINTERVAL;
     int probeTestTime=PROBE_TESTTIME;
-    CurrentValue probeTestCurrent;
-    int probeCurrentPercent;
+    CurrentValue probeTestCurrent=CurrentValue::c060;
+    float probeCurrentPercent=CURRENT_PERCENT;
     CurrentSelectorConfig   currentSelectConfig;
     
 	ProbeConfig	probeConfigs[PROBE_COUNT]={

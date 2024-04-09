@@ -6,6 +6,7 @@ ProbeController::ProbeController(const ProbeControllerConfig& config)
     testCurrent(config.probeTestCurrent),
     currentPercent(config.probeCurrentPercent),
     probeTestTime(config.probeTestTime){
+
     for(uint8_t i=0;i<PROBE_COUNT;i++){
         this->probes[i]=new Probe(config.probeConfigs[i]);
         RegisterChild(this->probes[i]);
@@ -15,7 +16,15 @@ ProbeController::ProbeController(const ProbeControllerConfig& config)
     this->readTimer.onInterval([&]{
         this->Read();
     },config.readInterval);
+
+    this->probeTestTimer.setTimeout([&]{
+        ComHandler::SendSystemMessage(SystemMessage::PROBE_TEST_END,MessageType::NOTIFY);
+        this->TurnOffSrc();
+        this->currentSelector.SetCurrent(this->savedCurrent);
+    },this->probeTestTime);
+
     RegisterChild(this->readTimer);
+    RegisterChild(this->probeTestTimer);
 }
 
 ProbeController::ProbeController():Component(){
@@ -26,6 +35,7 @@ void ProbeController::Setup(const ProbeControllerConfig& config){
     this->currentSelector.Setup(config.currentSelectConfig);
     this->testCurrent=config.probeTestCurrent;
     this->currentPercent=config.probeCurrentPercent;
+    this->probeTestTime=config.probeTestTime;
     for(uint8_t i=0;i<PROBE_COUNT;i++){
         this->probes[i]=new Probe(config.probeConfigs[i]);
         RegisterChild(this->probes[i]);
@@ -36,7 +46,15 @@ void ProbeController::Setup(const ProbeControllerConfig& config){
         this->Read();
     },config.readInterval);
 
+    this->probeTestTimer.setTimeout([&]{
+        this->TurnOffSrc();
+        this->currentSelector.SetCurrent(this->savedCurrent);
+        ComHandler::SendSystemMessage(SystemMessage::PROBE_TEST_END,
+                MessageType::NOTIFY,
+                (uint8_t)this->currentSelector.GetSetCurrent());
+    },this->probeTestTime);
     RegisterChild(this->readTimer);
+    RegisterChild(this->probeTestTimer);
 }
 
 void ProbeController::Initialize(){
@@ -50,14 +68,15 @@ void ProbeController::StartProbeTest(){
     this->savedCurrent=this->currentSelector.GetSetCurrent();
     this->currentSelector.SetCurrent(this->testCurrent);
     this->currentSelector.TurnOn();
-    probeTestTimer.setTimeout([&]{
-        this->TurnOffSrc();
-        this->currentSelector.SetCurrent(this->savedCurrent);
-    },this->probeTestTime);
+    this->probeTestTimer.start();
+    ComHandler::SendSystemMessage(SystemMessage::PROBE_TEST_START,MessageType::NOTIFY,(uint8_t)this->testCurrent);
 }
 
 void ProbeController::CycleCurrent(){
-    this->currentSelector.CycleCurrent();
+    auto newCurrent=currentSelector.CycleCurrent();
+    ComHandler::SendSystemMessage(SystemMessage::CURRENT_CHANGED,
+                MessageType::NOTIFY,
+                (uint8_t)newCurrent);
 }
 
 CurrentValue ProbeController::GetSetCurrent(){
