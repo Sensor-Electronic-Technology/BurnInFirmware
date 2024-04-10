@@ -62,6 +62,16 @@ public:
         instance->_ackCallback=ckb;
     }
 
+    static void MapChangeCurrentCallback(ChangeCurrentCallback cbk){
+        auto instance=ComHandler::Instance();
+        instance->_changeCurrentCallback=cbk;
+    }
+
+    static void MapChangeTempCallback(ChangeTempCallback cbk){
+        auto instance=ComHandler::Instance();
+        instance->_changeTempCallback=cbk;
+    }
+
     static void SendStartResponse(bool success,const __FlashStringHelper* msg){
         auto instance=ComHandler::Instance();
         char buffer[BUFFER_SIZE];
@@ -197,6 +207,8 @@ private:
     
     Stream* serial=nullptr;
     bool serialEventEnabled;
-    CommandCallback _commandCallback=[](StationCommand){};
-    AckCallback     _ackCallback=[](AckType){_NOP();};
+    CommandCallback             _commandCallback=[](StationCommand){};
+    AckCallback                 _ackCallback=[](AckType){_NOP();};
+    ChangeCurrentCallback       _changeCurrentCallback=[](int){_NOP();};
+    ChangeTempCallback          _changeTempCallback=[](int){_NOP();};
 };

@@ -35,8 +35,9 @@ private:
     //actions
     void TestFinished();
     void Reset();
-    //void SetStationId();
     void UpdateSerialData();
+    void UpdateCurrent(int value);
+    void UpdateTempSp(int value);
 
 private:
     ProbeController        probeControl;
@@ -45,6 +46,8 @@ private:
     CommandCallback        _commandCallback=[](StationCommand){_NOP();};
     TestFinsihedCallback   _testFinishedCallback=[](){_NOP();};
     AckCallback            _ackCallback=[](AckType){_NOP();};
+    ChangeCurrentCallback  _changeCurrentCallback=[](int){_NOP();};
+    ChangeTempCallback     _changeTempCallback=[](int){_NOP();};
 
 
     ProbeResult            probeResults[PROBE_COUNT];

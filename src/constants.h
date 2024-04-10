@@ -117,10 +117,12 @@ template <class T> int EEPROM_read(int addr, T& value) {
     typedef components::Function<void(void)> TestFinsihedCallback;
     typedef components::Function<void(void)> TestAckCallback;
     typedef components::Function<void(AckType)> AckCallback;
+    typedef components::Function<void(int)> ChangeCurrentCallback;
+    typedef components::Function<void(int)> ChangeTempCallback;
 #pragma endregion
 
 #pragma region PrefixDefinitions
-    #define PREFIX_COUNT    17
+    #define PREFIX_COUNT    19
 
     enum PacketType:uint8_t{
         HEATER_CONFIG=0,            //PC to Station config
@@ -140,6 +142,8 @@ template <class T> int EEPROM_read(int addr, T& value) {
         HEATER_NOTIFY=14,           //Outgoing->Notify PC of a single heater tuning results
         HEATER_TUNE_COMPLETE=15,    //Outgoing->notfiy PC that all heaters have been tuned,
         ACK=16,                     //Outgoing->Acknowledge PC of command
+        UPDATE_CURRENT=17,          //Incoming update current
+        UPDATE_TEMP=18              //Incoming update temperature
     };
 
     const char strPre_00[] PROGMEM="CH";   //0
@@ -159,6 +163,8 @@ template <class T> int EEPROM_read(int addr, T& value) {
     const char strPre_14[] PROGMEM="HNOTIFY";    //14
     const char strPre_15[] PROGMEM="HTUNED";     //15
     const char strPre_16[] PROGMEM="ACK";     //16
+    const char strPre_17[] PROGMEM="UC";     //16
+    const char strPre_18[] PROGMEM="UT";     //16
 
     const char* const prefixes[] PROGMEM = {
         strPre_00,
@@ -177,7 +183,9 @@ template <class T> int EEPROM_read(int addr, T& value) {
         strPre_13,
         strPre_14,
         strPre_15,
-        strPre_16
+        strPre_16,
+        strPre_17,
+        strPre_18
     };
 #pragma endregion
 
@@ -334,7 +342,9 @@ template <class T> int EEPROM_read(int addr, T& value) {
         TUNE_SAVE_CMD_ERR=20,
         TUNE_DISCARD_CMD_ERR=21,
         TUNE_TRANSISITON_ERR=22,
-        HEATER_TRANSITION_ERR=23
+        HEATER_TRANSITION_ERR=23,
+        CHANGE_RUNNING_ERR=24,
+        MAX_TEMP_ERR=25
     };
 
     const char strErr_01[] PROGMEM="Failed to load configuration files. Please contact administrator";
@@ -361,6 +371,8 @@ template <class T> int EEPROM_read(int addr, T& value) {
     const char strErr_22[] PROGMEM="Failed to discard tuning, tuning is not in complete state";
     const char strErr_23[] PROGMEM="Error: Not in Tuning Mode, Switch modes to start tuning";
     const char strErr_24[] PROGMEM="Error: Not in Heating Mode, Switch modes to Turn On/Off Heaters";
+    const char strErr_25[] PROGMEM="Error: Cannot change current or temperature while a test is running";
+    const char strErr_26[] PROGMEM="Error: Temperature set point must be <= %d";
 
     const char* const system_error_table[] PROGMEM={
         strErr_01,
@@ -386,19 +398,14 @@ template <class T> int EEPROM_read(int addr, T& value) {
         strErr_21,
         strErr_22,
         strErr_23,
-        strErr_24
+        strErr_24,
+        strErr_25,
+        strErr_26
     };
 
 #pragma endregion
 
 
-
-/*
-//File indexes
-#define HEATER_CONFIG_INDEX     0
-#define PROBE_CONFIG_INDEX      1
-#define SYSTEM_CONFIG_INDEX     2
-*/
 
 
 // enum PacketType:uint8_t{

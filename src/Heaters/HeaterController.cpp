@@ -256,6 +256,10 @@ void HeaterController::HeaterRunCompleteHandler(HeaterTuneResult result){
     }
 }
 void HeaterController::ChangeSetPoint(uint8_t setPoint){
+    if(setPoint>MAX_SETPOINT){
+        ComHandler::SendErrorMessage(SystemError::MAX_TEMP_ERR,MessageType::ERROR,MAX_SETPOINT);
+        return;
+    }
     for(uint8_t i=0;i<HEATER_COUNT;i++){
         this->heaters[i]->ChangeSetpoint(setPoint);
     }

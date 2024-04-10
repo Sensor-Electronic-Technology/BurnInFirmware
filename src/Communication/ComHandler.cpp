@@ -66,6 +66,16 @@ void ComHandler::MsgPacketDeserialize(JsonDocument& serialEventDoc) {
                 this->_ackCallback(ackType);
                 break;
             }
+            case PacketType::UPDATE_CURRENT:{
+                auto current=serialEventDoc[F("Packet")].as<int>();
+                this->_changeCurrentCallback(current);
+                break;
+            }
+            case PacketType::UPDATE_TEMP:{
+                auto temp=serialEventDoc[F("Packet")].as<int>();
+                this->_changeTempCallback(temp);
+                break;
+            }
             default:{
                 ComHandler::SendErrorMessage(SystemError::INVALID_PREFIX,prefix);
                 break;

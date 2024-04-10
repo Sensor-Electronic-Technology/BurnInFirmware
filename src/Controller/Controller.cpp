@@ -7,9 +7,16 @@ Controller::Controller():Component(){
         this->HandleCommand(command);
     };
     
-
     this->_testFinishedCallback=[&](){
         this->TestFinished();
+    };
+
+    this->_changeCurrentCallback=[&](int value){
+        this->UpdateCurrent(value);
+    };
+
+    this->_changeTempCallback=[&](int value){
+        this->UpdateTempSp(value);
     };
 
     this->_ackCallback=[&](AckType ack){
@@ -31,6 +38,8 @@ Controller::Controller():Component(){
 
     ComHandler::MapAckCallback(this->_ackCallback);
     ComHandler::MapCommandCallback(this->_commandCallback);
+    ComHandler::MapChangeCurrentCallback(this->_changeCurrentCallback);
+    ComHandler::MapChangeTempCallback(this->_changeTempCallback);
 
     for(uint8_t i=0;i<PROBE_COUNT;i++){
         this->probeResults[i]=ProbeResult();
@@ -311,6 +320,23 @@ void Controller::HandleCommand(StationCommand command){
 
 void Controller::privateLoop(){
 
+}
+
+void Controller::UpdateCurrent(int value){
+    if(!this->testController.IsRunning()){
+        this->probeControl.SetCurrent((CurrentValue)value);
+    }else{
+       ComHandler::SendErrorMessage(SystemError::CHANGE_RUNNING_ERR,MessageType::ERROR);
+    }
+ 
+}
+
+void Controller::UpdateTempSp(int value){
+    if(!this->testController.IsRunning()){
+        this->heaterControl.ChangeSetPoint(value);
+    }else{
+
+    }
 }
 
 void Controller::Reset(){

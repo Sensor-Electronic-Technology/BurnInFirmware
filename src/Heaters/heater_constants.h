@@ -11,6 +11,7 @@ typedef components::Function<void(void)> TransitionActionHandler;
 #define HEATER_COUNT                    3
 #define TEMP_INTERVAL                   100ul 
 #define DEFAULT_TEMP_DEV                0.1
+#define MAX_SETPOINT                    100
 
 struct HeaterTuneResult:Serializable{
     int heaterNumber=-1;
