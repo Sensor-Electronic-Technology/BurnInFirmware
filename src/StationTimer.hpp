@@ -9,7 +9,7 @@ public:
 	StationTimer(Ref<Component> parent);
 	StationTimer() : StationTimer(nullptr) {}
 	void setTimeout(VoidCallback callback, unsigned long delay);
-	void onInterval(VoidCallback callback, unsigned long interval,bool start=true);
+	void onInterval(VoidCallback callback, unsigned long interval,bool start=true,bool fireImmediately=false);
 	void changeCallback(VoidCallback callback){
 		this->_timeout_callback = callback;
 	}
@@ -27,6 +27,7 @@ private:
 	bool _timer_running;
 	unsigned _period;
 	bool _intervaling;
+	bool _fireImmediately;
 };
 
 /* class TimerOneShot : public Component {

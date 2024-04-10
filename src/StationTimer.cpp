@@ -4,7 +4,9 @@ StationTimer::StationTimer(Ref<Component> parent) :
     Component(parent),
     _timeout_callback([](){}),
     _timer_running(false), 
-    _deadline(0) {
+    _deadline(0),_fireImmediately(false),
+    _period(0),
+    _intervaling(false){
 }
 
 void StationTimer::setTimeout(VoidCallback callback, unsigned long delay) {
@@ -13,11 +15,12 @@ void StationTimer::setTimeout(VoidCallback callback, unsigned long delay) {
     this->_intervaling = false;
     this->_timer_running = false;
     this->_timeout_callback = callback;
+    this->_fireImmediately=false;
 }
 
-void StationTimer::onInterval(VoidCallback callback, unsigned long interval,bool start) {
+void StationTimer::onInterval(VoidCallback callback, unsigned long interval,bool start,bool fireImmediately) {
     cancel();
-    
+    this->_fireImmediately=fireImmediately;
     this->_period = interval;
     this->_intervaling = true;
 
@@ -31,6 +34,9 @@ void StationTimer::onInterval(VoidCallback callback, unsigned long interval,bool
 
 void StationTimer::start() {
     this->_timer_running = true;
+    if(this->_intervaling && this->_fireImmediately){
+        this->_timeout_callback();
+    }
     this->_deadline = millisTime() + this->_period;  
 }
 

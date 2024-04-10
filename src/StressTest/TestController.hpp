@@ -8,6 +8,7 @@
 
 #define STATE_COUNT         3
 #define TRANSITION_COUNT    5
+#define TEST_START_PERIOD   10000ul
 
 enum class TestState{
     TEST_IDLE=0,

@@ -4,11 +4,10 @@
 ComHandler* ComHandler::instance=nullptr;
 
 void ComHandler::MsgPacketDeserialize(JsonDocument& serialEventDoc) {
-    //JsonDocument serialEventDoc;
     const char* prefix=serialEventDoc[F("Prefix")].as<const char*>();
     bool found=false;
      PacketType packetType;
-    for(uint8_t i=0;i<15;i++){
+    for(uint8_t i=0;i<PREFIX_COUNT;i++){
         char target[BUFFER_SIZE];
         strcpy_P(target,read_packet_prefix(i));
         if(strcmp(prefix,(const char*)target)==0){
@@ -35,11 +34,9 @@ void ComHandler::MsgPacketDeserialize(JsonDocument& serialEventDoc) {
             }
             case PacketType::SYSTEM_CONFIG:{
                 auto packet=serialEventDoc[F("Packet")].as<JsonObject>();
-                // serializeJson(serialEventDoc,*this->serial);
                 ControllerConfig config;
                 config.Deserialize(packet);
                 FileManager::Save(&config,packetType);
-                //this->InstanceMsgPacketSerializer(config,packetType);
                 break;
             }
             case PacketType::COMMAND:{
@@ -49,7 +46,7 @@ void ComHandler::MsgPacketDeserialize(JsonDocument& serialEventDoc) {
                 break;
             }
             case PacketType::ID_REQUEST:{
-                this->SendId();
+                this->InstanceSendId();
                 break;
             }
             case PacketType::ID_RECEIVE:{
@@ -57,11 +54,16 @@ void ComHandler::MsgPacketDeserialize(JsonDocument& serialEventDoc) {
                 break;
             }
             case PacketType::VER_REQUEST:{
-                this->SendVersion();
+                this->InstanceSendVersion();
                 break;
             }
             case PacketType::VER_RECIEVE:{
                 this->ReceiveVersion(serialEventDoc);
+                break;
+            }
+            case PacketType::ACK:{
+                auto ackType=serialEventDoc[F("Packet")].as<AckType>();
+                this->_ackCallback(ackType);
                 break;
             }
             default:{
@@ -74,7 +76,7 @@ void ComHandler::MsgPacketDeserialize(JsonDocument& serialEventDoc) {
     }
 }
 
-void ComHandler::SendId(){
+void ComHandler::InstanceSendId(){
     JsonDocument serializerDoc;
     EEPROM_read(ID_ADDR,StationId);
     serializerDoc.clear();
@@ -93,7 +95,7 @@ void ComHandler::ReceiveId(const JsonDocument& serialEventDoc){
     EEPROM_write(ID_ADDR,StationId);
 }
 
-void ComHandler::SendVersion(){
+void ComHandler::InstanceSendVersion(){
     JsonDocument serializerDoc;
     EEPROM_read(VER_ADDR,FirmwareVersion);
     serializerDoc.clear();

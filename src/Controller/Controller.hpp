@@ -25,34 +25,15 @@ public:
     void LoadConfigurations();
     void SetupComponents();
     void CheckSavedState();
-
-    //Transition Checks 
-
-
     //other
     void HandleCommand(StationCommand command);
 
 private:
-    void BuildStateMachine(void);
-
-    //Modes
-    void NormalRun();
-    void TuningRun();
-    void CalRun();
-
-    //Transitions
-    void NormalToTuning();
-    void NormalToCal();
-    void TuningToNormal();
-    void TuningToCal();
-    void CalToNormal();
-    void CalToTuning();
 
     //Test Actions
     bool* CheckCurrents();
     //actions
     void TestFinished();
-    void RunTestProbes();
     void Reset();
     //void SetStationId();
     void UpdateSerialData();
@@ -63,6 +44,7 @@ private:
     TestController         testController;
     CommandCallback        _commandCallback=[](StationCommand){_NOP();};
     TestFinsihedCallback   _testFinishedCallback=[](){_NOP();};
+    AckCallback            _ackCallback=[](AckType){_NOP();};
 
 
     ProbeResult            probeResults[PROBE_COUNT];
@@ -72,7 +54,7 @@ private:
     unsigned long          logInterval=LOG_INTERVAL;
     unsigned long          versionInterval=VER_CHECK_INTERVAL;
     SaveState              saveState;
-    StationTimer           comTimer,updateTimer,testTimer,stateLogTimer;
+    StationTimer           comTimer,updateTimer,testTimer,stateLogTimer,idTimer,versionTimer;
     SerialDataOutput       comData;
     HeaterControllerConfig heatersConfig;
     ProbeControllerConfig  probesConfig;

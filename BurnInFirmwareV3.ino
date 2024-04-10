@@ -12,15 +12,9 @@
 #include "src/free_memory.h"
 #include "src/Heaters/HeaterTests.hpp"
 
-
 Controller controller;
-// HeaterTests heaterTesting;
+
 void setup(){
-
-/*     heaterTesting.setup_pid();
-    Serial.print(F("Free SRAM: "));
-    Serial.println(FreeSRAM()); */
-
     Serial.begin(38400);
     ComHandler::SetSerial(&Serial);
     sdInitialized=true;
@@ -31,8 +25,7 @@ void setup(){
     ComHandler::SendSystemMessage(SystemMessage::SD_INIT,MessageType::GENERAL);
     Serial.print(F("Free SRAM: "));
     Serial.println(FreeSRAM());
-    //EEPROM_write(VER_ADDR,"V1.0.0");
-    EEPROM_read(ID_ADDR,StationId);
+
     randomSeed(analogRead(0));
     ComHandler::SetSerial(&Serial);
     controller.LoadConfigurations();
@@ -52,4 +45,19 @@ void serialEvent(){
         ComHandler::HandleSerial();
     }
     //heaterTesting.handleSerial();
+}
+
+void InitEEPROM(){
+    EEPROM_write(VER_ADDR,"V1.0.0");
+    EEPROM_write(ID_ADDR,"S01");
+}
+
+void ReadEEpromVars(){
+    EEPROM_read(VER_ADDR,FirmwareVersion);
+    //EEPROM_write(VER_ADDR,"V1.0.0");
+    EEPROM_read(ID_ADDR,StationId);
+    Serial.print(F("Firmware Version: "));
+    Serial.println(FirmwareVersion);
+    Serial.print(F("Station ID: "));
+    Serial.println(StationId);
 }

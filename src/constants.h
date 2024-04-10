@@ -71,6 +71,9 @@ template <class T> int EEPROM_read(int addr, T& value) {
 
     #define ADC_MIN                         0
     #define ADC_MAX                         1023
+
+    #define VERSION_PERIOD                  10000ul //10sec
+    #define ID_PERIOD                       5000ul //5sec
 #pragma endregion
 
 #pragma region ENUMS
@@ -98,8 +101,13 @@ template <class T> int EEPROM_read(int addr, T& value) {
         STOP_TUNE=9,
         SAVE_TUNE=10,
         CANCEL_TUNE=11,
-        RESET=12,
-        START_ACKNOWLEDGE=13
+        RESET=12
+    };
+
+    enum AckType:uint8_t{
+        TEST_START_ACK=0,
+        VER_ACK=1,
+        ID_ACK=2   
     };
 #pragma endregion
 
@@ -107,10 +115,13 @@ template <class T> int EEPROM_read(int addr, T& value) {
     typedef components::Function<void(void)> RestartRequiredCallback;
     typedef components::Function<void(StationCommand)> CommandCallback;
     typedef components::Function<void(void)> TestFinsihedCallback;
+    typedef components::Function<void(void)> TestAckCallback;
+    typedef components::Function<void(AckType)> AckCallback;
 #pragma endregion
 
 #pragma region PrefixDefinitions
-    #define PREFIX_COUNT    15
+    #define PREFIX_COUNT    17
+
     enum PacketType:uint8_t{
         HEATER_CONFIG=0,            //PC to Station config
         PROBE_CONFIG=1,             //PC to stattion config
@@ -122,12 +133,13 @@ template <class T> int EEPROM_read(int addr, T& value) {
         ID_RECEIVE=7,               //Set station id
         ID_REQUEST=8,               //Request station id-Send to PC
         VER_RECIEVE=9,              //incoming-> new firmware version
-        VER_REQUEST=10,             //
+        VER_REQUEST=10,             //incoming-> request version and send
         TEST_START_STATUS=11,       //outgoing->Notify PC that test has started
         TEST_COMPLETED=12,          //outgoing->Notify PC that test has completed
         TEST_LOAD_START=13,         //outgoing->Notify PC that test is starting from a load state
         HEATER_NOTIFY=14,           //Outgoing->Notify PC of a single heater tuning results
         HEATER_TUNE_COMPLETE=15,    //Outgoing->notfiy PC that all heaters have been tuned,
+        ACK=16,                     //Outgoing->Acknowledge PC of command
     };
 
     const char strPre_00[] PROGMEM="CH";   //0
@@ -146,6 +158,7 @@ template <class T> int EEPROM_read(int addr, T& value) {
     const char strPre_13[] PROGMEM="TLOAD";     //13
     const char strPre_14[] PROGMEM="HNOTIFY";    //14
     const char strPre_15[] PROGMEM="HTUNED";     //15
+    const char strPre_16[] PROGMEM="ACK";     //16
 
     const char* const prefixes[] PROGMEM = {
         strPre_00,
@@ -163,7 +176,8 @@ template <class T> int EEPROM_read(int addr, T& value) {
         strPre_12,
         strPre_13,
         strPre_14,
-        strPre_15
+        strPre_15,
+        strPre_16
     };
 #pragma endregion
 

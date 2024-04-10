@@ -6,10 +6,31 @@ Controller::Controller():Component(){
     this->_commandCallback=[&](StationCommand command){
         this->HandleCommand(command);
     };
-    ComHandler::MapCommandCallback(this->_commandCallback);
+    
+
     this->_testFinishedCallback=[&](){
         this->TestFinished();
     };
+
+    this->_ackCallback=[&](AckType ack){
+        switch(ack){
+            case AckType::TEST_START_ACK:{
+                this->testController.AcknowledgeTestStart();
+                break;
+            }
+            case AckType::VER_ACK:{
+                this->versionTimer.cancel();
+                break;
+            }
+            case AckType::ID_ACK:{
+                this->idTimer.cancel();
+                break;
+            }
+        }
+    };
+
+    ComHandler::MapAckCallback(this->_ackCallback);
+    ComHandler::MapCommandCallback(this->_commandCallback);
 
     for(uint8_t i=0;i<PROBE_COUNT;i++){
         this->probeResults[i]=ProbeResult();
@@ -17,9 +38,7 @@ Controller::Controller():Component(){
 
     for(uint8_t i=0;i<HEATER_COUNT;i++){
         this->heaterResults[i]=HeaterResult();
-    }   
-    //this->mode_run[StationMode::NORMAL]=&Controller::NormalRun;
-    
+    }       
 }
 
 void Controller::LoadConfigurations(){
@@ -77,13 +96,13 @@ void Controller::SetupComponents(){
             FileManager::Save(&this->saveState,PacketType::SAVE_STATE);
         }
     },30000);
-
+    
     this->comTimer.onInterval([&](){
         this->UpdateSerialData();
         bool probeRtOkay[PROBE_COUNT]={false,false,false,false,false,false};
         this->testController.GetProbeRunTimeOkay(probeRtOkay);
         this->comData.Set(this->probeResults,this->heaterResults,probeRtOkay,*(this->testController.GetBurnTimer()));
-/*         Serial.print("Data: ");
+/*      Serial.print("Data: ");
 
         for(int i=0;i<PROBE_COUNT;i++){
             Serial.print("["+String(i)+"]:");
@@ -92,21 +111,32 @@ void Controller::SetupComponents(){
             
             Serial.print(", ");
         } */
-        ComHandler::MsgPacketSerializer(this->comData,PacketType::DATA);
+    ComHandler::MsgPacketSerializer(this->comData,PacketType::DATA);
         Serial.println(" Free RAM: "+String(FreeRam()));
-    },this->comInterval);
+    },this->comInterval,true,false);
 
     this->updateTimer.onInterval([&](){
         this->probeControl.GetProbeResults(this->probeResults);
         this->heaterControl.GetResults(this->heaterResults);
     },this->updateInterval);
 
+    this->versionTimer.onInterval([&](){
+        ComHandler::SendVersion();
+    },VERSION_PERIOD,false,true);
+
+    this->idTimer.onInterval([&](){
+        ComHandler::SendId();
+    },ID_PERIOD,false,true);
+
     ComHandler::SendSystemMessage(SystemMessage::TIMER_INIT_COMPLETE,MessageType::INIT); 
     ComHandler::SendSystemMessage(SystemMessage::REG_COMPONENTS,MessageType::INIT);
+
     RegisterChild(this->testTimer);
     RegisterChild(this->stateLogTimer);
     RegisterChild(this->comTimer);
     RegisterChild(this->updateTimer);
+    RegisterChild(this->versionTimer);
+    RegisterChild(this->idTimer);
 
     RegisterChild(this->heaterControl);
     RegisterChild(this->probeControl);
@@ -141,6 +171,8 @@ void Controller::CheckSavedState(){
         }
     }
     ComHandler::SendSystemMessage(SystemMessage::COMPONENTS_INIT_COMPLETE,MessageType::INIT);
+    this->idTimer.start();
+    this->versionTimer.start();
 }
 
 void Controller::UpdateSerialData(){
@@ -148,6 +180,7 @@ void Controller::UpdateSerialData(){
         this->probeResults[i].current=random(148,151);
         this->probeResults[i].voltage=random(60,65);
     }
+
     for(uint8_t i=0;i<HEATER_COUNT;i++){
         this->heaterResults[i].temperature=random(82,85);
         this->heaterResults[i].tempOkay=true;
@@ -261,18 +294,11 @@ void Controller::HandleCommand(StationCommand command){
             }
             break;
         }
-        case StationCommand::START_ACKNOWLEDGE:{
+/*         case StationCommand::START_ACKNOWLEDGE:{
             this->testController.AcknowledgeTestStart();   
             break;
-        }
+        } */
         case StationCommand::RESET:{
-            
-            if(FileManager::ClearState()){
-                ComHandler::SendSystemMessage(SystemMessage::SAVED_STATE_DELETED,MessageType::GENERAL);
-            }else{
-                ComHandler::SendErrorMessage(SystemError::STATE_DELETE_FAILED,MessageType::ERROR);
-            }
-            ComHandler::SendSystemMessage(SystemMessage::RESETTING_CONTROLLER,MessageType::GENERAL);
             this->Reset();
             break;
         }
@@ -288,6 +314,12 @@ void Controller::privateLoop(){
 }
 
 void Controller::Reset(){
+    if(FileManager::ClearState()){
+        ComHandler::SendSystemMessage(SystemMessage::SAVED_STATE_DELETED,MessageType::GENERAL);
+    }else{
+        ComHandler::SendErrorMessage(SystemError::STATE_DELETE_FAILED,MessageType::ERROR);
+    }
+    ComHandler::SendSystemMessage(SystemMessage::RESETTING_CONTROLLER,MessageType::GENERAL);
     wdt_disable();
 	wdt_enable(WDTO_15MS);
 	while(true){_NOP();}

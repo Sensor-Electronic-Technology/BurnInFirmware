@@ -30,9 +30,14 @@ public:
         }
     }
 
-    static void SendOutVersion(){
+    static void SendVersion(){
         auto instance=ComHandler::Instance();
-        instance->SendVersion();
+        instance->InstanceSendVersion();
+    }
+
+    static void SendId(){
+        auto instance=ComHandler::Instance();
+        instance->InstanceSendId();
     }
 
     static void DisabledSerialEvent(){
@@ -50,6 +55,11 @@ public:
     static void MapCommandCallback(CommandCallback cbk){
         auto instance=ComHandler::Instance();
         instance->_commandCallback=cbk;
+    }
+
+    static void MapAckCallback(AckCallback ckb){
+        auto instance=ComHandler::Instance();
+        instance->_ackCallback=ckb;
     }
 
     static void SendStartResponse(bool success,const __FlashStringHelper* msg){
@@ -120,11 +130,11 @@ public:
         instance->InstanceSendTestCompleted(buffer);
     }
 
-    template<typename...Args>
+/*     template<typename...Args>
     static void SendCustomMessage(const __FlashStringHelper* format,MessageType msgType,Args...args){
         auto instance=ComHandler::Instance();
         instance->SendCustomMessage(format,msgType,args...);
-    }
+    } */
 
     static void HandleSerial(){
         auto instance=ComHandler::Instance();
@@ -173,9 +183,9 @@ private:
     template <typename T> 
     void InstanceSendRequest(PacketType packetType,const char* request,const T& data);
     // void InstanceSendMessage(const char* message);
-    void SendId();
+    void InstanceSendId();
     void ReceiveId(const JsonDocument& serialEventDoc);
-    void SendVersion();
+    void InstanceSendVersion();
     void ReceiveVersion(const JsonDocument& serialEventDoc);
     void InstanceSendStartResponse(bool success,const char* message);
     void InstanceSendTestStartFromLoad(bool success,const char* message);
@@ -188,4 +198,5 @@ private:
     Stream* serial=nullptr;
     bool serialEventEnabled;
     CommandCallback _commandCallback=[](StationCommand){};
+    AckCallback     _ackCallback=[](AckType){_NOP();};
 };
