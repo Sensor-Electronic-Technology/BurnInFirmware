@@ -1,6 +1,6 @@
 #include "Heater.hpp"
 
-Heater::Heater(const HeaterConfig& config) 
+Heater::Heater(const HeaterConfig& config,int tempSp) 
     :Component(),
     id(config.HeaterId),
     ntc(config.ntcConfig),
@@ -10,8 +10,8 @@ Heater::Heater(const HeaterConfig& config)
     ki(config.pidConfig.ki),
     tempDeviation(config.tempDeviation),
     WindowSize(config.pidConfig.windowSize),
-    heaterState(HeatState::Off){
-    this->tempSetPoint=DEFAULT_TEMPSP;
+    heaterState(HeatState::Off),
+    tempSetPoint(tempSp){
     this->pid.Setup(&this->temperature,&this->pidOutput,&this->tempSetPoint,this->kp,this->ki,this->kd);
     this->pid.SetOutputRange(0,this->WindowSize,true);
     this->autoTuner.Setup(&this->temperature,&this->pidOutput,this->tempSetPoint,this->pid.GetSampleTime(),15);

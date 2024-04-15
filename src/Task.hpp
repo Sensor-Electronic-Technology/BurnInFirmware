@@ -1,4 +1,6 @@
 #pragma once
+#include "constants.h"
+#include "Communication/ComHandler.hpp"
 
 template <typename T>
 struct Task{
@@ -10,6 +12,7 @@ struct Task{
     }
 
     void transition(){
+        ComHandler::SendSystemMessage(SystemMessage::HEATER_STATE_TRANSITION,MessageType::GENERAL,this->state,this->nextState);
         this->state=this->nextState;
     }
 

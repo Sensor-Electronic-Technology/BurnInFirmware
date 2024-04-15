@@ -2,18 +2,24 @@
 
 #pragma region Initializtion
 HeaterController::HeaterController(const HeaterControllerConfig& config)
-        :Component(),readInterval(config.readInterval),configuration(config){
+        :Component(),
+        readInterval(config.readInterval),
+        tempSp(config.tempSp),
+        configuration(config){
 
     this->tuningCompleteCbk=[&](HeaterTuneResult result){
         this->HeaterRunCompleteHandler(result);
     };
 
     for(uint8_t i=0;i<HEATER_COUNT;i++){ 
-        this->heaters[i]=new Heater(config.heaterConfigs[i]);
+        this->heaters[i]=new Heater(config.heaterConfigs[i],this->tempSp);
         this->heaters[i]->MapTurningComplete(this->tuningCompleteCbk);
         RegisterChild(this->heaters[i]);
         this->results[i]=HeaterResult();
-    }    
+    }
+    this->mode.set(HeaterMode::HEATING,HeaterMode::HEATING);
+    this->hState.set(HeaterState::HEATER_OFF,HeaterState::HEATER_OFF);
+    this->tState.set(TuneState::TUNE_IDLE,TuneState::TUNE_IDLE);  
 }
 
 HeaterController::HeaterController():Component(){
@@ -30,16 +36,26 @@ HeaterController::HeaterController():Component(){
     this->heaterStateRun[HeaterState::HEATER_OFF]=&HeaterController::RunIdle;
     this->heaterStateRun[HeaterState::HEATER_WARMUP]=&HeaterController::RunWarmup;
     this->heaterStateRun[HeaterState::HEATER_ON]=&HeaterController::RunOn;
+
+    this->mode.set(HeaterMode::HEATING,HeaterMode::HEATING);
+    this->hState.set(HeaterState::HEATER_OFF,HeaterState::HEATER_OFF);
+    this->tState.set(TuneState::TUNE_IDLE,TuneState::TUNE_IDLE);
     
 }
 
 void HeaterController::Setup(const HeaterControllerConfig& config){
+    this->tempSp=config.tempSp;
+    Serial.println("TempSP: "+String(this->tempSp));
+    this->readInterval=config.readInterval;
     for(uint8_t i=0;i<HEATER_COUNT;i++){ 
-        this->heaters[i]=new Heater(config.heaterConfigs[i]);
+        this->heaters[i]=new Heater(config.heaterConfigs[i],this->tempSp);
         this->heaters[i]->MapTurningComplete(this->tuningCompleteCbk);
         RegisterChild(this->heaters[i]);
         this->results[i]=HeaterResult();
     }  
+    this->mode.set(HeaterMode::HEATING,HeaterMode::HEATING);
+    this->hState.set(HeaterState::HEATER_OFF,HeaterState::HEATER_OFF);
+    this->tState.set(TuneState::TUNE_IDLE,TuneState::TUNE_IDLE);
 }
 
 void HeaterController::Initialize(){
@@ -65,11 +81,11 @@ void HeaterController::Run(){
     if(this->mode){
         if(this->mode.is_next(HeaterMode::ATUNE)){
             this->OnStopTuning();
-            this->mode.transition();
         }else if(this->mode.is_next(HeaterMode::HEATING)){
             this->OnTurnOff();
-            this->mode.transition();
+            
         }
+        this->mode.transition();
     }
     (this->*modeRun[this->mode.state])();
 }
@@ -104,7 +120,7 @@ void HeaterController::TuneRun(){
 #pragma region Commands
 void HeaterController::TurnOn(){
     if(this->mode==HeaterMode::HEATING){
-        this->hState.nextState=HeaterState::HEATER_ON;
+        this->hState.nextState=HeaterState::HEATER_WARMUP;
     }else{
         Serial.println(F("Err: Cannot turn on while in tuning mode"));
     }
@@ -165,11 +181,8 @@ void HeaterController::ToggleHeaters(){
         Serial.println(F("Err: Cannot toggle heaters while in tuning mode"));
         return;
     }
-    if(this->heaterState==HeatState::Off){
-       this->hState.nextState=HeaterState::HEATER_ON;
-    }else{
-        this->hState.nextState=HeaterState::HEATER_OFF;
-    }
+    this->hState.nextState=(this->hState.state==HeaterState::HEATER_OFF) ? 
+                            HeaterState::HEATER_WARMUP:HeaterState::HEATER_OFF;
 }
 
 void HeaterController::OnTurnOn(){
@@ -260,6 +273,7 @@ void HeaterController::ChangeSetPoint(uint8_t setPoint){
         ComHandler::SendErrorMessage(SystemError::MAX_TEMP_ERR,MessageType::ERROR,MAX_SETPOINT);
         return;
     }
+    this->tempSp=setPoint;
     for(uint8_t i=0;i<HEATER_COUNT;i++){
         this->heaters[i]->ChangeSetpoint(setPoint);
     }
@@ -314,9 +328,11 @@ void HeaterController::OnDiscardTuning(){
 #pragma region StateMachineHeating
 
 void HeaterController::RunOn(){
+
     for(uint8_t i=0;i<HEATER_COUNT;i++){
         this->heaters[i]->RunPid();
     }
+
 }
 
 void HeaterController::RunWarmup(){
@@ -326,10 +342,11 @@ void HeaterController::RunWarmup(){
     if(this->TempOkay()){
         this->hState.nextState=HeaterState::HEATER_ON;
     }
+
 }
 
 void HeaterController::RunIdle(){
-    _NOP();
+
 }
 
 #pragma endregion
@@ -353,17 +370,21 @@ bool HeaterController::SwitchToAutoTune(){
         return true;
     }
     return false;
-    //return this->modeStateMachine.triggerEvent(ModeTrigger::ATUNE_START);
 }
 #pragma endregion
 
 #pragma region Misc
+int HeaterController::GetSetPoint(){
+    return this->heaterState==HeatState::On ? this->tempSp:0;
+}
+
 void HeaterController::ReadTemperatures(){
     for(uint8_t i=0;i<HEATER_COUNT;i++){
         results[i]=heaters[i]->Read();
         //results[i]=heaters[i]->GetHeaterResult();
     }
 }
+
 bool HeaterController::TempOkay(){
     bool okay=true;
     for(auto result:this->results){

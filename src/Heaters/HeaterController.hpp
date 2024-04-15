@@ -29,8 +29,8 @@ public:
     void ReadTemperatures();
     bool TempOkay();
     void ChangeSetPoint(uint8_t setPoint);
+    int GetSetPoint();
     void GetResults(HeaterResult* fill);
-
     void Run();
     void HeatingRun();
     void TuneRun();
@@ -99,6 +99,7 @@ private:
     unsigned long readInterval;
     bool isTuning=false;
     bool tuningCompleted=false;
+    int tempSp=DEFAULT_TEMPSP;
     virtual void privateLoop() override;
 
     ModeRun modeRun[MODE_COUNT];

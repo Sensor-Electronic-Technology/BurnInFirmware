@@ -168,6 +168,7 @@ public:
 class HeaterControllerConfig:public Serializable{
 public:
 	unsigned long readInterval=TEMP_INTERVAL;
+    int tempSp=DEFAULT_TEMPSP;
 	HeaterConfig heaterConfigs[HEATER_COUNT]={
 		HeaterConfig(NtcConfig(PIN_HEATER1_TEMP,NTC1_A,NTC1_B,NTC1_C),PidConfig(242.21f,1868.81f,128.49f,DEFAULT_WINDOW),1,PIN_HEATER1_HEATER),
 		HeaterConfig(NtcConfig(PIN_HEATER2_TEMP,NTC2_A,NTC2_B,NTC2_C),PidConfig(765.77f,1345.82f,604.67f,DEFAULT_WINDOW),2,PIN_HEATER2_HEATER),
@@ -194,6 +195,7 @@ public:
             }
         }
         (*doc)[F("ReadInterval")] = this->readInterval;
+        (*doc)[F("TemperatureSetPoint")]=this->tempSp;
     }
 
     virtual void Serialize(JsonObject *packet,bool initialize){
@@ -212,6 +214,7 @@ public:
             }
         }
         (*packet)[F("ReadInterval")] = this->readInterval;
+        (*packet)[F("TemperatureSetPoint")]=this->tempSp;
     }
 
     virtual void Deserialize(JsonDocument &doc) override{
@@ -221,6 +224,7 @@ public:
             this->heaterConfigs[i].Deserialize(heaterJson);   
         }
         this->readInterval = doc[F("ReadInterval")];
+        this->tempSp=doc[F("TemperatureSetPoint")];
     }
 
     virtual void Deserialize(JsonObject &packet) override{
@@ -230,5 +234,6 @@ public:
             this->heaterConfigs[i].Deserialize(heaterJson);   
         }
         this->readInterval = packet[F("ReadInterval")];
+        this->tempSp=packet[F("TemperatureSetPoint")];
     }
 };

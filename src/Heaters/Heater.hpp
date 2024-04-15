@@ -36,7 +36,7 @@ typedef struct HeaterResult{
 class Heater:public Component{
 	typedef void(Heater::*RunFunc)(void);
 public:
-	Heater(const HeaterConfig& config);
+	Heater(const HeaterConfig& config,int tempSp);
 	Heater();
 	void SetConfiguration(const HeaterConfig& config);
 	void Initialize();

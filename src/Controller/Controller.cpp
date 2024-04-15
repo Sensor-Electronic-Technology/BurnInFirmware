@@ -111,6 +111,9 @@ void Controller::SetupComponents(){
         bool probeRtOkay[PROBE_COUNT]={false,false,false,false,false,false};
         this->testController.GetProbeRunTimeOkay(probeRtOkay);
         this->comData.Set(this->probeResults,this->heaterResults,probeRtOkay,*(this->testController.GetBurnTimer()));
+        this->comData.currentSP=this->probeControl.GetSetCurrent();
+        this->comData.temperatureSP=this->heaterControl.GetSetPoint();
+        //this->comData.temperatureSP=this->heaterControl.Set
 /*      Serial.print("Data: ");
 
         for(int i=0;i<PROBE_COUNT;i++){
