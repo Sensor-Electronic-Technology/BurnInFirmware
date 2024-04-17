@@ -140,12 +140,6 @@ public:
         instance->InstanceSendTestCompleted(buffer);
     }
 
-/*     template<typename...Args>
-    static void SendCustomMessage(const __FlashStringHelper* format,MessageType msgType,Args...args){
-        auto instance=ComHandler::Instance();
-        instance->SendCustomMessage(format,msgType,args...);
-    } */
-
     static void HandleSerial(){
         auto instance=ComHandler::Instance();
         JsonDocument serialEventDoc;
