@@ -56,7 +56,7 @@ void Heater::SetConfiguration(const HeaterConfig& config){
         this->isTuning=false;
         this->isComplete=true;
         this->PrintTuning(true);
-    },2000);
+    },10000);
     
 }
 

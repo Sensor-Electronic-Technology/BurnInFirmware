@@ -13,6 +13,26 @@ typedef components::Function<void(void)> TransitionActionHandler;
 #define DEFAULT_TEMP_DEV                0.1
 #define MAX_SETPOINT                    100
 
+
+enum HeatState {
+	On,
+	Off
+};
+
+typedef struct HeaterResult{
+	float temperature=0;
+	bool state=false;
+	bool tempOkay=false;
+
+	HeaterResult operator=(const HeaterResult& rhs){
+		this->temperature=rhs.temperature;
+		this->state=rhs.state;
+		this->tempOkay=rhs.tempOkay;
+		return *this;
+	}
+
+}HeaterResult;
+
 struct HeaterTuneResult:Serializable{
     int heaterNumber=-1;
     bool complete=false;

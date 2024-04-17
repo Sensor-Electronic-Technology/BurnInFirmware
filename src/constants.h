@@ -143,7 +143,8 @@ template <class T> int EEPROM_read(int addr, T& value) {
         HEATER_TUNE_COMPLETE=15,    //Outgoing->notfiy PC that all heaters have been tuned,
         ACK=16,                     //Outgoing->Acknowledge PC of command
         UPDATE_CURRENT=17,          //Incoming update current
-        UPDATE_TEMP=18              //Incoming update temperature
+        UPDATE_TEMP=18,             //Incoming update temperature
+        TUNE_COM=19               //Outgoing->tuning serial data
     };
 
     const char strPre_00[] PROGMEM="CH";   //0
@@ -163,8 +164,9 @@ template <class T> int EEPROM_read(int addr, T& value) {
     const char strPre_14[] PROGMEM="HNOTIFY";    //14
     const char strPre_15[] PROGMEM="HTUNED";     //15
     const char strPre_16[] PROGMEM="ACK";     //16
-    const char strPre_17[] PROGMEM="UC";     //16
-    const char strPre_18[] PROGMEM="UT";     //16
+    const char strPre_17[] PROGMEM="UC";     //17
+    const char strPre_18[] PROGMEM="UT";     //18
+    const char strPre_19[] PROGMEM="TCOM";     //19
 
     const char* const prefixes[] PROGMEM = {
         strPre_00,
@@ -185,7 +187,8 @@ template <class T> int EEPROM_read(int addr, T& value) {
         strPre_15,
         strPre_16,
         strPre_17,
-        strPre_18
+        strPre_18,
+        strPre_19
     };
 #pragma endregion
 
@@ -344,7 +347,8 @@ template <class T> int EEPROM_read(int addr, T& value) {
         TUNE_TRANSISITON_ERR=22,
         HEATER_TRANSITION_ERR=23,
         CHANGE_RUNNING_ERR=24,
-        MAX_TEMP_ERR=25
+        MAX_TEMP_ERR=25,
+        TEST_RUNNING_ERR=26
     };
 
     const char strErr_01[] PROGMEM="Failed to load configuration files. Please contact administrator";
@@ -373,6 +377,7 @@ template <class T> int EEPROM_read(int addr, T& value) {
     const char strErr_24[] PROGMEM="Error: Not in Heating Mode, Switch modes to Turn On/Off Heaters";
     const char strErr_25[] PROGMEM="Error: Cannot change current or temperature while a test is running";
     const char strErr_26[] PROGMEM="Error: Temperature set point must be <= %d";
+    const char strErr_27[] PROGMEM="Error: Cannot perform this action while a test is running";
 
     const char* const system_error_table[] PROGMEM={
         strErr_01,
@@ -400,7 +405,8 @@ template <class T> int EEPROM_read(int addr, T& value) {
         strErr_23,
         strErr_24,
         strErr_25,
-        strErr_26
+        strErr_26,
+        strErr_27
     };
 
 #pragma endregion

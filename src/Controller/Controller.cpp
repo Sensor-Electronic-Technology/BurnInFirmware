@@ -113,17 +113,7 @@ void Controller::SetupComponents(){
         this->comData.Set(this->probeResults,this->heaterResults,probeRtOkay,*(this->testController.GetBurnTimer()));
         this->comData.currentSP=this->probeControl.GetSetCurrent();
         this->comData.temperatureSP=this->heaterControl.GetSetPoint();
-        //this->comData.temperatureSP=this->heaterControl.Set
-/*      Serial.print("Data: ");
-
-        for(int i=0;i<PROBE_COUNT;i++){
-            Serial.print("["+String(i)+"]:");
-            Serial.print(probeRtOkay[i] ? F("{ Okay,"):F("{ Fail,"));
-            Serial.print(String(this->testController.GetTimerData().probeRunTimes[i])+"}");
-            
-            Serial.print(", ");
-        } */
-    ComHandler::MsgPacketSerializer(this->comData,PacketType::DATA);
+        ComHandler::MsgPacketSerializer(this->comData,PacketType::DATA);
         Serial.println(" Free RAM: "+String(FreeRam()));
     },this->comInterval,true,false);
 
@@ -258,17 +248,21 @@ void Controller::HandleCommand(StationCommand command){
         }
         case StationCommand::CHANGE_MODE_ATUNE:{
             if(!this->testController.IsRunning()){
-                this->heaterControl.SwitchToAutoTune();
+                if(this->heaterControl.SwitchToAutoTune()){
+                    this->comTimer.cancel();
+                }
             }else{
-                //ComHandler::SendErrorMessage(SystemError::TEST_RUNNING,MessageType::ERROR);
+                ComHandler::SendErrorMessage(SystemError::TEST_RUNNING_ERR);
             }
             break;
         }
         case StationCommand::CHANGE_MODE_NORMAL:{
             if(!this->testController.IsRunning()){
-                this->heaterControl.SwitchToHeating();
+                if(this->heaterControl.SwitchToHeating()){
+                    this->comTimer.start();
+                }
             }else{
-                //ComHandler::SendErrorMessage(SystemError::TEST_RUNNING,MessageType::ERROR);
+                ComHandler::SendErrorMessage(SystemError::TEST_RUNNING_ERR);
             }
             break;
         }
@@ -276,16 +270,15 @@ void Controller::HandleCommand(StationCommand command){
             if(!this->testController.IsRunning()){
                 this->heaterControl.StartTuning();
             }else{
-                //ComHandler::SendErrorMessage(SystemError::TEST_RUNNING,MessageType::ERROR);
+                ComHandler::SendErrorMessage(SystemError::TEST_RUNNING_ERR);
             }
             break;
         }
         case StationCommand::STOP_TUNE:{
-            //TODO: Add stop tune->this only stops the tuning and puts the heaters in Tuning Idle state
             if(!this->testController.IsRunning()){
                 this->heaterControl.StopTuning();
             }else{
-                //ComHandler::SendErrorMessage(SystemError::TEST_RUNNING,MessageType::ERROR);
+                ComHandler::SendErrorMessage(SystemError::TEST_RUNNING_ERR);
             }
             break;
         }
@@ -294,7 +287,7 @@ void Controller::HandleCommand(StationCommand command){
             if(!this->testController.IsRunning()){
                 this->heaterControl.DiscardTuning();
             }else{
-                //ComHandler::SendErrorMessage(SystemError::TEST_RUNNING,MessageType::ERROR);
+                ComHandler::SendErrorMessage(SystemError::TEST_RUNNING_ERR);
             }
             break;
         }
@@ -302,14 +295,10 @@ void Controller::HandleCommand(StationCommand command){
             if(!this->testController.IsRunning()){
                 this->heaterControl.SaveTuning();
             }else{
-                //ComHandler::SendErrorMessage(SystemError::TEST_RUNNING,MessageType::ERROR);
+                ComHandler::SendErrorMessage(SystemError::TEST_RUNNING_ERR);
             }
             break;
         }
-/*         case StationCommand::START_ACKNOWLEDGE:{
-            this->testController.AcknowledgeTestStart();   
-            break;
-        } */
         case StationCommand::RESET:{
             this->Reset();
             break;

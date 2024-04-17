@@ -10,29 +10,6 @@
 
 using namespace components;
 
-
-
-enum HeatState {
-	On,
-	Off
-};
-
-typedef struct HeaterResult{
-	float temperature=0;
-	bool state=false;
-	bool tempOkay=false;
-
-	HeaterResult operator=(const HeaterResult& rhs){
-		this->temperature=rhs.temperature;
-		this->state=rhs.state;
-		this->tempOkay=rhs.tempOkay;
-		return *this;
-	}
-
-}HeaterResult;
-
-
-
 class Heater:public Component{
 	typedef void(Heater::*RunFunc)(void);
 public:

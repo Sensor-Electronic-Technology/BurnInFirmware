@@ -7,6 +7,7 @@
 #include "../Files/FileManager.hpp"
 #include "heater_constants.h"
 #include "../Task.hpp"
+#include "../Communication/TuningSerialData.hpp"
 
 #define HEATER_DEBUG 		1
 #define HEATER_STATE_COUNT 	3
@@ -14,8 +15,6 @@
 #define MODE_COUNT          2
 
 using namespace components;
-
-
 
 class HeaterController:public Component{
     typedef void(HeaterController::*ModeRun)(void);
@@ -88,17 +87,19 @@ private:
     Heater* heaters[HEATER_COUNT];
     HeaterResult results[HEATER_COUNT];
     AutoTuneResults tuningResults;
-    Timer  readTimer,printTimer;
+    StationTimer  readTimer,tuningComTimer,debugTuneTimer;
     Task<HeaterMode>  mode;
     Task<HeaterState> hState;
     Task<TuneState>   tState;
     HeatState heaterState=HeatState::Off;
+    TuningSerialData tuningSerialData;
 
     HeaterControllerConfig configuration;
     TuningCompleteCallback tuningCompleteCbk=[](HeaterTuneResult){};
     unsigned long readInterval;
     bool isTuning=false;
     bool tuningCompleted=false;
+    unsigned long tuningElapsed=0;
     int tempSp=DEFAULT_TEMPSP;
     virtual void privateLoop() override;
 
