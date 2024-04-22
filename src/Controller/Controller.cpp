@@ -155,7 +155,11 @@ void Controller::CheckSavedState(){
     switch(result){
         case FileResult::LOADED:{
             ComHandler::SendSystemMessage(SystemMessage::STATE_LOADED,MessageType::INIT);
-            if(this->testController.StartTest(this->saveState.currentTimes,this->saveState.testId.c_str())){
+            if(this->testController.StartTest(this->saveState.currentTimes,
+                                                this->saveState.testId.c_str(),
+                                                this->saveState.setCurrent,
+                                                this->saveState.setTemperature)){
+                                                    
                 this->probeControl.SetCurrent(this->saveState.setCurrent);
                 this->heaterControl.ChangeSetPoint(this->saveState.setTemperature);
                 this->heaterControl.TurnOn();

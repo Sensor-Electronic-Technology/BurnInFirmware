@@ -3,6 +3,7 @@
 #include <ArduinoJson.h>
 #include "../Heaters/HeaterConfiguration.hpp"
 #include "../Probes/ProbeConfiguration.hpp"
+#include "../Probes/probe_constants.h"
 #include "../Controller/ControllerConfiguration.hpp"
 #include "../Serializable.hpp"
 #include "../constants.h"
@@ -25,8 +26,6 @@ public:
         auto instance=ComHandler::Instance();
         if(instance->serial!=nullptr){
             instance->serialEventEnabled=true;
-            //instance->SendVersion();
-            //instance->serial->flush();
         }
     }
 
@@ -129,12 +128,12 @@ public:
         instance->InstanceMsgPacketSerializer(msgPacket,PacketType::MESSAGE);
     }
 
-    static void SendStartFromLoad(bool success,const __FlashStringHelper* msg,const char* testId){
+    static void SendStartFromLoad(const __FlashStringHelper* msg,const char* testId,CurrentValue current,int temp){
         auto instance=ComHandler::Instance();
         char buffer[BUFFER_SIZE];
         PGM_P msgMem=reinterpret_cast<PGM_P>(msg);
         strcpy_P(buffer,msgMem);
-        instance->InstanceSendTestStartFromLoad(success,buffer,testId);
+        instance->InstanceSendTestStartFromLoad(buffer,testId,current,temp);
     }
 
     static void SendTestCompleted(const __FlashStringHelper* msg){
@@ -197,7 +196,7 @@ private:
     void InstanceSendVersion();
     void ReceiveVersion(const JsonDocument& serialEventDoc);
     void InstanceSendStartResponse(bool success,const char* message);
-    void InstanceSendTestStartFromLoad(bool success,const char* message,const char* testId);
+    void InstanceSendTestStartFromLoad(const char* message,const char* testId,CurrentValue current,int temp);
     void InstanceSendTestCompleted(const char* message);
 
 

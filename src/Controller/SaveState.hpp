@@ -34,7 +34,7 @@ struct SaveState:public Serializable{
 
     void Serialize(JsonDocument* doc,bool initialize){
         (*doc)[F("TestId")]=this->testId.c_str();
-        
+                
         (*doc)[F("SetCurrent")]=this->setCurrent;     
         (*doc)[F("SetTemperature")]=this->setTemperature;
         JsonObject jsonTime=(initialize) ? (*doc)[F("CurrentTime")].to<JsonObject>():(*doc)[F("CurrentTime")].as<JsonObject>();

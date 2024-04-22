@@ -106,15 +106,15 @@ bool TestController::StartTest(CurrentValue current){
     },TEST_START_PERIOD,true,true);
 }
 
-bool TestController::StartTest(const TimerData& savedState, const char* id){
+bool TestController::StartTest(const TimerData& savedState,const char* id,CurrentValue current,int setTemp){
     this->savedState=savedState;
     this->savedStateLoaded=true;
     this->testId=id;
     this->testIdSet=true;
-    this->burn_timer.Start(this->savedState);
     this->ackTimer.onInterval([&](){
-        ComHandler::SendStartFromLoad(true,F("Test Started"),this->testId.c_str());
+        ComHandler::SendStartFromLoad(F("Test Started"),this->testId.c_str(),current,setTemp);
     },TEST_START_PERIOD,true,true);
+    return this->burn_timer.Start(this->savedState);
 }
 
 void TestController::SetTestId(const char* id){
