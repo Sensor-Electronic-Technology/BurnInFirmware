@@ -101,10 +101,12 @@ void Controller::SetupComponents(){
 
     this->stateLogTimer.onInterval([&](){
         if(this->testController.IsRunning()){
-            this->saveState.Set(CurrentValue::c150,85,this->testController.GetTimerData());
+            this->saveState.Set(CurrentValue::c150,85,
+                                this->testController.GetTimerData(),
+                                this->testController.GetTestId());
             FileManager::Save(&this->saveState,PacketType::SAVE_STATE);
         }
-    },30000);
+    },false,30000,true);
     
     this->comTimer.onInterval([&](){
         this->UpdateSerialData();
@@ -150,15 +152,15 @@ void Controller::SetupComponents(){
 void Controller::CheckSavedState(){
     ComHandler::SendSystemMessage(SystemMessage::CHECK_SAVED_STATE,MessageType::INIT,FreeSRAM());
     FileResult result=FileManager::LoadState(&this->saveState);
-    //Serial.println("FileResult: "+String(result));
     switch(result){
         case FileResult::LOADED:{
             ComHandler::SendSystemMessage(SystemMessage::STATE_LOADED,MessageType::INIT);
-            if(this->testController.StartTest(this->saveState.currentTimes)){
+            if(this->testController.StartTest(this->saveState.currentTimes,this->saveState.testId.c_str())){
                 this->probeControl.SetCurrent(this->saveState.setCurrent);
                 this->heaterControl.ChangeSetPoint(this->saveState.setTemperature);
                 this->heaterControl.TurnOn();
                 this->probeControl.TurnOnSrc();
+                this->stateLogTimer.start();
             }
             break;
         }
@@ -201,7 +203,7 @@ void Controller::HandleCommand(StationCommand command){
                 } */
                 if(this->testController.StartTest(CurrentValue::c060)){
                     this->probeControl.TurnOnSrc();
-                    this->heaterControl.TurnOn();
+                    this->stateLogTimer.start();
                 }
             }else{
                 //TODO: Send temperature notification
@@ -354,6 +356,7 @@ bool* Controller::CheckCurrents(){
 void Controller::TestFinished(){
     this->probeControl.TurnOffSrc();
     this->heaterControl.TurnOff();
+    this->saveState.Clear();
     FileManager::ClearState();
     ComHandler::SendTestCompleted(F("Test Completed"));
 }

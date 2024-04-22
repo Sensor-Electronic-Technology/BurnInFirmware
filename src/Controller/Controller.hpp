@@ -48,8 +48,6 @@ private:
     AckCallback            _ackCallback=[](AckType){_NOP();};
     ChangeCurrentCallback  _changeCurrentCallback=[](int){_NOP();};
     ChangeTempCallback     _changeTempCallback=[](int){_NOP();};
-
-
     ProbeResult            probeResults[PROBE_COUNT];
     HeaterResult           heaterResults[HEATER_COUNT];
     unsigned long          comInterval=COM_INTERVAL;

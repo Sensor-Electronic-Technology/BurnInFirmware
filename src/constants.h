@@ -46,6 +46,7 @@ template <class T> int EEPROM_read(int addr, T& value) {
 
 
 #pragma region Constants
+    #define TEST_ID_LENGTH                  24
     //Timer
     #define TIMER_PERIOD                   1
     #define TIMER_FACTOR                   1000
@@ -119,10 +120,11 @@ template <class T> int EEPROM_read(int addr, T& value) {
     typedef components::Function<void(AckType)> AckCallback;
     typedef components::Function<void(int)> ChangeCurrentCallback;
     typedef components::Function<void(int)> ChangeTempCallback;
+    typedef components::Function<void(const char* testId)> TestIdCallback;
 #pragma endregion
 
 #pragma region PrefixDefinitions
-    #define PREFIX_COUNT    19
+    #define PREFIX_COUNT    21
 
     enum PacketType:uint8_t{
         HEATER_CONFIG=0,            //PC to Station config
@@ -144,7 +146,8 @@ template <class T> int EEPROM_read(int addr, T& value) {
         ACK=16,                     //Outgoing->Acknowledge PC of command
         UPDATE_CURRENT=17,          //Incoming update current
         UPDATE_TEMP=18,             //Incoming update temperature
-        TUNE_COM=19               //Outgoing->tuning serial data
+        TUNE_COM=19,                //Outgoing->tuning serial data,
+        SEND_TEST_ID=20,            //Incoming->Start test  
     };
 
     const char strPre_00[] PROGMEM="CH";   //0
@@ -167,6 +170,7 @@ template <class T> int EEPROM_read(int addr, T& value) {
     const char strPre_17[] PROGMEM="UC";     //17
     const char strPre_18[] PROGMEM="UT";     //18
     const char strPre_19[] PROGMEM="TCOM";     //19
+    const char strPre_20[] PROGMEM="TID";     //20
 
     const char* const prefixes[] PROGMEM = {
         strPre_00,
@@ -188,7 +192,8 @@ template <class T> int EEPROM_read(int addr, T& value) {
         strPre_16,
         strPre_17,
         strPre_18,
-        strPre_19
+        strPre_19,
+        strPre_20
     };
 #pragma endregion
 
@@ -348,7 +353,8 @@ template <class T> int EEPROM_read(int addr, T& value) {
         HEATER_TRANSITION_ERR=23,
         CHANGE_RUNNING_ERR=24,
         MAX_TEMP_ERR=25,
-        TEST_RUNNING_ERR=26
+        TEST_RUNNING_ERR=26,
+        TEST_ID_NOT_SET=27
     };
 
     const char strErr_01[] PROGMEM="Failed to load configuration files. Please contact administrator";
@@ -378,6 +384,7 @@ template <class T> int EEPROM_read(int addr, T& value) {
     const char strErr_25[] PROGMEM="Error: Cannot change current or temperature while a test is running";
     const char strErr_26[] PROGMEM="Error: Temperature set point must be <= %d";
     const char strErr_27[] PROGMEM="Error: Cannot perform this action while a test is running";
+    const char strErr_28[] PROGMEM="Error: Test Id must be set before starting a test";
 
     const char* const system_error_table[] PROGMEM={
         strErr_01,
@@ -406,7 +413,8 @@ template <class T> int EEPROM_read(int addr, T& value) {
         strErr_24,
         strErr_25,
         strErr_26,
-        strErr_27
+        strErr_27,
+        strErr_28
     };
 
 #pragma endregion

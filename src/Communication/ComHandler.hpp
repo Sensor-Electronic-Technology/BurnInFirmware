@@ -72,6 +72,11 @@ public:
         instance->_changeTempCallback=cbk;
     }
 
+    static void MapTestIdCallback(TestIdCallback cbk){
+        auto instance=ComHandler::Instance();
+        instance->_testIdCallback=cbk;
+    }
+
     static void SendStartResponse(bool success,const __FlashStringHelper* msg){
         auto instance=ComHandler::Instance();
         char buffer[BUFFER_SIZE];
@@ -124,12 +129,12 @@ public:
         instance->InstanceMsgPacketSerializer(msgPacket,PacketType::MESSAGE);
     }
 
-    static void SendStartFromLoad(bool success,const __FlashStringHelper* msg){
+    static void SendStartFromLoad(bool success,const __FlashStringHelper* msg,const char* testId){
         auto instance=ComHandler::Instance();
         char buffer[BUFFER_SIZE];
         PGM_P msgMem=reinterpret_cast<PGM_P>(msg);
         strcpy_P(buffer,msgMem);
-        instance->InstanceSendTestStartFromLoad(success,buffer);
+        instance->InstanceSendTestStartFromLoad(success,buffer,testId);
     }
 
     static void SendTestCompleted(const __FlashStringHelper* msg){
@@ -192,7 +197,7 @@ private:
     void InstanceSendVersion();
     void ReceiveVersion(const JsonDocument& serialEventDoc);
     void InstanceSendStartResponse(bool success,const char* message);
-    void InstanceSendTestStartFromLoad(bool success,const char* message);
+    void InstanceSendTestStartFromLoad(bool success,const char* message,const char* testId);
     void InstanceSendTestCompleted(const char* message);
 
 
@@ -205,4 +210,5 @@ private:
     AckCallback                 _ackCallback=[](AckType){_NOP();};
     ChangeCurrentCallback       _changeCurrentCallback=[](int){_NOP();};
     ChangeTempCallback          _changeTempCallback=[](int){_NOP();};
+    TestIdCallback              _testIdCallback=[](const char*){_NOP();};
 };

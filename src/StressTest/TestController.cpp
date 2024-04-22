@@ -1,5 +1,66 @@
 #include "TestController.hpp"
 
+TestController::TestController(const BurnTimerConfig timerConfig):Component(),burn_timer(timerConfig){
+    this->burn_timer.SetCallback([&](){
+        ComHandler::SendSystemMessage(SystemMessage::TEST_STATE_COMPLETED,MessageType::NOTIFY);
+        this->ClearTestId();
+        this->Reset();
+        this->_finishedCallback();
+    });
+    this->_testIdCallback=[&](const char* id){
+        if(!this->IsRunning()){
+            this->testId=id;
+            this->testIdSet=true;
+        }
+    };
+    ComHandler::MapTestIdCallback(this->_testIdCallback);
+    this->testId.reserve(TEST_ID_LENGTH);
+    this->ClearTestId();
+    RegisterChild(ackTimer);
+}
+
+TestController::TestController():Component(){  
+    this->burn_timer.SetCallback([&](){
+        ComHandler::SendSystemMessage(SystemMessage::TEST_STATE_COMPLETED,MessageType::NOTIFY);
+        this->Reset();
+        this->_finishedCallback();
+    });
+    this->_testIdCallback=[&](const char* id){
+        if(!this->IsRunning()){
+            this->testId=id;
+            this->testIdSet=true;
+        }
+    };
+    ComHandler::MapTestIdCallback(this->_testIdCallback);
+    this->testId.reserve(TEST_ID_LENGTH);
+    this->ClearTestId();
+    RegisterChild(ackTimer);
+}
+
+void TestController::SetConfig(const BurnTimerConfig timerConfig){
+    this->burn_timer.SetConfig(timerConfig);
+    this->ClearTestId();
+}
+
+void TestController::ClearTestId(){
+    this->testIdSet=false;
+    for(int i=0;i<TEST_ID_LENGTH-1;i++){
+        this->testId[i]='\0';
+    }
+}
+
+void TestController::AcknowledgeTestStart(){
+    this->ackTimer.cancel();
+}
+
+void TestController::GetProbeRunTimeOkay(bool *probeRtOkay){
+    this->burn_timer.GetProbeTimeOkay(probeRtOkay);
+}
+
+const char* TestController::GetTestId(){
+    return this->testId.c_str();
+}
+
 void TestController::SetFinsihedCallback(TestFinsihedCallback callback){
     this->_finishedCallback=callback;
 }
@@ -33,23 +94,36 @@ bool TestController::StartTest(CurrentValue current){
         ComHandler::SendErrorMessage(SystemError::START_ALREADY_RUNNING);
         return false;
     }
+    if(!this->testIdSet){
+        ComHandler::SendErrorMessage(SystemError::TEST_ID_NOT_SET);
+        return false;
+    }
     this->currentSet=true;
     this->stressCurrent=current;
     this->burn_timer.Start(this->stressCurrent);
-    //ComHandler::SendStartResponse(true,F("Test Started"));
     this->ackTimer.onInterval([&](){
         ComHandler::SendStartResponse(true,F("Test Started"));
     },TEST_START_PERIOD,true,true);
 }
 
-bool TestController::StartTest(const TimerData& savedState){
+bool TestController::StartTest(const TimerData& savedState, const char* id){
     this->savedState=savedState;
     this->savedStateLoaded=true;
-    //ComHandler::SendStartFromLoad(true,F("Test Started"));
+    this->testId=id;
+    this->testIdSet=true;
     this->burn_timer.Start(this->savedState);
     this->ackTimer.onInterval([&](){
-        ComHandler::SendStartFromLoad(true,F("Test Started"));
+        ComHandler::SendStartFromLoad(true,F("Test Started"),this->testId.c_str());
     },TEST_START_PERIOD,true,true);
+}
+
+void TestController::SetTestId(const char* id){
+    if(this->IsRunning()){
+        ComHandler::SendErrorMessage(SystemError::TEST_RUNNING_ERR);
+        return;
+    }
+    this->testId=id;
+    this->testIdSet=true;
 }
 
 bool TestController::IsRunning(){

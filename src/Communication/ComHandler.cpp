@@ -76,6 +76,11 @@ void ComHandler::MsgPacketDeserialize(JsonDocument& serialEventDoc) {
                 this->_changeTempCallback(temp);
                 break;
             }
+            case PacketType::SEND_TEST_ID:{
+                auto testId=serialEventDoc[F("Packet")].as<const char*>();
+                this->_testIdCallback(testId);
+                break;
+            }
             default:{
                 ComHandler::SendErrorMessage(SystemError::INVALID_PREFIX,prefix);
                 break;
@@ -131,7 +136,7 @@ void ComHandler::InstanceSendTestCompleted(const char* message){
     serializerDoc.clear();
 }
 
-void ComHandler::InstanceSendTestStartFromLoad(bool success,const char* message){
+void ComHandler::InstanceSendTestStartFromLoad(bool success,const char* message,const char* testId){
     JsonDocument serializerDoc;
     serializerDoc.clear();
     char packetStr[BUFFER_SIZE];
@@ -140,6 +145,7 @@ void ComHandler::InstanceSendTestStartFromLoad(bool success,const char* message)
     JsonObject packet=serializerDoc[F("Packet")].to<JsonObject>();
     packet[F("Status")]=success;
     packet[F("Message")]=message;
+    packet[F("TestId")]=testId;
     serializeJson(serializerDoc,*this->serial);
     this->serial->println();
     serializerDoc.clear();
