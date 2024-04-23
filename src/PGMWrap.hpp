@@ -1,16 +1,20 @@
 #pragma once
 #include <avr/pgmspace.h>
 
-template<typename T> struct PGMWrap; //Forward declaration to allow PGMMode use.
+/**
+ * @brief Attempt at wrapping PGM data in a class
+ * Copied from https://github.com/Chris--A/PGMWrap
+ * 
+ * Plan was to modify to make it cleaner to save string
+ * but was not worth the extra time
+ * 
+ * @tparam T 
+ */
+
+template<typename T> struct PGMWrap;
     
 namespace pgmtools{    
-    
-    /** Type traits for compile time optimization. **/
 
-    /***
-        Select different types based on a condition, an 'if statement' for types.
-        The type Select<V,T,F>::Result is type T when V is true, otherwise it is set to type F.
-    ***/
     template<bool V,typename T,typename F> struct select{ typedef T type; };
     template<typename T,typename F> struct select<false,T,F>{ typedef F type; };
     
@@ -38,7 +42,7 @@ namespace pgmtools{
             return buffer;
         }
     };
-} //namespace pgm    
+}
 
     template<typename T>
     struct PGMWrap{

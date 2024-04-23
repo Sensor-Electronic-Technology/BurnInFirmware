@@ -8,6 +8,7 @@
 #include "../Serializable.hpp"
 #include "../constants.h"
 #include "SystemMessagePacket.hpp"
+#include "StartTestFromPacket.hpp"
 #include "avr/pgmspace.h"
 
 #define ARDUINOJSON_DEFAULT_NESTING_LIMIT       50

@@ -27,6 +27,7 @@ public:
     void CheckSavedState();
     //other
     void HandleCommand(StationCommand command);
+    void Acknowledge(AckType ack);
 
 private:
 
@@ -38,6 +39,7 @@ private:
     void UpdateSerialData();
     void UpdateCurrent(int value);
     void UpdateTempSp(int value);
+
 
 private:
     ProbeController        probeControl;

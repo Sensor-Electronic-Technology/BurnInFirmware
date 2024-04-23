@@ -123,35 +123,6 @@ void ComHandler::InstanceSendVersion(){
     serializerDoc.clear();
 }
 
-void ComHandler::InstanceSendTestCompleted(const char* message){
-    JsonDocument serializerDoc;
-    serializerDoc.clear();
-    char packetStr[BUFFER_SIZE];
-    strcpy_P(packetStr,read_packet_prefix(PacketType::TEST_COMPLETED));
-    serializerDoc[F("Prefix")]=packetStr;
-    JsonObject packet=serializerDoc[F("Packet")].to<JsonObject>();
-    packet[F("Message")]=message;
-    serializeJson(serializerDoc,*this->serial);
-    this->serial->println();
-    serializerDoc.clear();
-}
-
-void ComHandler::InstanceSendTestStartFromLoad(const char* message,const char* testId,CurrentValue current,int temp){
-    JsonDocument serializerDoc;
-    serializerDoc.clear();
-    char packetStr[BUFFER_SIZE];
-    strcpy_P(packetStr,read_packet_prefix(PacketType::TEST_LOAD_START));
-    serializerDoc[F("Prefix")]=packetStr;
-    JsonObject packet=serializerDoc[F("Packet")].to<JsonObject>();
-    packet[F("Message")]=message;
-    packet[F("TestId")]=testId;
-    packet[F("SetCurrent")]=current;
-    packet[F("SetTemp")]=temp;
-    serializeJson(serializerDoc,*this->serial);
-    this->serial->println();
-    serializerDoc.clear();
-}
-
 void ComHandler::ReceiveVersion(const JsonDocument& serialEventDoc){
     auto version=serialEventDoc[F("Packet")].as<const char*>();
     sprintf(FirmwareVersion,version);
@@ -207,6 +178,41 @@ void ComHandler::InstanceSendStartResponse(bool success,const char* message){
     packet[F("Message")]=message;
     serializeJson(serializerDoc,*this->serial);
     this->serial->println();
+}
+
+void ComHandler::InstanceSendTestCompleted(const char* message){
+    JsonDocument serializerDoc;
+    serializerDoc.clear();
+    char packetStr[BUFFER_SIZE];
+    strcpy_P(packetStr,read_packet_prefix(PacketType::TEST_COMPLETED));
+    serializerDoc[F("Prefix")]=packetStr;
+    JsonObject packet=serializerDoc[F("Packet")].to<JsonObject>();
+    packet[F("Message")]=message;
+    serializeJson(serializerDoc,*this->serial);
+    this->serial->println();
+    serializerDoc.clear();
+}
+
+void ComHandler::InstanceSendTestStartFromLoad(const char* message,const char* testId,CurrentValue current,int temp){
+    JsonDocument serializerDoc;
+    serializerDoc.clear();
+    char packetStr[BUFFER_SIZE];
+    strcpy_P(packetStr,read_packet_prefix(PacketType::TEST_LOAD_START));
+    serializerDoc[F("Prefix")]=packetStr;
+    JsonObject packet=serializerDoc[F("Packet")].to<JsonObject>();
+/*  packet[F("Message")]=message;
+    packet[F("TestId")]=testId;
+    packet[F("SetCurrent")]=current;
+    packet[F("SetTemp")]=temp; */
+    StartTestFromPacket testPacket;
+    testPacket.message=message;
+    testPacket.testId=testId;
+    testPacket.setCurrent=current;
+    testPacket.setTemp=temp;
+    testPacket.Serialize(&packet,false);
+    serializeJson(serializerDoc,*this->serial);
+    this->serial->println();
+    serializerDoc.clear();
 }
 
 

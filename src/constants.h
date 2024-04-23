@@ -108,7 +108,8 @@ template <class T> int EEPROM_read(int addr, T& value) {
     enum AckType:uint8_t{
         TEST_START_ACK=0,
         VER_ACK=1,
-        ID_ACK=2   
+        ID_ACK=2,
+        TEST_FINISH_ACK=3,   
     };
 #pragma endregion
 

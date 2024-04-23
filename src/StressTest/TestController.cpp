@@ -13,16 +13,26 @@ TestController::TestController(const BurnTimerConfig timerConfig):Component(),bu
             this->testIdSet=true;
         }
     };
+    this->ackStartTimer.onInterval([&](){
+        ComHandler::SendStartResponse(true,F("Test Started"));
+    },TEST_START_PERIOD,false,true);
+
+    this->ackCompleteTimer.onInterval([&](){
+        ComHandler::SendTestCompleted(F("Test Completed"));
+    },TEST_COMP_PERIOD,false,true);
+
     ComHandler::MapTestIdCallback(this->_testIdCallback);
     this->testId.reserve(TEST_ID_LENGTH);
     this->ClearTestId();
-    RegisterChild(ackTimer);
+    RegisterChild(ackStartTimer);
+    RegisterChild(ackCompleteTimer);
 }
 
 TestController::TestController():Component(){  
     this->burn_timer.SetCallback([&](){
         ComHandler::SendSystemMessage(SystemMessage::TEST_STATE_COMPLETED,MessageType::NOTIFY);
         this->Reset();
+        this->ackCompleteTimer.start();
         this->_finishedCallback();
     });
     this->_testIdCallback=[&](const char* id){
@@ -31,10 +41,18 @@ TestController::TestController():Component(){
             this->testIdSet=true;
         }
     };
+    this->ackStartTimer.onInterval([&](){
+        ComHandler::SendStartResponse(true,F("Test Started"));
+    },TEST_START_PERIOD,false,true);
+
+    this->ackCompleteTimer.onInterval([&](){
+        ComHandler::SendTestCompleted(F("Test Completed"));
+    },TEST_COMP_PERIOD,false,true);
     ComHandler::MapTestIdCallback(this->_testIdCallback);
     this->testId.reserve(TEST_ID_LENGTH);
     this->ClearTestId();
-    RegisterChild(ackTimer);
+    RegisterChild(ackStartTimer);
+    RegisterChild(ackCompleteTimer);
 }
 
 void TestController::SetConfig(const BurnTimerConfig timerConfig){
@@ -50,7 +68,11 @@ void TestController::ClearTestId(){
 }
 
 void TestController::AcknowledgeTestStart(){
-    this->ackTimer.cancel();
+    this->ackStartTimer.cancel();
+}
+
+void TestController::AcknowledgeTestComplete(){
+    this->ackCompleteTimer.cancel();
 }
 
 void TestController::GetProbeRunTimeOkay(bool *probeRtOkay){
@@ -67,7 +89,6 @@ void TestController::SetFinsihedCallback(TestFinsihedCallback callback){
 
 void TestController::Tick(bool probesOkay[PROBE_COUNT]){
     this->burn_timer.Increment(probesOkay);
-
 }
 
 void TestController::SetCurrent(CurrentValue current){
@@ -101,9 +122,7 @@ bool TestController::StartTest(CurrentValue current){
     this->currentSet=true;
     this->stressCurrent=current;
     this->burn_timer.Start(this->stressCurrent);
-    this->ackTimer.onInterval([&](){
-        ComHandler::SendStartResponse(true,F("Test Started"));
-    },TEST_START_PERIOD,true,true);
+    this->ackStartTimer.start();
 }
 
 bool TestController::StartTest(const TimerData& savedState,const char* id,CurrentValue current,int setTemp){
@@ -111,7 +130,7 @@ bool TestController::StartTest(const TimerData& savedState,const char* id,Curren
     this->savedStateLoaded=true;
     this->testId=id;
     this->testIdSet=true;
-    this->ackTimer.onInterval([&](){
+    this->ackStartTimer.onInterval([&](){
         ComHandler::SendStartFromLoad(F("Test Started"),this->testId.c_str(),current,setTemp);
     },TEST_START_PERIOD,true,true);
     return this->burn_timer.Start(this->savedState);

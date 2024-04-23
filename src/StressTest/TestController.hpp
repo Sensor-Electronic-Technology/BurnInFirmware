@@ -10,6 +10,7 @@
 #define STATE_COUNT         3
 #define TRANSITION_COUNT    5
 #define TEST_START_PERIOD   10000ul
+#define TEST_COMP_PERIOD    10000ul
 
 
 enum class TestState{
@@ -44,6 +45,7 @@ public:
     void SendTestStart();
     const char* GetTestId();
     void AcknowledgeTestStart();
+    void AcknowledgeTestComplete();
     void GetProbeRunTimeOkay(bool *probeRtOkay);
     void Reset();
     void SetCurrent(CurrentValue current);
@@ -61,7 +63,7 @@ private:
     bool                    savedStateLoaded=false;
     bool                    acknowledge=false;
     bool                    testIdSet=false;
-    StationTimer            ackTimer;
+    StationTimer            ackStartTimer,ackCompleteTimer;
     String                  testId;
     TestFinsihedCallback    _finishedCallback=[](){_NOP();};
     TestIdCallback         _testIdCallback=[](const char*){_NOP();};

@@ -20,20 +20,7 @@ Controller::Controller():Component(){
     };
 
     this->_ackCallback=[&](AckType ack){
-        switch(ack){
-            case AckType::TEST_START_ACK:{
-                this->testController.AcknowledgeTestStart();
-                break;
-            }
-            case AckType::VER_ACK:{
-                this->versionTimer.cancel();
-                break;
-            }
-            case AckType::ID_ACK:{
-                this->idTimer.cancel();
-                break;
-            }
-        }
+        this->Acknowledge(ack);
     };
 
     ComHandler::MapAckCallback(this->_ackCallback);
@@ -193,6 +180,27 @@ void Controller::UpdateSerialData(){
         this->heaterResults[i].temperature=random(82,85);
         this->heaterResults[i].tempOkay=true;
         this->heaterResults[i].state=(bool)random(0,1);
+    }
+}
+
+void Controller::Acknowledge(AckType ack){
+    switch(ack){
+        case AckType::TEST_START_ACK:{
+            this->testController.AcknowledgeTestStart();
+            break;
+        }
+        case AckType::VER_ACK:{
+            this->versionTimer.cancel();
+            break;
+        }
+        case AckType::ID_ACK:{
+            this->idTimer.cancel();
+            break;
+        }
+        case AckType::TEST_FINISH_ACK:{
+            this->testController.AcknowledgeTestComplete();
+            break;
+        }
     }
 }
 
@@ -362,5 +370,4 @@ void Controller::TestFinished(){
     this->heaterControl.TurnOff();
     this->saveState.Clear();
     FileManager::ClearState();
-    ComHandler::SendTestCompleted(F("Test Completed"));
 }
