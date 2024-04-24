@@ -122,10 +122,11 @@ template <class T> int EEPROM_read(int addr, T& value) {
     typedef components::Function<void(int)> ChangeCurrentCallback;
     typedef components::Function<void(int)> ChangeTempCallback;
     typedef components::Function<void(const char* testId)> TestIdCallback;
+    
 #pragma endregion
 
 #pragma region PrefixDefinitions
-    #define PREFIX_COUNT    21
+    #define PREFIX_COUNT    22
 
     enum PacketType:uint8_t{
         HEATER_CONFIG=0,            //PC to Station config
@@ -148,7 +149,8 @@ template <class T> int EEPROM_read(int addr, T& value) {
         UPDATE_CURRENT=17,          //Incoming update current
         UPDATE_TEMP=18,             //Incoming update temperature
         TUNE_COM=19,                //Outgoing->tuning serial data,
-        SEND_TEST_ID=20,            //Incoming->Start test  
+        SEND_TEST_ID=20,            //Incoming->Start test
+        LOAD_STATE=21,              //Incoming->Load saved state
     };
 
     const char strPre_00[] PROGMEM="CH";   //0
@@ -172,6 +174,7 @@ template <class T> int EEPROM_read(int addr, T& value) {
     const char strPre_18[] PROGMEM="UT";     //18
     const char strPre_19[] PROGMEM="TCOM";     //19
     const char strPre_20[] PROGMEM="TID";     //20
+    const char strPre_21[] PROGMEM="LSTATE";     //21
 
     const char* const prefixes[] PROGMEM = {
         strPre_00,
@@ -194,7 +197,8 @@ template <class T> int EEPROM_read(int addr, T& value) {
         strPre_17,
         strPre_18,
         strPre_19,
-        strPre_20
+        strPre_20,
+        strPre_21
     };
 #pragma endregion
 

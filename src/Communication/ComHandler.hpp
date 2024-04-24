@@ -9,10 +9,14 @@
 #include "../constants.h"
 #include "SystemMessagePacket.hpp"
 #include "StartTestFromPacket.hpp"
+#include "../Controller/SaveState.hpp"
 #include "avr/pgmspace.h"
 
 #define ARDUINOJSON_DEFAULT_NESTING_LIMIT       50
 #define BUFFER_SIZE                             255
+
+typedef components::Function<void(const SaveState&)> LoadStateCallback;
+
 
 class ComHandler{
 public:
@@ -77,6 +81,11 @@ public:
         instance->_testIdCallback=cbk;
     }
 
+    static void MapLoadStateCallback(LoadStateCallback cbk){
+        auto instance=ComHandler::Instance();
+        instance->_loadStateCallback=cbk;
+    }
+
     static void SendStartResponse(bool success,const __FlashStringHelper* msg){
         auto instance=ComHandler::Instance();
         char buffer[BUFFER_SIZE];
@@ -135,6 +144,17 @@ public:
         PGM_P msgMem=reinterpret_cast<PGM_P>(msg);
         strcpy_P(buffer,msgMem);
         instance->InstanceSendTestStartFromLoad(buffer,testId,current,temp);
+    }
+
+    static void SendStartFromLoad(const SaveState& saveState){
+        auto instance=ComHandler::Instance();
+        instance->InstanceMsgPacketSerializer(saveState,PacketType::TEST_LOAD_START);
+    }
+
+    
+    static void SendSavedState(const SaveState& saveState){
+        auto instance=ComHandler::Instance();
+        instance->InstanceMsgPacketSerializer(saveState,PacketType::SAVE_STATE);
     }
 
     static void SendTestCompleted(const __FlashStringHelper* msg){
@@ -211,4 +231,5 @@ private:
     ChangeCurrentCallback       _changeCurrentCallback=[](int){_NOP();};
     ChangeTempCallback          _changeTempCallback=[](int){_NOP();};
     TestIdCallback              _testIdCallback=[](const char*){_NOP();};
+    LoadStateCallback           _loadStateCallback=[](const SaveState&){_NOP();};
 };

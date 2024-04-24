@@ -38,7 +38,7 @@ public:
 
     //Start Test
     bool StartTest(CurrentValue current);
-    bool StartTest(const TimerData& savedState,const char* id,CurrentValue current,int setTemp);
+    bool StartTest(const SaveState& state);
     bool PauseTest();
     bool ContinueTest();
     bool IsRunning();

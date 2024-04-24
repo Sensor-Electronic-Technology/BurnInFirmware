@@ -81,6 +81,13 @@ void ComHandler::MsgPacketDeserialize(JsonDocument& serialEventDoc) {
                 this->_testIdCallback(testId);
                 break;
             }
+            case PacketType::LOAD_STATE:{
+                auto state=serialEventDoc[F("Packet")].as<JsonObject>();
+                SaveState saveState;
+                saveState.Deserialize(state);
+                this->_loadStateCallback(saveState);
+                break;
+            }
             default:{
                 ComHandler::SendErrorMessage(SystemError::INVALID_PREFIX,prefix);
                 break;
@@ -214,5 +221,7 @@ void ComHandler::InstanceSendTestStartFromLoad(const char* message,const char* t
     this->serial->println();
     serializerDoc.clear();
 }
+
+
 
 

@@ -32,36 +32,43 @@ struct SaveState:public Serializable{
         this->testId=testId;
     }
 
-    void Serialize(JsonDocument* doc,bool initialize){
+    void Serialize(JsonDocument* doc,bool initialize) override{
         (*doc)[F("TestId")]=this->testId.c_str();
-                
         (*doc)[F("SetCurrent")]=this->setCurrent;     
         (*doc)[F("SetTemperature")]=this->setTemperature;
-        JsonObject jsonTime=(initialize) ? (*doc)[F("CurrentTime")].to<JsonObject>():(*doc)[F("CurrentTime")].as<JsonObject>();
+        JsonObject jsonTime;
+        if(initialize){
+            (*doc)[F("CurrentTime")].to<JsonObject>();
+        }else{
+            (*doc)[F("CurrentTime")].as<JsonObject>();
+        }
         this->currentTimes.Serialize(&jsonTime,initialize);
     }
 
-    void Deserialize(JsonDocument &doc){
+    void Deserialize(JsonDocument &doc) override{
         this->testId=doc[F("TestId")].as<String>();
-
         this->setCurrent=(CurrentValue)doc[F("SetCurrent")];
         this->setTemperature=doc[F("SetTemperature")];
         JsonObject jsonTime=doc[F("CurrentTime")].as<JsonObject>();
         this->currentTimes.Deserialize(jsonTime);
     }
 
-    void Serialize(JsonObject* packet,bool initialize){
+    void Serialize(JsonObject *packet,bool initialize) override{
         (*packet)[F("TestId")]=this->testId.c_str();
-        
+    
         (*packet)[F("SetCurrent")]=this->setCurrent;
         (*packet)[F("SetTemperature")]=this->setTemperature;
-        JsonObject jsonTime=(initialize) ? (*packet)[F("CurrentTime")].to<JsonObject>():(*packet)[F("CurrentTime")].as<JsonObject>();
+        JsonObject jsonTime;
+        if(initialize){
+            (*packet)[F("CurrentTime")].to<JsonObject>();
+        }else{
+            (*packet)[F("CurrentTime")].as<JsonObject>();
+        }
         this->currentTimes.Serialize(&jsonTime,initialize);
     }
 
-    void Deserialize(JsonObject &packet){
+    void Deserialize(JsonObject &packet) override{
         this->testId=packet[F("TestId")].as<String>();
-
         this->setCurrent=(CurrentValue)packet[F("SetCurrent")];
         this->setTemperature=packet[F("SetTemperature")];
         JsonObject jsonTime=packet[F("CurrentTime")].as<JsonObject>();

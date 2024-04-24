@@ -23,6 +23,10 @@ Controller::Controller():Component(){
         this->Acknowledge(ack);
     };
 
+    this->_loadStateCallback=[&](const SaveState& state){
+        this->StartFromSavedState(state);
+    };
+
     ComHandler::MapAckCallback(this->_ackCallback);
     ComHandler::MapCommandCallback(this->_commandCallback);
     ComHandler::MapChangeCurrentCallback(this->_changeCurrentCallback);
@@ -91,9 +95,10 @@ void Controller::SetupComponents(){
             this->saveState.Set(CurrentValue::c150,85,
                                 this->testController.GetTimerData(),
                                 this->testController.GetTestId());
+            //ComHandler::SendSavedState(this->saveState);
             FileManager::Save(&this->saveState,PacketType::SAVE_STATE);
         }
-    },false,30000,true);
+    },false,20000,true);
     
     this->comTimer.onInterval([&](){
         this->UpdateSerialData();
@@ -142,17 +147,7 @@ void Controller::CheckSavedState(){
     switch(result){
         case FileResult::LOADED:{
             ComHandler::SendSystemMessage(SystemMessage::STATE_LOADED,MessageType::INIT);
-            if(this->testController.StartTest(this->saveState.currentTimes,
-                                                this->saveState.testId.c_str(),
-                                                this->saveState.setCurrent,
-                                                this->saveState.setTemperature)){
-                                                    
-                this->probeControl.SetCurrent(this->saveState.setCurrent);
-                this->heaterControl.ChangeSetPoint(this->saveState.setTemperature);
-                this->heaterControl.TurnOn();
-                this->probeControl.TurnOnSrc();
-                this->stateLogTimer.start();
-            }
+            this->StartFromSavedState(this->saveState);
             break;
         }
         case FileResult::DOES_NOT_EXIST:{
@@ -201,6 +196,20 @@ void Controller::Acknowledge(AckType ack){
             this->testController.AcknowledgeTestComplete();
             break;
         }
+    }
+}
+
+void Controller::StartFromSavedState(const SaveState& savedState){
+    if(this->testController.IsRunning()){
+        ComHandler::SendErrorMessage(SystemError::TEST_RUNNING_ERR,MessageType::ERROR);
+        return;
+    }
+    if(this->testController.StartTest(savedState)){      
+        this->probeControl.SetCurrent(this->saveState.setCurrent);
+        this->heaterControl.ChangeSetPoint(this->saveState.setTemperature);
+        this->heaterControl.TurnOn();
+        this->probeControl.TurnOnSrc();
+        this->stateLogTimer.start();
     }
 }
 

@@ -39,6 +39,7 @@ private:
     void UpdateSerialData();
     void UpdateCurrent(int value);
     void UpdateTempSp(int value);
+    void StartFromSavedState(const SaveState& savedState);
 
 
 private:
@@ -48,6 +49,7 @@ private:
     CommandCallback        _commandCallback=[](StationCommand){_NOP();};
     TestFinsihedCallback   _testFinishedCallback=[](){_NOP();};
     AckCallback            _ackCallback=[](AckType){_NOP();};
+    LoadStateCallback      _loadStateCallback=[](const SaveState&){_NOP();};
     ChangeCurrentCallback  _changeCurrentCallback=[](int){_NOP();};
     ChangeTempCallback     _changeTempCallback=[](int){_NOP();};
     ProbeResult            probeResults[PROBE_COUNT];
