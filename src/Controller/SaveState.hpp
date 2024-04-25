@@ -38,9 +38,9 @@ struct SaveState:public Serializable{
         (*doc)[F("SetTemperature")]=this->setTemperature;
         JsonObject jsonTime;
         if(initialize){
-            (*doc)[F("CurrentTime")].to<JsonObject>();
+            jsonTime=(*doc)[F("CurrentTime")].to<JsonObject>();
         }else{
-            (*doc)[F("CurrentTime")].as<JsonObject>();
+            jsonTime=(*doc)[F("CurrentTime")].as<JsonObject>();
         }
         this->currentTimes.Serialize(&jsonTime,initialize);
     }
@@ -60,9 +60,9 @@ struct SaveState:public Serializable{
         (*packet)[F("SetTemperature")]=this->setTemperature;
         JsonObject jsonTime;
         if(initialize){
-            (*packet)[F("CurrentTime")].to<JsonObject>();
+            jsonTime=(*packet)[F("CurrentTime")].to<JsonObject>();
         }else{
-            (*packet)[F("CurrentTime")].as<JsonObject>();
+            jsonTime=(*packet)[F("CurrentTime")].as<JsonObject>();
         }
         this->currentTimes.Serialize(&jsonTime,initialize);
     }

@@ -30,14 +30,19 @@ public:
     static void Load(Serializable* config,PacketType configType){
         auto instance=FileManager::Instance();
          if(sdInitialized){
+            digitalWrite(LED_BUILTIN,HIGH);
             instance->InstanceLoadConfig(config,configType);
+            digitalWrite(LED_BUILTIN,LOW);
         }
     }
 
     static FileResult LoadState(Serializable* sysState){
         auto instance=FileManager::Instance();
         if(sdInitialized){
-            return instance->InstanceLoadState(sysState);
+            digitalWrite(LED_BUILTIN,HIGH);
+            auto fileResult=instance->InstanceLoadState(sysState);
+            digitalWrite(LED_BUILTIN,LOW);
+            return fileResult;
         }
         return FileResult::SD_NOT_INITIALIZED;
     }
@@ -45,7 +50,10 @@ public:
     static bool ClearState(){
         auto instance=FileManager::Instance();
         if(sdInitialized){
-            return instance->InstanceClearState();
+            digitalWrite(LED_BUILTIN,HIGH);
+            auto fileResult= instance->InstanceClearState();
+            digitalWrite(LED_BUILTIN,LOW);
+            return fileResult;
         }
         return false;
     }
@@ -58,14 +66,19 @@ public:
     static void Save(Serializable* config,PacketType configType){
         auto instance=FileManager::Instance();
         if(sdInitialized){
+            digitalWrite(LED_BUILTIN,HIGH);
             instance->InstanceSaveConfigLog(config,configType);
+            digitalWrite(LED_BUILTIN,LOW);
         }
     }
 
     static bool SaveConfig(Serializable* sysState){
         auto instance=FileManager::Instance();
         if(sdInitialized){
-            return instance->InstanceSaveConfig(sysState,PacketType::SAVE_STATE);
+            digitalWrite(LED_BUILTIN,HIGH);
+            auto fileResult=instance->InstanceSaveConfig(sysState,PacketType::SAVE_STATE);
+            digitalWrite(LED_BUILTIN,LOW);
+            return fileResult;
         }
         return false;
     }

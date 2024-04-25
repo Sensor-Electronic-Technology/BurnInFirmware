@@ -9,6 +9,7 @@ void FileManager::InstanceLoadConfig(Serializable* config,PacketType configType)
     strcpy_P(filename,read_filename(configType));
     file=SD.open(filename);
     if(!file){
+        
         ComHandler::SendErrorMessage(SystemError::CONFIG_LOAD_FAILED_FILE,filename);
         return;
     }
@@ -19,7 +20,6 @@ void FileManager::InstanceLoadConfig(Serializable* config,PacketType configType)
         file.close();
         return;
     }
-    
     config->Deserialize(doc);
     file.close();
     doc.clear();
@@ -41,6 +41,7 @@ FileResult FileManager::InstanceLoadState(Serializable* sysState){
     }
     doc.clear();
     auto error=deserializeJson(doc,file);
+    
     if(error){
         file.close();
         return FileResult::DESERIALIZE_FAILED;
@@ -64,7 +65,6 @@ void FileManager::InstanceSaveConfigLog(Serializable* config,PacketType configTy
         // ComHandler::SendFileMsg(FileResult::FAILED_TO_OPEN,F("Configuration file failed to open.  Please save values and restart the system"));
         return;
     }
-    doc.clear();
     config->Serialize(&doc,true);
     if(serializeJsonPretty(doc,fileWriteBuffer)==0){
         file.close();

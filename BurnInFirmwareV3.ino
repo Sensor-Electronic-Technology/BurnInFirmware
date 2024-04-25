@@ -15,6 +15,7 @@
 Controller controller;
 
 void setup(){
+    pinMode(LED_BUILTIN,OUTPUT);
     Serial.begin(38400);
     ComHandler::SetSerial(&Serial);
     sdInitialized=true;

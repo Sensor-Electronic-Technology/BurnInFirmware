@@ -43,6 +43,7 @@ public:
     bool ContinueTest();
     bool IsRunning();
     void SendTestStart();
+    void CompleteTest();
     const char* GetTestId();
     void AcknowledgeTestStart();
     void AcknowledgeTestComplete();

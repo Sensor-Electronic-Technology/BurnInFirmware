@@ -95,10 +95,9 @@ void Controller::SetupComponents(){
             this->saveState.Set(CurrentValue::c150,85,
                                 this->testController.GetTimerData(),
                                 this->testController.GetTestId());
-            //ComHandler::SendSavedState(this->saveState);
             FileManager::Save(&this->saveState,PacketType::SAVE_STATE);
         }
-    },false,20000,true);
+    },5000,false,true);
     
     this->comTimer.onInterval([&](){
         this->UpdateSerialData();
@@ -204,7 +203,8 @@ void Controller::StartFromSavedState(const SaveState& savedState){
         ComHandler::SendErrorMessage(SystemError::TEST_RUNNING_ERR,MessageType::ERROR);
         return;
     }
-    if(this->testController.StartTest(savedState)){      
+    if(this->testController.StartTest(savedState)){
+        this->saveState=savedState;
         this->probeControl.SetCurrent(this->saveState.setCurrent);
         this->heaterControl.ChangeSetPoint(this->saveState.setTemperature);
         this->heaterControl.TurnOn();
