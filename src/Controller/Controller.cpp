@@ -98,17 +98,8 @@ void Controller::SetupComponents(){
             FileManager::Save(&this->saveState,PacketType::SAVE_STATE);
         }
     },5000,false,true);
-    
-    this->comTimer.onInterval([&](){
-        this->UpdateSerialData();
-        bool probeRtOkay[PROBE_COUNT]={false,false,false,false,false,false};
-        this->testController.GetProbeRunTimeOkay(probeRtOkay);
-        this->comData.Set(this->probeResults,this->heaterResults,probeRtOkay,*(this->testController.GetBurnTimer()));
-        this->comData.currentSP=this->probeControl.GetSetCurrent();
-        this->comData.temperatureSP=this->heaterControl.GetSetPoint();
-        ComHandler::MsgPacketSerializer(this->comData,PacketType::DATA);
-        Serial.println(" Free RAM: "+String(FreeRam()));
-    },this->comInterval,true,false);
+
+    this->comTimer.onInterval([&](){ this->ComUpdate(); }, this->comInterval, true, false);
 
     this->updateTimer.onInterval([&](){
         this->probeControl.GetProbeResults(this->probeResults);
@@ -137,7 +128,18 @@ void Controller::SetupComponents(){
     RegisterChild(this->probeControl);
     RegisterChild(this->testController);
     
-    this->CheckSavedState();    
+    this->CheckSavedState();
+}
+
+void Controller::ComUpdate(){
+    this->UpdateSerialData();
+    bool probeRtOkay[PROBE_COUNT] = {false, false, false, false, false, false};
+    this->testController.GetProbeRunTimeOkay(probeRtOkay);
+    this->comData.Set(this->probeResults, this->heaterResults, probeRtOkay, *(this->testController.GetBurnTimer()));
+    this->comData.currentSP = this->probeControl.GetSetCurrent();
+    this->comData.temperatureSP = this->heaterControl.GetSetPoint();
+    ComHandler::MsgPacketSerializer(this->comData, PacketType::DATA);
+    Serial.println(" Free RAM: " + String(FreeRam()));
 }
 
 void Controller::CheckSavedState(){
@@ -174,7 +176,8 @@ void Controller::UpdateSerialData(){
     for(uint8_t i=0;i<HEATER_COUNT;i++){
         this->heaterResults[i].temperature=random(82,85);
         this->heaterResults[i].tempOkay=true;
-        this->heaterResults[i].state=(bool)random(0,1);
+        this->toggler=!this->toggler;
+        this->heaterResults[i].state=this->toggler;
     }
 }
 

@@ -24,8 +24,9 @@ public:
     //Init
     void LoadConfigurations();
     void SetupComponents();
+    void ComUpdate();
     void CheckSavedState();
-    //other
+    // other
     void HandleCommand(StationCommand command);
     void Acknowledge(AckType ack);
 
@@ -58,6 +59,7 @@ private:
     unsigned long          updateInterval=UPDATE_INTERVAL;
     unsigned long          logInterval=LOG_INTERVAL;
     unsigned long          versionInterval=VER_CHECK_INTERVAL;
+    bool toggler=false;
     SaveState              saveState;
     StationTimer           comTimer,updateTimer,testTimer,stateLogTimer,idTimer,versionTimer;
     SerialDataOutput       comData;
