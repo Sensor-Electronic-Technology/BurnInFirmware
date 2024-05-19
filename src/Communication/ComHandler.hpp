@@ -171,6 +171,14 @@ public:
         }
     }
 
+    static void SendConfigSaveStatus(PacketType configType,bool success,const __FlashStringHelper* msg){
+        auto instance=ComHandler::Instance();
+        char buffer[BUFFER_SIZE];
+        PGM_P msgMem=reinterpret_cast<PGM_P>(msg);
+        strcpy_P(buffer,msgMem);
+        instance->InstanceSendConfigSaved(configType,buffer,success);
+    }
+
     template<typename T> 
     static void MsgPacketSerializer(const T& data,PacketType packetType){
         auto instance=ComHandler::Instance();
@@ -209,6 +217,7 @@ private:
     void ReceiveVersion(const JsonDocument& serialEventDoc);
     void InstanceSendStartResponse(bool success,const char* message);
     void InstanceSendTestCompleted(const char* message);
+    void InstanceSendConfigSaved(PacketType configType,const char* message, bool success);
 
 
 private:

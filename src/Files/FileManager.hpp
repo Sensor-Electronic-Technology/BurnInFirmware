@@ -63,20 +63,22 @@ public:
      * @param config Configuration of type ControllerConfiguration
      * @param fileNameIndex While file name
      */
-    static void Save(Serializable* config,PacketType configType){
+    static bool SaveConfiguration(Serializable* config,PacketType configType){
         auto instance=FileManager::Instance();
+        bool result=false;
         if(sdInitialized){
             digitalWrite(LED_BUILTIN,HIGH);
-            instance->InstanceSaveConfigLog(config,configType);
+            result=instance->InstanceSaveConfig(config,configType);
             digitalWrite(LED_BUILTIN,LOW);
         }
+        return result;
     }
 
     static bool SaveState(Serializable* sysState){
         auto instance=FileManager::Instance();
         if(sdInitialized){
             digitalWrite(LED_BUILTIN,HIGH);
-            auto fileResult=instance->InstanceSaveConfig(sysState,PacketType::SAVE_STATE);
+            auto fileResult=instance->InstanceSaveState(sysState,PacketType::SAVE_STATE);
             digitalWrite(LED_BUILTIN,LOW);
             return fileResult;
         }
@@ -84,8 +86,8 @@ public:
     }
 private:
     void InstanceLoadConfig(Serializable* config,PacketType configType);
+    bool InstanceSaveState(Serializable* config,PacketType configType);
     bool InstanceSaveConfig(Serializable* config,PacketType configType);
-    void InstanceSaveConfigLog(Serializable* config,PacketType configType);
     bool InstanceClearState();
     FileResult InstanceLoadState(Serializable* config);
 private:

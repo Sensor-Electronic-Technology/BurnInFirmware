@@ -48,13 +48,14 @@ void Controller::LoadConfigurations(){
     ComHandler::SendSystemMessage(SystemMessage::LOAD_CONFIG,MessageType::INIT);
 
 
-    //FileManager::Load(&heatersConfig,PacketType::HEATER_CONFIG);
-    //FileManager::Load(&probesConfig,PacketType::PROBE_CONFIG);
-    //FileManager::Load(&controllerConfig,PacketType::SYSTEM_CONFIG);
+    FileManager::Load(&heatersConfig,PacketType::HEATER_CONFIG);
+    FileManager::Load(&probesConfig,PacketType::PROBE_CONFIG);
+    FileManager::Load(&controllerConfig,PacketType::SYSTEM_CONFIG);
 
-    // ComHandler::MsgPacketSerializer(heatersConfig,PacketType::HEATER_CONFIG);
-    // ComHandler::MsgPacketSerializer(probesConfig,PacketType::PROBE_CONFIG);
-    // ComHandler::MsgPacketSerializer(controllerConfig,PacketType::SYSTEM_CONFIG);
+/*     ComHandler::MsgPacketSerializer(heatersConfig,PacketType::HEATER_CONFIG);
+    ComHandler::MsgPacketSerializer(probesConfig,PacketType::PROBE_CONFIG);
+    ComHandler::MsgPacketSerializer(controllerConfig,PacketType::SYSTEM_CONFIG); */
+    FileManager::SaveConfiguration(&heatersConfig,PacketType::HEATER_CONFIG);
     
     this->heaterControl.Setup(heatersConfig);
     this->probeControl.Setup(probesConfig);
@@ -95,7 +96,7 @@ void Controller::SetupComponents(){
             this->saveState.Set(CurrentValue::c150,85,
                                 this->testController.GetTimerData(),
                                 this->testController.GetTestId());
-            FileManager::Save(&this->saveState,PacketType::SAVE_STATE);
+            FileManager::SaveState(&this->saveState);
         }
     },5000,false,true);
     

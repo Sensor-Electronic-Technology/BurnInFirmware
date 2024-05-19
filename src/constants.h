@@ -151,6 +151,7 @@ template <class T> int EEPROM_read(int addr, T& value) {
         TUNE_COM=19,                //Outgoing->tuning serial data,
         SEND_TEST_ID=20,            //Incoming->Start test
         LOAD_STATE=21,              //Incoming->Load saved state
+        CONFIG_SAVE_STATUS=22       //Outgoing->Notify PC of config save status
     };
 
     const char strPre_00[] PROGMEM="CH";   //0
@@ -175,6 +176,7 @@ template <class T> int EEPROM_read(int addr, T& value) {
     const char strPre_19[] PROGMEM="TCOM";     //19
     const char strPre_20[] PROGMEM="TID";     //20
     const char strPre_21[] PROGMEM="LSTATE";     //21
+    const char strPre_22[] PROGMEM="SCONF";     //22
 
     const char* const prefixes[] PROGMEM = {
         strPre_00,
@@ -198,7 +200,8 @@ template <class T> int EEPROM_read(int addr, T& value) {
         strPre_18,
         strPre_19,
         strPre_20,
-        strPre_21
+        strPre_21,
+        strPre_22
     };
 #pragma endregion
 
