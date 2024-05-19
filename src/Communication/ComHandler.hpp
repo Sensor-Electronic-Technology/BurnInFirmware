@@ -94,6 +94,24 @@ public:
         instance->InstanceSendStartResponse(success,buffer);
     }
 
+    static void SendStartFromLoad(const SaveState& saveState){
+        auto instance=ComHandler::Instance();
+        instance->InstanceMsgPacketSerializer(saveState,PacketType::TEST_LOAD_START);
+    }
+
+    static void SendSavedState(const SaveState& saveState){
+        auto instance=ComHandler::Instance();
+        instance->InstanceMsgPacketSerializer(saveState,PacketType::SAVE_STATE);
+    }
+
+    static void SendTestCompleted(const __FlashStringHelper* msg){
+        auto instance=ComHandler::Instance();
+        char buffer[BUFFER_SIZE];
+        PGM_P msgMem=reinterpret_cast<PGM_P>(msg);
+        strcpy_P(buffer,msgMem);
+        instance->InstanceSendTestCompleted(buffer);
+    }
+
     static void SendSystemMessage(SystemMessage msgIndex,MessageType msgType,...){
         auto instance=ComHandler::Instance();
         char buffer[BUFFER_SIZE];
@@ -136,33 +154,6 @@ public:
         msgPacket.message=buffer;
         msgPacket.messageType=msgType;
         instance->InstanceMsgPacketSerializer(msgPacket,PacketType::MESSAGE);
-    }
-
-    static void SendStartFromLoad(const __FlashStringHelper* msg,const char* testId,CurrentValue current,int temp){
-        auto instance=ComHandler::Instance();
-        char buffer[BUFFER_SIZE];
-        PGM_P msgMem=reinterpret_cast<PGM_P>(msg);
-        strcpy_P(buffer,msgMem);
-        instance->InstanceSendTestStartFromLoad(buffer,testId,current,temp);
-    }
-
-    static void SendStartFromLoad(const SaveState& saveState){
-        auto instance=ComHandler::Instance();
-        instance->InstanceMsgPacketSerializer(saveState,PacketType::TEST_LOAD_START);
-    }
-
-    
-    static void SendSavedState(const SaveState& saveState){
-        auto instance=ComHandler::Instance();
-        instance->InstanceMsgPacketSerializer(saveState,PacketType::SAVE_STATE);
-    }
-
-    static void SendTestCompleted(const __FlashStringHelper* msg){
-        auto instance=ComHandler::Instance();
-        char buffer[BUFFER_SIZE];
-        PGM_P msgMem=reinterpret_cast<PGM_P>(msg);
-        strcpy_P(buffer,msgMem);
-        instance->InstanceSendTestCompleted(buffer);
     }
 
     static void HandleSerial(){
@@ -217,7 +208,6 @@ private:
     void InstanceSendVersion();
     void ReceiveVersion(const JsonDocument& serialEventDoc);
     void InstanceSendStartResponse(bool success,const char* message);
-    void InstanceSendTestStartFromLoad(const char* message,const char* testId,CurrentValue current,int temp);
     void InstanceSendTestCompleted(const char* message);
 
 

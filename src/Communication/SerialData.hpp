@@ -26,7 +26,7 @@ public:
 /*      void Set(const Array<ProbeResult,PROBE_COUNT>& probeResults,
             const Array<HeaterResult,HEATER_COUNT>& heaterResults,
             const BurnInTimer& burnTimer){ */
-        void Set(ProbeResult probeResults[PROBE_COUNT],
+    void Set(ProbeResult probeResults[PROBE_COUNT],
                 HeaterResult heaterResults[HEATER_COUNT],
                 bool probeRtOkay[PROBE_COUNT],
                 const BurnInTimer& burnTimer){ 

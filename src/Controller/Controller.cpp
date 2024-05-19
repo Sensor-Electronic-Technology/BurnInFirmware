@@ -142,11 +142,12 @@ void Controller::SetupComponents(){
 
 void Controller::CheckSavedState(){
     ComHandler::SendSystemMessage(SystemMessage::CHECK_SAVED_STATE,MessageType::INIT,FreeSRAM());
-    FileResult result=FileManager::LoadState(&this->saveState);
+    SaveState loadState;
+    FileResult result=FileManager::LoadState(&loadState);
     switch(result){
         case FileResult::LOADED:{
             ComHandler::SendSystemMessage(SystemMessage::STATE_LOADED,MessageType::INIT);
-            this->StartFromSavedState(this->saveState);
+            this->StartFromSavedState(loadState);
             break;
         }
         case FileResult::DOES_NOT_EXIST:{

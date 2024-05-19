@@ -320,7 +320,7 @@ void HeaterController::OnSaveTuning(){
         auto newPid=this->tuningResults.results[i];
         this->configuration.UpdateHeaterPid(newPid);
         this->heaters[newPid.heaterNumber-1]->UpdatePid(newPid);
-        auto saveResult=FileManager::SaveConfig(&this->configuration);
+        auto saveResult=FileManager::SaveState(&this->configuration);
         if(saveResult==FileResult::SAVED){
             ComHandler::SendSystemMessage(SystemMessage::TUNING_RESULT_SAVED,MessageType::NOTIFY);
         }

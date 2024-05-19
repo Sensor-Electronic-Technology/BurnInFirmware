@@ -9,7 +9,6 @@ void FileManager::InstanceLoadConfig(Serializable* config,PacketType configType)
     strcpy_P(filename,read_filename(configType));
     file=SD.open(filename);
     if(!file){
-        
         ComHandler::SendErrorMessage(SystemError::CONFIG_LOAD_FAILED_FILE,filename);
         return;
     }
@@ -41,7 +40,6 @@ FileResult FileManager::InstanceLoadState(Serializable* sysState){
     }
     doc.clear();
     auto error=deserializeJson(doc,file);
-    
     if(error){
         file.close();
         return FileResult::DESERIALIZE_FAILED;

@@ -5,10 +5,7 @@ TestController::TestController(const BurnTimerConfig timerConfig):Component(),bu
         this->CompleteTest();
     });
     this->_testIdCallback=[&](const char* id){
-        if(!this->IsRunning()){
-            this->testId=id;
-            this->testIdSet=true;
-        }
+        this->SetTestId(id);
     };
     this->ackStartTimer.onInterval([&](){
         ComHandler::SendStartResponse(true,F("Test Started"));
@@ -29,12 +26,11 @@ TestController::TestController():Component(){
     this->burn_timer.SetCallback([&](){
         this->CompleteTest();
     });
+
     this->_testIdCallback=[&](const char* id){
-        if(!this->IsRunning()){
-            this->testId=id;
-            this->testIdSet=true;
-        }
+        this->SetTestId(id);
     };
+
     this->ackStartTimer.onInterval([&](){
         ComHandler::SendStartResponse(true,F("Test Started"));
     },TEST_START_PERIOD,false,true);
@@ -42,6 +38,7 @@ TestController::TestController():Component(){
     this->ackCompleteTimer.onInterval([&](){
         ComHandler::SendTestCompleted(F("Test Completed"));
     },TEST_COMP_PERIOD,false,true);
+    
     ComHandler::MapTestIdCallback(this->_testIdCallback);
     this->testId.reserve(TEST_ID_LENGTH);
     this->ClearTestId();
@@ -56,8 +53,8 @@ void TestController::SetConfig(const BurnTimerConfig timerConfig){
 
 void TestController::ClearTestId(){
     this->testIdSet=false;
-    for(int i=0;i<TEST_ID_LENGTH-1;i++){
-        this->testId[i]='\0';
+    for(int i=0;i<TEST_ID_LENGTH;i++){
+        this->testId[i]='x';
     }
 }
 
@@ -94,6 +91,11 @@ void TestController::Reset(){
     this->burn_timer.Reset();
     this->currentSet=false;
     this->savedStateLoaded=false;
+    this->testIdSet=false;
+    for(int i=0;i<TEST_ID_LENGTH;i++){
+        this->testId[i]='x';
+    }
+    this->ackStartTimer.cancel();
 }//
 
 const TimerData& TestController::GetTimerData(){
@@ -109,15 +111,31 @@ bool TestController::StartTest(CurrentValue current){
         ComHandler::SendErrorMessage(SystemError::START_ALREADY_RUNNING);
         return false;
     }
-/*     if(!this->testIdSet){
+    if(!this->testIdSet){
         ComHandler::SendErrorMessage(SystemError::TEST_ID_NOT_SET);
         return false;
-    } */
+    } 
     this->currentSet=true;
     this->stressCurrent=current;
     this->burn_timer.Start(this->stressCurrent);
-    this->ackStartTimer.start();
+    this->ackStartTimer.onInterval([&](){
+        ComHandler::SendStartResponse(true,F("Test Started"));
+    },TEST_START_PERIOD,true,true);
     return true;
+}
+
+bool TestController::StartTest(SaveState state){
+    this->timerDataSate=state.currentTimes;
+    this->saveState=state;
+    this->savedStateLoaded=true;
+    this->testId=state.testId;
+    this->currentSet=true;
+    this->stressCurrent=state.setCurrent;
+    this->testIdSet=true;
+    this->ackStartTimer.onInterval([&](){
+        ComHandler::MsgPacketSerializer(this->saveState,PacketType::TEST_LOAD_START);
+    },2000,true,true);
+    return this->burn_timer.Start(this->timerDataSate);
 }
 
 void TestController::CompleteTest(){
@@ -126,19 +144,6 @@ void TestController::CompleteTest(){
         this->ackStartTimer.cancel();
         this->ackCompleteTimer.start();
         this->_finishedCallback();
-}
-
-bool TestController::StartTest(const SaveState& state){
-    this->savedState=state.currentTimes;
-    this->savedStateLoaded=true;
-    this->testId=state.testId.c_str();
-    this->currentSet=true;
-    this->stressCurrent=state.setCurrent;
-    this->testIdSet=true;
-    this->ackStartTimer.onInterval([&](){
-        ComHandler::SendStartFromLoad(F("Test Started"),this->testId.c_str(),this->stressCurrent,state.setTemperature);
-    },TEST_START_PERIOD,true,true);
-    return this->burn_timer.Start(this->savedState);
 }
 
 void TestController::SetTestId(const char* id){

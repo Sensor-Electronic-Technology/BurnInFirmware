@@ -72,7 +72,7 @@ public:
         }
     }
 
-    static bool SaveConfig(Serializable* sysState){
+    static bool SaveState(Serializable* sysState){
         auto instance=FileManager::Instance();
         if(sdInitialized){
             digitalWrite(LED_BUILTIN,HIGH);

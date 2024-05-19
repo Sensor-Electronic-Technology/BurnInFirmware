@@ -4,7 +4,8 @@
 #include "../Serializable.hpp"
 
 
-struct SaveState:public Serializable{
+class SaveState:public Serializable{
+public:
     CurrentValue    setCurrent;
     uint8_t         setTemperature;
     TimerData       currentTimes;
@@ -14,6 +15,9 @@ struct SaveState:public Serializable{
         this->setCurrent=CurrentValue::c060;
         this->setTemperature=0;
         this->testId.reserve(TEST_ID_LENGTH);
+        for(int i=0;i<TEST_ID_LENGTH;i++){
+            this->testId[i]='x';
+        }
     }
 
     void Clear(){
@@ -21,7 +25,7 @@ struct SaveState:public Serializable{
         this->setTemperature=0;
         this->currentTimes.Reset();
         for(int i=0;i<TEST_ID_LENGTH;i++){
-            this->testId[i]='\0';
+            this->testId[i]='x';
         }
     }
 
@@ -32,7 +36,7 @@ struct SaveState:public Serializable{
         this->testId=testId;
     }
 
-    void Serialize(JsonDocument* doc,bool initialize) override{
+    void Serialize(JsonDocument *doc,bool initialize) override{
         (*doc)[F("TestId")]=this->testId.c_str();
         (*doc)[F("SetCurrent")]=this->setCurrent;     
         (*doc)[F("SetTemperature")]=this->setTemperature;
@@ -44,18 +48,9 @@ struct SaveState:public Serializable{
         }
         this->currentTimes.Serialize(&jsonTime,initialize);
     }
-
-    void Deserialize(JsonDocument &doc) override{
-        this->testId=doc[F("TestId")].as<String>();
-        this->setCurrent=(CurrentValue)doc[F("SetCurrent")];
-        this->setTemperature=doc[F("SetTemperature")];
-        JsonObject jsonTime=doc[F("CurrentTime")].as<JsonObject>();
-        this->currentTimes.Deserialize(jsonTime);
-    }
-
+    
     void Serialize(JsonObject *packet,bool initialize) override{
         (*packet)[F("TestId")]=this->testId.c_str();
-    
         (*packet)[F("SetCurrent")]=this->setCurrent;
         (*packet)[F("SetTemperature")]=this->setTemperature;
         JsonObject jsonTime;
@@ -65,6 +60,14 @@ struct SaveState:public Serializable{
             jsonTime=(*packet)[F("CurrentTime")].as<JsonObject>();
         }
         this->currentTimes.Serialize(&jsonTime,initialize);
+    }
+
+    void Deserialize(JsonDocument &doc) override{
+        this->testId=doc[F("TestId")].as<String>();
+        this->setCurrent=(CurrentValue)doc[F("SetCurrent")];
+        this->setTemperature=doc[F("SetTemperature")];
+        JsonObject jsonTime=doc[F("CurrentTime")].as<JsonObject>();
+        this->currentTimes.Deserialize(jsonTime);
     }
 
     void Deserialize(JsonObject &packet) override{

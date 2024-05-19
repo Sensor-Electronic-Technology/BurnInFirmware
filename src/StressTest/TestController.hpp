@@ -38,7 +38,7 @@ public:
 
     //Start Test
     bool StartTest(CurrentValue current);
-    bool StartTest(const SaveState& state);
+    bool StartTest(SaveState state);
     bool PauseTest();
     bool ContinueTest();
     bool IsRunning();
@@ -59,7 +59,8 @@ private:
 private:
     BurnInTimer            burn_timer;
     CurrentValue            stressCurrent;
-    TimerData               savedState;
+    TimerData               timerDataSate;
+    SaveState               saveState;
     bool                    currentSet=false;   
     bool                    savedStateLoaded=false;
     bool                    acknowledge=false;

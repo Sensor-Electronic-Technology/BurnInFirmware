@@ -27,7 +27,7 @@ void StationTimer::onInterval(VoidCallback callback, unsigned long interval,bool
     this->_timer_running = start;
     this->_timeout_callback = callback;
     if(start){
-        this->_deadline = millisTime() + interval;
+        this->_deadline = millisTime(); //+ interval;
     }
         
 }
