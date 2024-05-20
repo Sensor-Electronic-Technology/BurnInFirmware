@@ -50,31 +50,6 @@ FileResult FileManager::InstanceLoadState(Serializable* sysState){
     return FileResult::LOADED;
 }
 
-void FileManager::InstanceSaveConfigLog(Serializable* config,PacketType configType){
-    JsonDocument doc;
-    File file;
-    WriteBufferingStream fileWriteBuffer{file, 64};
-    char filename[BUFFER_SIZE];
-    strcpy_P(filename,read_filename(configType));    
-    SD.remove(filename);//overwrite file
-    file=SD.open(filename,FILE_WRITE);
-    if(!file){
-        ComHandler::SendErrorMessage(SystemError::CONFIG_SAVE_FAILED_FILE,filename);
-        // ComHandler::SendFileMsg(FileResult::FAILED_TO_OPEN,F("Configuration file failed to open.  Please save values and restart the system"));
-        return;
-    }
-    config->Serialize(&doc,true);
-    if(serializeJsonPretty(doc,fileWriteBuffer)==0){
-        file.close();
-        ComHandler::SendErrorMessage(SystemError::CONFIG_SAVE_FAILED_FILE,filename);
-        // ComHandler::SendFileMsg(FileResult::FAILED_TO_SAVE,F("Configuration save failed. Changed will be lost on restart.\n Suggest manually enter changes"));
-        return;
-    }
-    fileWriteBuffer.flush();
-    file.close();
-    doc.clear();
-}
-
 bool FileManager::InstanceSaveConfig(Serializable* config,PacketType configType){
     JsonDocument doc;
     File file;
@@ -84,22 +59,43 @@ bool FileManager::InstanceSaveConfig(Serializable* config,PacketType configType)
     SD.remove(filename);//overwrite file
     file=SD.open(filename,FILE_WRITE);
     if(!file){
-        ComHandler::SendErrorMessage(SystemError::CONFIG_SAVE_FAILED_FILE,filename);
-        // ComHandler::SendFileMsg(FileResult::FAILED_TO_OPEN,F("Configuration file failed to open.  Please save values and restart the system"));
+        ComHandler::SendConfigSaveStatus(configType,false,F("Configuration file failed to open.  Please save values and restart the system"));
         return false;
     }
-    doc.clear();
     config->Serialize(&doc,true);
     if(serializeJsonPretty(doc,fileWriteBuffer)==0){
         file.close();
-        ComHandler::SendErrorMessage(SystemError::CONFIG_SAVE_FAILED_FILE,filename);
-        // ComHandler::SendFileMsg(FileResult::FAILED_TO_SAVE,F("Configuration save failed. Changed will be lost on restart.\n Suggest manually enter changes"));
+        ComHandler::SendConfigSaveStatus(configType,false,F("Configuration save failed. Changed will be lost on restart.\n Suggest manually enter changes"));
         return false;
     }
+    ComHandler::SendConfigSaveStatus(configType,true,F("Configuration saved successfully"));
     fileWriteBuffer.flush();
     file.close();
     doc.clear();
     return true;
+}
+
+bool FileManager::InstanceSaveState(Serializable* config,PacketType configType){
+    JsonDocument doc;
+    File file;
+    WriteBufferingStream fileWriteBuffer{file, 64};
+    char filename[BUFFER_SIZE];
+    strcpy_P(filename,read_filename(configType));    
+    SD.remove(filename);//overwrite file
+    file=SD.open(filename,FILE_WRITE);
+    if(!file){
+        ComHandler::SendErrorMessage(SystemError::SAVED_STATE_FAILED,filename);
+        return;
+    }
+    config->Serialize(&doc,true);
+    if(serializeJsonPretty(doc,fileWriteBuffer)==0){
+        file.close();
+        ComHandler::SendErrorMessage(SystemError::SAVED_STATE_FAILED,filename);
+        return;
+    }
+    fileWriteBuffer.flush();
+    file.close();
+    doc.clear();
 }
 
 bool FileManager::InstanceClearState(){

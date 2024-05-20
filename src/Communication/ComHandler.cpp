@@ -22,21 +22,22 @@ void ComHandler::MsgPacketDeserialize(JsonDocument& serialEventDoc) {
                 auto packet=serialEventDoc[F("Packet")].as<JsonObject>();
                 ProbeControllerConfig config;
                 config.Deserialize(packet);
-                FileManager::Save(&config,packetType);
+                FileManager::SaveConfiguration(&config,packetType);
                 break;
             }
             case PacketType::HEATER_CONFIG:{
                 auto packet=serialEventDoc[F("Packet")].as<JsonObject>();
                 HeaterControllerConfig config;
                 config.Deserialize(packet);
-                FileManager::Save(&config,packetType);
+                serializeJson(packet,Serial);
+                FileManager::SaveConfiguration(&config,packetType);
                 break;
             }
             case PacketType::SYSTEM_CONFIG:{
                 auto packet=serialEventDoc[F("Packet")].as<JsonObject>();
                 ControllerConfig config;
                 config.Deserialize(packet);
-                FileManager::Save(&config,packetType);
+                FileManager::SaveConfiguration(&config,packetType);
                 break;
             }
             case PacketType::COMMAND:{
@@ -189,7 +190,6 @@ void ComHandler::InstanceSendStartResponse(bool success,const char* message){
 
 void ComHandler::InstanceSendTestCompleted(const char* message){
     JsonDocument serializerDoc;
-    serializerDoc.clear();
     char packetStr[BUFFER_SIZE];
     strcpy_P(packetStr,read_packet_prefix(PacketType::TEST_COMPLETED));
     serializerDoc[F("Prefix")]=packetStr;
@@ -198,6 +198,21 @@ void ComHandler::InstanceSendTestCompleted(const char* message){
     serializeJson(serializerDoc,*this->serial);
     this->serial->println();
     serializerDoc.clear();
+}
+
+void ComHandler::InstanceSendConfigSaved(PacketType configType,const char* message, bool success){
+    JsonDocument serializerDoc;
+    char packetStr[BUFFER_SIZE];
+    char typeStr[BUFFER_SIZE];
+    strcpy_P(packetStr,read_packet_prefix(PacketType::CONFIG_SAVE_STATUS));
+    strcpy_P(typeStr,read_packet_prefix(configType));
+    serializerDoc[F("Prefix")]=packetStr;
+    JsonObject packet=serializerDoc[F("Packet")].to<JsonObject>();
+    packet[F("Type")]=typeStr;
+    packet[F("Message")]=message;
+    packet[F("Status")]=success;
+    serializeJson(serializerDoc,*this->serial);
+    this->serial->println();
 }
 
 
