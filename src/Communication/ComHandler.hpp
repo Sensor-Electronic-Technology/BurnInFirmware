@@ -86,6 +86,11 @@ public:
         instance->_loadStateCallback=cbk;
     }
 
+    static void MapConfigReceivedCallback(ConfigReceivedCallback cbk){
+        auto instance=ComHandler::Instance();
+        instance->_configReceivedCallback=cbk;
+    }
+
     static void SendStartResponse(bool success,const __FlashStringHelper* msg){
         auto instance=ComHandler::Instance();
         char buffer[BUFFER_SIZE];
@@ -171,7 +176,7 @@ public:
         }
     }
 
-    static void SendConfigSaveStatus(PacketType configType,bool success,const __FlashStringHelper* msg){
+    static void SendConfigSaveStatus(ConfigType configType,bool success,const __FlashStringHelper* msg){
         auto instance=ComHandler::Instance();
         char buffer[BUFFER_SIZE];
         PGM_P msgMem=reinterpret_cast<PGM_P>(msg);
@@ -217,7 +222,7 @@ private:
     void ReceiveVersion(const JsonDocument& serialEventDoc);
     void InstanceSendStartResponse(bool success,const char* message);
     void InstanceSendTestCompleted(const char* message);
-    void InstanceSendConfigSaved(PacketType configType,const char* message, bool success);
+    void InstanceSendConfigSaved(ConfigType configType,const char* message, bool success);
 
 
 private:
@@ -231,4 +236,5 @@ private:
     ChangeTempCallback          _changeTempCallback=[](int){_NOP();};
     TestIdCallback              _testIdCallback=[](const char*){_NOP();};
     LoadStateCallback           _loadStateCallback=[](const SaveState&){_NOP();};
+    ConfigReceivedCallback      _configReceivedCallback=[](ConfigType,Serializable*){_NOP();};
 };

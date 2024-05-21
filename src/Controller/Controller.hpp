@@ -29,6 +29,7 @@ public:
     // other
     void HandleCommand(StationCommand command);
     void Acknowledge(AckType ack);
+    void ConfigReceivedHandler(ConfigType,Serializable*);
 
 private:
 
@@ -53,6 +54,7 @@ private:
     LoadStateCallback      _loadStateCallback=[](const SaveState&){_NOP();};
     ChangeCurrentCallback  _changeCurrentCallback=[](int){_NOP();};
     ChangeTempCallback     _changeTempCallback=[](int){_NOP();};
+    ConfigReceivedCallback _configReceivedCallback=[](ConfigType,Serializable*){_NOP();};
     ProbeResult            probeResults[PROBE_COUNT];
     HeaterResult           heaterResults[HEATER_COUNT];
     unsigned long          comInterval=COM_INTERVAL;

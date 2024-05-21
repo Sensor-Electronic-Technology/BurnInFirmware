@@ -18,26 +18,58 @@ void ComHandler::MsgPacketDeserialize(JsonDocument& serialEventDoc) {
     }
     if(found){
         switch(packetType){
-            case PacketType::PROBE_CONFIG:{
+/*             case PacketType::PROBE_CONFIG:{
                 auto packet=serialEventDoc[F("Packet")].as<JsonObject>();
                 ProbeControllerConfig config;
                 config.Deserialize(packet);
-                FileManager::SaveConfiguration(&config,packetType);
+                this->_configReceivedCallback(packetType,&config);
                 break;
             }
             case PacketType::HEATER_CONFIG:{
                 auto packet=serialEventDoc[F("Packet")].as<JsonObject>();
                 HeaterControllerConfig config;
                 config.Deserialize(packet);
-                serializeJson(packet,Serial);
-                FileManager::SaveConfiguration(&config,packetType);
+                this->_configReceivedCallback(packetType,&config);
                 break;
             }
             case PacketType::SYSTEM_CONFIG:{
                 auto packet=serialEventDoc[F("Packet")].as<JsonObject>();
                 ControllerConfig config;
                 config.Deserialize(packet);
-                FileManager::SaveConfiguration(&config,packetType);
+                this->_configReceivedCallback(packetType,&config);
+                break;
+            } */
+            case PacketType::RECEIVE_CONFIG:{
+                auto packet=serialEventDoc[F("Packet")].as<JsonObject>();
+                ConfigType configType=packet[F("ConfigType")].as<ConfigType>();
+                Serial.println("Receieved Config Type: "+String(configType));
+                Serial.println("Print Config");
+                auto configJson=packet[F("Configuration")].as<JsonObject>();
+                //serializeJson(configJson,Serial);
+                switch(configType){
+                    case ConfigType::PROBE_CONFIG:{
+                        ProbeControllerConfig config;
+                        config.Deserialize(configJson);
+                        this->_configReceivedCallback(configType,&config);
+                        break;
+                    }
+                    case ConfigType::HEATER_CONFIG:{
+                        HeaterControllerConfig config;
+                        config.Deserialize(configJson);
+                        this->_configReceivedCallback(configType,&config);
+                        break;
+                    }
+                    case ConfigType::SYSTEM_CONFIG:{
+                        ControllerConfig config;
+                        config.Deserialize(configJson);
+                        this->_configReceivedCallback(configType,&config);
+                        break;
+                    }
+                    case ConfigType::ALL:{
+                        //ComHandler::SendErrorMessage(SystemError:,configType);
+                        break;
+                    }
+                }
                 break;
             }
             case PacketType::COMMAND:{
@@ -200,15 +232,13 @@ void ComHandler::InstanceSendTestCompleted(const char* message){
     serializerDoc.clear();
 }
 
-void ComHandler::InstanceSendConfigSaved(PacketType configType,const char* message, bool success){
+void ComHandler::InstanceSendConfigSaved(ConfigType configType,const char* message, bool success){
     JsonDocument serializerDoc;
     char packetStr[BUFFER_SIZE];
-    char typeStr[BUFFER_SIZE];
     strcpy_P(packetStr,read_packet_prefix(PacketType::CONFIG_SAVE_STATUS));
-    strcpy_P(typeStr,read_packet_prefix(configType));
     serializerDoc[F("Prefix")]=packetStr;
     JsonObject packet=serializerDoc[F("Packet")].to<JsonObject>();
-    packet[F("Type")]=typeStr;
+    packet[F("Type")]=configType;
     packet[F("Message")]=message;
     packet[F("Status")]=success;
     serializeJson(serializerDoc,*this->serial);

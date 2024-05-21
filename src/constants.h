@@ -41,6 +41,8 @@ template <class T> int EEPROM_read(int addr, T& value) {
 #define read_log_prefix(pre)      ((const char *)pgm_read_ptr(&(log_level_prefixes[pre])))
 #define read_packet_prefix(pre)   ((const char *)pgm_read_ptr(&(prefixes[pre])))
 #define read_filename(pType)      ((const char *)pgm_read_ptr(&(json_filenames[pType])))
+/* #define read_state_filename()     ((const char *)pgm_read_ptr(&(json_filenames[3]))) */
+
 
 #pragma endregion
 
@@ -78,6 +80,13 @@ template <class T> int EEPROM_read(int addr, T& value) {
 #pragma endregion
 
 #pragma region ENUMS
+    enum ConfigType:uint8_t{
+        HEATER_CONFIG=0,            //PC to Station config
+        PROBE_CONFIG=1,             //PC to stattion config
+        SYSTEM_CONFIG=2,            //PC to station config
+        ALL=3,               //Station to PC
+    };
+
     enum FileResult:uint8_t{
         DOES_NOT_EXIST,
         FAILED_TO_OPEN,
@@ -129,54 +138,55 @@ template <class T> int EEPROM_read(int addr, T& value) {
     #define PREFIX_COUNT    22
 
     enum PacketType:uint8_t{
-        HEATER_CONFIG=0,            //PC to Station config
-        PROBE_CONFIG=1,             //PC to stattion config
-        SYSTEM_CONFIG=2,            //PC to station config
-        SAVE_STATE=3,               //???
-        MESSAGE=4,                  //outgoing->message of speficied type
-        DATA=5,                     //outgoing-> readings and state data
-        COMMAND=6,                  //incoming-> route to Controller
-        ID_RECEIVE=7,               //Set station id
-        ID_REQUEST=8,               //Request station id-Send to PC
-        VER_RECIEVE=9,              //incoming-> new firmware version
-        VER_REQUEST=10,             //incoming-> request version and send
-        TEST_START_STATUS=11,       //outgoing->Notify PC that test has started
-        TEST_COMPLETED=12,          //outgoing->Notify PC that test has completed
-        TEST_LOAD_START=13,         //outgoing->Notify PC that test is starting from a load state
-        HEATER_NOTIFY=14,           //Outgoing->Notify PC of a single heater tuning results
-        HEATER_TUNE_COMPLETE=15,    //Outgoing->notfiy PC that all heaters have been tuned,
-        ACK=16,                     //Outgoing->Acknowledge PC of command
-        UPDATE_CURRENT=17,          //Incoming update current
-        UPDATE_TEMP=18,             //Incoming update temperature
-        TUNE_COM=19,                //Outgoing->tuning serial data,
-        SEND_TEST_ID=20,            //Incoming->Start test
-        LOAD_STATE=21,              //Incoming->Load saved state
-        CONFIG_SAVE_STATUS=22       //Outgoing->Notify PC of config save status
+        SAVE_STATE=0,               //???
+        MESSAGE=1,                  //outgoing->message of speficied type
+        DATA=2,                     //outgoing-> readings and state data
+        COMMAND=3,                  //incoming-> route to Controller
+        ID_RECEIVE=4,               //Set station id
+        ID_REQUEST=5,               //Request station id-Send to PC
+        VER_RECIEVE=6,              //incoming-> new firmware version
+        VER_REQUEST=7,             //incoming-> request version and send
+        TEST_START_STATUS=8,       //outgoing->Notify PC that test has started
+        TEST_COMPLETED=9,          //outgoing->Notify PC that test has completed
+        TEST_LOAD_START=10,         //outgoing->Notify PC that test is starting from a load state
+        HEATER_NOTIFY=11,           //Outgoing->Notify PC of a single heater tuning results
+        HEATER_TUNE_COMPLETE=12,    //Outgoing->notfiy PC that all heaters have been tuned,
+        ACK=13,                     //Outgoing->Acknowledge PC of command
+        UPDATE_CURRENT=14,          //Incoming update current
+        UPDATE_TEMP=15,             //Incoming update temperature
+        TUNE_COM=16,                //Outgoing->tuning serial data,
+        SEND_TEST_ID=17,            //Incoming->Start test
+        LOAD_STATE=18,              //Incoming->Load saved state
+        CONFIG_SAVE_STATUS=19,       //Outgoing->Notify PC of config save status
+        GET_CONFIG=20,               //Incoming->Request config
+        RECEIVE_CONFIG=21              //Outgoing->Send config
     };
 
-    const char strPre_00[] PROGMEM="CH";   //0
+/*     const char strPre_00[] PROGMEM="CH";   //0
     const char strPre_01[] PROGMEM="CP";   //1
-    const char strPre_02[] PROGMEM="CS";   //2
-    const char strPre_03[] PROGMEM="ST";   //3
-    const char strPre_04[] PROGMEM="M";    //4
-    const char strPre_05[] PROGMEM="D";    //5
-    const char strPre_06[] PROGMEM="COM";  //6
-    const char strPre_07[] PROGMEM="IDREC";  //7
-    const char strPre_08[] PROGMEM="IDREQ";   //8
-    const char strPre_09[] PROGMEM="VERREC";  //9
-    const char strPre_10[] PROGMEM="VERREQ";  //10
-    const char strPre_11[] PROGMEM="TSTAT";     //11
-    const char strPre_12[] PROGMEM="TCOMP";     //12
-    const char strPre_13[] PROGMEM="TLOAD";     //13
-    const char strPre_14[] PROGMEM="HNOTIFY";    //14
-    const char strPre_15[] PROGMEM="HTUNED";     //15
-    const char strPre_16[] PROGMEM="ACK";     //16
-    const char strPre_17[] PROGMEM="UC";     //17
-    const char strPre_18[] PROGMEM="UT";     //18
-    const char strPre_19[] PROGMEM="TCOM";     //19
-    const char strPre_20[] PROGMEM="TID";     //20
-    const char strPre_21[] PROGMEM="LSTATE";     //21
-    const char strPre_22[] PROGMEM="SCONF";     //22
+    const char strPre_02[] PROGMEM="CS";   //2 */
+    const char strPre_00[] PROGMEM="ST";   //3
+    const char strPre_01[] PROGMEM="M";    //4
+    const char strPre_02[] PROGMEM="D";    //5
+    const char strPre_03[] PROGMEM="COM";  //6
+    const char strPre_04[] PROGMEM="IDREC";  //7
+    const char strPre_05[] PROGMEM="IDREQ";   //8
+    const char strPre_06[] PROGMEM="VERREC";  //9
+    const char strPre_07[] PROGMEM="VERREQ";  //10
+    const char strPre_08[] PROGMEM="TSTAT";     //11
+    const char strPre_09[] PROGMEM="TCOMP";     //12
+    const char strPre_10[] PROGMEM="TLOAD";     //13
+    const char strPre_11[] PROGMEM="HNOTIFY";    //14
+    const char strPre_12[] PROGMEM="HTUNED";     //15
+    const char strPre_13[] PROGMEM="ACK";     //16
+    const char strPre_14[] PROGMEM="UC";     //17
+    const char strPre_15[] PROGMEM="UT";     //18
+    const char strPre_16[] PROGMEM="TCOM";     //19
+    const char strPre_17[] PROGMEM="TID";     //20
+    const char strPre_18[] PROGMEM="LSTATE";     //21
+    const char strPre_19[] PROGMEM="SCONF";     //22
+    const char strPre_20[] PROGMEM="GCONF";     //22
+    const char strPre_21[] PROGMEM="RCONF";     //22
 
     const char* const prefixes[] PROGMEM = {
         strPre_00,
@@ -200,8 +210,7 @@ template <class T> int EEPROM_read(int addr, T& value) {
         strPre_18,
         strPre_19,
         strPre_20,
-        strPre_21,
-        strPre_22
+        strPre_21
     };
 #pragma endregion
 
@@ -216,11 +225,8 @@ template <class T> int EEPROM_read(int addr, T& value) {
     const char* const json_filenames[] PROGMEM = {
         strFile_01,
         strFile_02,
-        strFile_03,
-        strFile_04
+        strFile_03
     };
-
-
 
 #pragma endregion
 
