@@ -5,26 +5,14 @@ ProbeController::ProbeController(const ProbeControllerConfig& config)
     currentSelector(config.currentSelectConfig),
     testCurrent(config.probeTestCurrent),
     currentPercent(config.probeCurrentPercent),
-    probeTestTime(config.probeTestTime){
+    probeTestTime(config.probeTestTime),
+    readInterval(config.readInterval){
 
     for(uint8_t i=0;i<PROBE_COUNT;i++){
         this->probes[i]=new Probe(config.probeConfigs[i]);
         RegisterChild(this->probes[i]);
         this->results[i]=ProbeResult();
     }
-    
-    this->readTimer.onInterval([&]{
-        this->Read();
-    },config.readInterval);
-
-    this->probeTestTimer.setTimeout([&]{
-        ComHandler::SendSystemMessage(SystemMessage::PROBE_TEST_END,MessageType::NOTIFY);
-        this->TurnOffSrc();
-        this->currentSelector.SetCurrent(this->savedCurrent);
-    },this->probeTestTime);
-
-    RegisterChild(this->readTimer);
-    RegisterChild(this->probeTestTimer);
 }
 
 ProbeController::ProbeController():Component(){
@@ -36,15 +24,22 @@ void ProbeController::Setup(const ProbeControllerConfig& config){
     this->testCurrent=config.probeTestCurrent;
     this->currentPercent=config.probeCurrentPercent;
     this->probeTestTime=config.probeTestTime;
+    this->readInterval=config.readInterval;
     for(uint8_t i=0;i<PROBE_COUNT;i++){
         this->probes[i]=new Probe(config.probeConfigs[i]);
         RegisterChild(this->probes[i]);
         this->results[i]=ProbeResult();
     }
-    
+}
+
+void ProbeController::Initialize(){
+    this->currentSelector.TurnOff();
+    for(uint8_t i=0;i<100;i++){
+        this->Read();
+    }
     this->readTimer.onInterval([&]{
         this->Read();
-    },config.readInterval);
+    },this->readInterval);
 
     this->probeTestTimer.setTimeout([&]{
         this->TurnOffSrc();
@@ -55,13 +50,6 @@ void ProbeController::Setup(const ProbeControllerConfig& config){
     },this->probeTestTime);
     RegisterChild(this->readTimer);
     RegisterChild(this->probeTestTimer);
-}
-
-void ProbeController::Initialize(){
-    this->currentSelector.TurnOff();
-    for(uint8_t i=0;i<100;i++){
-        this->Read();
-    }
 }
 
 void ProbeController::StartProbeTest(){

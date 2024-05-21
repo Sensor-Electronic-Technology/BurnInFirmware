@@ -2,7 +2,7 @@
 
 FileManager* FileManager::instance=nullptr;
 
-void FileManager::InstanceLoadConfig(Serializable* config,ConfigType configType){
+bool FileManager::InstanceLoadConfig(Serializable* config,ConfigType configType){
     JsonDocument doc;
     File file;
     char filename[BUFFER_SIZE];
@@ -10,14 +10,14 @@ void FileManager::InstanceLoadConfig(Serializable* config,ConfigType configType)
     file=SD.open(filename);
     if(!file){
         //ComHandler::SendErrorMessage(SystemError::CONFIG_LOAD_FAILED_FILE,filename);
-        return;
+        return false;
     }
     doc.clear();
     auto error=deserializeJson(doc,file);
     if(error){
         //ComHandler::SendErrorMessage(SystemError::CONFIG_LOAD_FAILED_FILE,filename);
         file.close();
-        return;
+        return false;
     }
     config->Deserialize(doc);
     file.close();

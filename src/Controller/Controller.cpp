@@ -31,11 +31,16 @@ Controller::Controller():Component(){
         this->ConfigReceivedHandler(type,config);
     };
 
+    this->_getConfigCallback=[&](ConfigType configType){
+        this->GetConfigHandler(configType);
+    };
+
     ComHandler::MapAckCallback(this->_ackCallback);
     ComHandler::MapCommandCallback(this->_commandCallback);
     ComHandler::MapChangeCurrentCallback(this->_changeCurrentCallback);
     ComHandler::MapChangeTempCallback(this->_changeTempCallback);
     ComHandler::MapConfigReceivedCallback(this->_configReceivedCallback);
+    ComHandler::MapGetConfigCallback(this->_getConfigCallback);
 
     for(uint8_t i=0;i<PROBE_COUNT;i++){
         this->probeResults[i]=ProbeResult();
@@ -52,15 +57,18 @@ void Controller::LoadConfigurations(){
 
     ComHandler::SendSystemMessage(SystemMessage::LOAD_CONFIG,MessageType::INIT);
 
+    HeaterControllerConfig heatersConfig;
+    ProbeControllerConfig probesConfig;
+    ControllerConfig controllerConfig;
 
-    FileManager::Load(&heatersConfig,ConfigType::HEATER_CONFIG);
-    FileManager::Load(&probesConfig,ConfigType::PROBE_CONFIG);
-    FileManager::Load(&controllerConfig,ConfigType::SYSTEM_CONFIG);
+    FileManager::LoadConfiguration(&heatersConfig,ConfigType::HEATER_CONFIG);
+    FileManager::LoadConfiguration(&probesConfig,ConfigType::PROBE_CONFIG);
+    FileManager::LoadConfiguration(&controllerConfig,ConfigType::SYSTEM_CONFIG);
 
 /*     ComHandler::MsgPacketSerializer(heatersConfig,PacketType::HEATER_CONFIG);
     ComHandler::MsgPacketSerializer(probesConfig,PacketType::PROBE_CONFIG);
-    ComHandler::MsgPacketSerializer(controllerConfig,PacketType::SYSTEM_CONFIG); */
-    FileManager::SaveConfiguration(&heatersConfig,ConfigType::HEATER_CONFIG);
+    ComHandler::MsgPacketSerializer(controllerConfig,PacketType::SYSTEM_CONFIG); 
+    FileManager::SaveConfiguration(&heatersConfig,ConfigType::HEATER_CONFIG);*/
     
     this->heaterControl.Setup(heatersConfig);
     this->probeControl.Setup(probesConfig);
@@ -148,23 +156,56 @@ void Controller::ComUpdate(){
     Serial.println(" Free RAM: " + String(FreeRam()));
 }
 
-void Controller::ConfigReceivedHandler(ConfigType packetType,Serializable* config){
-    auto success=FileManager::SaveConfiguration(config,packetType);
+void Controller::ConfigReceivedHandler(ConfigType configType,Serializable* config){
+    auto success=FileManager::SaveConfiguration(config,configType);
     if(success){
-        ComHandler::SendConfigSaveStatus(packetType,true,F("Configuration Saved"));
+        if(this->testController.IsRunning()){
+            ComHandler::SendConfigSaveStatus(configType,true,F("Test Running!! Configuration saved, controller will restart and apply changes once the test is completed"));
+            this->needsReset=true;
+        }else{
+            ComHandler::SendConfigSaveStatus(configType,true,F("Configuration saved.  Restarting Controller to apply changes"));
+            delay(1000);
+            this->Reset();
+        }
     }else{
-        ComHandler::SendConfigSaveStatus(packetType,false,F("Configuration Save Failed"));
+        ComHandler::SendConfigSaveStatus(configType,false,F("Configuration failed to save, please try again"));
     }
-    switch(packetType){
+}
+
+void Controller::GetConfigHandler(ConfigType configType){
+    switch(configType){
         case ConfigType::HEATER_CONFIG:{
-            this->heatersConfig=static_cast<HeaterControllerConfig&>(*config);
+            HeaterControllerConfig config;
+            auto success=FileManager::LoadConfiguration(&config,configType);
+            if(success){
+                ComHandler::SendConfig(configType,&config);
+            }else{
+                ComHandler::SendErrorMessage(SystemError::CONFIG_LOAD_FAILED,MessageType::ERROR);
+            }
             break;
         }
         case ConfigType::PROBE_CONFIG:{
-
+            ProbeControllerConfig config;
+            auto success=FileManager::LoadConfiguration(&config,configType);
+            if(success){
+                ComHandler::SendConfig(configType,&config);
+            }else{
+                ComHandler::SendErrorMessage(SystemError::CONFIG_LOAD_FAILED,MessageType::ERROR);
+            }
             break;
         }
         case ConfigType::SYSTEM_CONFIG:{
+            ControllerConfig config;
+            auto success=FileManager::LoadConfiguration(&config,configType);
+            if(success){
+                ComHandler::SendConfig(configType,&config);
+            }else{
+                ComHandler::SendErrorMessage(SystemError::CONFIG_LOAD_FAILED,MessageType::ERROR);
+            }
+            break;
+        }
+        case ConfigType::ALL:{
+            ComHandler::SendErrorMessage(SystemError::CONFIG_LOAD_FAILED,MessageType::ERROR);
             break;
         }
     }
@@ -411,4 +452,8 @@ void Controller::TestFinished(){
     this->heaterControl.TurnOff();
     this->saveState.Clear();
     FileManager::ClearState();
+    if(this->needsReset){
+        ComHandler::SendSystemMessage(SystemMessage::RESETTING_CONTROLLER,MessageType::GENERAL);
+        this->Reset();
+    }
 }

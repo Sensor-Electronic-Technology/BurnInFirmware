@@ -20,7 +20,6 @@ using namespace components;
 class Controller:public Component{
 public:
     Controller();
-
     //Init
     void LoadConfigurations();
     void SetupComponents();
@@ -30,6 +29,7 @@ public:
     void HandleCommand(StationCommand command);
     void Acknowledge(AckType ack);
     void ConfigReceivedHandler(ConfigType,Serializable*);
+    void GetConfigHandler(ConfigType configType);
 
 private:
 
@@ -55,19 +55,18 @@ private:
     ChangeCurrentCallback  _changeCurrentCallback=[](int){_NOP();};
     ChangeTempCallback     _changeTempCallback=[](int){_NOP();};
     ConfigReceivedCallback _configReceivedCallback=[](ConfigType,Serializable*){_NOP();};
+    GetConfigCallback      _getConfigCallback=[](ConfigType){_NOP();};
     ProbeResult            probeResults[PROBE_COUNT];
     HeaterResult           heaterResults[HEATER_COUNT];
     unsigned long          comInterval=COM_INTERVAL;
     unsigned long          updateInterval=UPDATE_INTERVAL;
     unsigned long          logInterval=LOG_INTERVAL;
     unsigned long          versionInterval=VER_CHECK_INTERVAL;
-    bool toggler=false;
+    bool                   needsReset=false;
+    bool                   toggler=false;
     SaveState              saveState;
     StationTimer           comTimer,updateTimer,testTimer,stateLogTimer,idTimer,versionTimer;
     SerialDataOutput       comData;
-    HeaterControllerConfig heatersConfig;
-    ProbeControllerConfig  probesConfig;
     bool                   probeChecks[PROBE_COUNT]={true,true,true,true,true,true};
-    ControllerConfig       controllerConfig;
     void privateLoop() override;
 };

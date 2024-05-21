@@ -27,7 +27,7 @@ public:
         return instance;
     }
     
-    static void Load(Serializable* config,ConfigType configType){
+    static bool LoadConfiguration(Serializable* config,ConfigType configType){
         auto instance=FileManager::Instance();
          if(sdInitialized){
             digitalWrite(LED_BUILTIN,HIGH);
@@ -85,7 +85,7 @@ public:
         return false;
     }
 private:
-    void InstanceLoadConfig(Serializable* config,ConfigType configType);
+    bool InstanceLoadConfig(Serializable* config,ConfigType configType);
     bool InstanceSaveState(Serializable* config);
     bool InstanceSaveConfig(Serializable* config,ConfigType configType);
     bool InstanceClearState();

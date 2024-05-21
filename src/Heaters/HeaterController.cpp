@@ -82,7 +82,6 @@ void HeaterController::Initialize(){
     RegisterChild(this->tuningComTimer);
 }
 
-
 void HeaterController::Run(){
     if(this->mode){
         if(this->mode.is_next(HeaterMode::ATUNE)){
@@ -350,11 +349,10 @@ void HeaterController::RunWarmup(){
     if(this->TempOkay()){
         this->hState.nextState=HeaterState::HEATER_ON;
     }
-
 }
 
 void HeaterController::RunIdle(){
-
+    _NOP();
 }
 
 #pragma endregion
@@ -368,7 +366,7 @@ bool HeaterController::SwitchToHeating(){
         this->tuningComTimer.start();
         return true;
     }
-    Serial.println(F("Already in Heating Mode"));
+    /* Serial.println(F("Already in Heating Mode")); */
     return false;
 }
 

@@ -17,7 +17,6 @@
 
 typedef components::Function<void(const SaveState&)> LoadStateCallback;
 
-
 class ComHandler{
 public:
     static ComHandler* const Instance(){
@@ -89,6 +88,11 @@ public:
     static void MapConfigReceivedCallback(ConfigReceivedCallback cbk){
         auto instance=ComHandler::Instance();
         instance->_configReceivedCallback=cbk;
+    }
+
+    static void MapGetConfigCallback(GetConfigCallback cbk){
+        auto instance=ComHandler::Instance();
+        instance->_getConfigCallback=cbk;
     }
 
     static void SendStartResponse(bool success,const __FlashStringHelper* msg){
@@ -184,6 +188,12 @@ public:
         instance->InstanceSendConfigSaved(configType,buffer,success);
     }
 
+    static void SendConfig(ConfigType configType,Serializable* config){
+        auto instance=ComHandler::Instance();
+        instance->InstanceSendConfig(configType,config);
+        
+    }
+
     template<typename T> 
     static void MsgPacketSerializer(const T& data,PacketType packetType){
         auto instance=ComHandler::Instance();
@@ -223,6 +233,7 @@ private:
     void InstanceSendStartResponse(bool success,const char* message);
     void InstanceSendTestCompleted(const char* message);
     void InstanceSendConfigSaved(ConfigType configType,const char* message, bool success);
+    void InstanceSendConfig(ConfigType configType,Serializable* config);
 
 
 private:
@@ -235,6 +246,7 @@ private:
     ChangeCurrentCallback       _changeCurrentCallback=[](int){_NOP();};
     ChangeTempCallback          _changeTempCallback=[](int){_NOP();};
     TestIdCallback              _testIdCallback=[](const char*){_NOP();};
+    GetConfigCallback           _getConfigCallback=[](ConfigType){_NOP();};
     LoadStateCallback           _loadStateCallback=[](const SaveState&){_NOP();};
     ConfigReceivedCallback      _configReceivedCallback=[](ConfigType,Serializable*){_NOP();};
 };

@@ -17,6 +17,7 @@ public:
     ProbeController();
     void Setup(const ProbeControllerConfig& config);
     void Initialize();
+    void ReInitialize();
     void Read();
     void TurnOnSrc();
     void TurnOffSrc();
@@ -36,5 +37,6 @@ private:
     Timer           readTimer;
     StationTimer    probeTestTimer;
     int             probeTestTime;
+    unsigned long   readInterval=1000;
     void privateLoop(){ }
 };

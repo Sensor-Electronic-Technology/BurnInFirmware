@@ -131,6 +131,7 @@ template <class T> int EEPROM_read(int addr, T& value) {
     typedef components::Function<void(int)> ChangeCurrentCallback;
     typedef components::Function<void(int)> ChangeTempCallback;
     typedef components::Function<void(const char* testId)> TestIdCallback;
+    typedef components::Function<void(ConfigType)> GetConfigCallback;
     
 #pragma endregion
 
@@ -274,7 +275,7 @@ template <class T> int EEPROM_read(int addr, T& value) {
     const char str_01[] PROGMEM=    "------Before Loading Free Memory: %d----------";  //0
     const char str_02[] PROGMEM=   "------Firmware Initialization Starting--------";  //1
     const char str_03[] PROGMEM=   "Loading configuration files...................";  //2
-    const char str_04[] PROGMEM=    "After Loading Free Memory: %d.................";  //3
+    const char str_04[] PROGMEM=   "After Loading Free Memory: %d.................";  //3
     const char str_05[] PROGMEM=   "Configuration Files Loaded....................";  //4
     const char str_06[] PROGMEM=    "--------Components Initalizing Starting-------";  //5
     const char str_07[] PROGMEM=   "Heaters initialized...........................";  //6
