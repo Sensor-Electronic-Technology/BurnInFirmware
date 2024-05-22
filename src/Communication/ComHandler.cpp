@@ -102,6 +102,10 @@ void ComHandler::MsgPacketDeserialize(JsonDocument& serialEventDoc) {
                 this->_getConfigCallback(configType);
                 break;
             }
+            case PacketType::FORMAT_SD:{
+                this->_formatSdCallback();
+                break;
+            }
             default:{
                 ComHandler::SendErrorMessage(SystemError::INVALID_PREFIX,prefix);
                 break;

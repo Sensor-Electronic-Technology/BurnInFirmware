@@ -30,6 +30,7 @@ public:
     void Acknowledge(AckType ack);
     void ConfigReceivedHandler(ConfigType,Serializable*);
     void GetConfigHandler(ConfigType configType);
+    void FormatSdHandler();
 
 private:
 
@@ -56,6 +57,7 @@ private:
     ChangeTempCallback     _changeTempCallback=[](int){_NOP();};
     ConfigReceivedCallback _configReceivedCallback=[](ConfigType,Serializable*){_NOP();};
     GetConfigCallback      _getConfigCallback=[](ConfigType){_NOP();};
+    FormatSdCallback       _formatSdCallback=[](){_NOP();};
     ProbeResult            probeResults[PROBE_COUNT];
     HeaterResult           heaterResults[HEATER_COUNT];
     unsigned long          comInterval=COM_INTERVAL;

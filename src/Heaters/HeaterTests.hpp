@@ -16,10 +16,10 @@ public:
         while(!Serial){}
         ComHandler::SetSerial(&Serial);
         sdInitialized=true;
-        if(!SD.begin(SS)){
+/*         if(!SD.begin(SS)){
             ComHandler::SendErrorMessage(SystemError::SD_INIT_FAILED);
             sdInitialized=false;
-        }
+        } */
         //ComHandler::SendSystemMessage(SystemMessage::SD_INIT,MessageType::GENERAL);
 
         //FileManager::Load(&configuration,PacketType::HEATER_CONFIG);

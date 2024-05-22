@@ -1,5 +1,6 @@
 #include <ArduinoJson.h>
-#include <SD.h>
+// #include <SD.h>
+#include <SdFat.h>
 #include "src/constants.h"
 #include "src/Communication/ComHandler.hpp"
 #include "src/Heaters/heater_constants.h"
@@ -19,10 +20,11 @@ void setup(){
     Serial.begin(38400);
     ComHandler::SetSerial(&Serial);
     sdInitialized=true;
-    if(!SD.begin(SS)){
+/*     if(!SD.begin(SS)){
         ComHandler::SendErrorMessage(SystemError::SD_INIT_FAILED);
         sdInitialized=false;
-    }
+    } */
+    FileManager::Init();
     ComHandler::SendSystemMessage(SystemMessage::SD_INIT,MessageType::GENERAL);
     Serial.print(F("Free SRAM: "));
     Serial.println(FreeSRAM());

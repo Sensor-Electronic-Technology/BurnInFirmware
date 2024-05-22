@@ -2,8 +2,9 @@
 #include <ArduinoJson.h>
 #include <StreamUtils.h>
 #include <ArduinoComponents.h>
-#include <SD.h>
-#include <SPI.h>
+/* #include <SD.h>
+#include <SPI.h> */
+#include <SdFat.h>
 #include "../Serializable.hpp"
 #include "../Heaters/HeaterConfiguration.hpp"
 #include "../Probes/ProbeConfiguration.hpp"
@@ -25,6 +26,24 @@ public:
             instance=new FileManager;
         }
         return instance;
+    }
+
+    static void Init(){
+        auto instance=FileManager::Instance();
+        if(!instance->sd.begin(SD_CONFIG)){
+            sdInitialized=false;
+            return;
+        }
+        sdInitialized=true;
+    }
+
+    static void FormatCard(){
+        auto instance=FileManager::Instance();
+        if(sdInitialized){
+            instance->InstanceFormatCard();
+            return;
+        }
+        ComHandler::SendErrorMessage(SystemError::SD_FORMAT_FAILED,0,0);
     }
     
     static bool LoadConfiguration(Serializable* config,ConfigType configType){
@@ -89,7 +108,9 @@ private:
     bool InstanceSaveState(Serializable* config);
     bool InstanceSaveConfig(Serializable* config,ConfigType configType);
     bool InstanceClearState();
+    bool InstanceFormatCard();
     FileResult InstanceLoadState(Serializable* config);
 private:
     static FileManager* instance;
+    SdFs sd;
 };

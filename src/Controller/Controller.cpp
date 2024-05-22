@@ -35,12 +35,17 @@ Controller::Controller():Component(){
         this->GetConfigHandler(configType);
     };
 
+    this->_formatSdCallback=[&](){
+        this->FormatSdHandler();
+    };
+
     ComHandler::MapAckCallback(this->_ackCallback);
     ComHandler::MapCommandCallback(this->_commandCallback);
     ComHandler::MapChangeCurrentCallback(this->_changeCurrentCallback);
     ComHandler::MapChangeTempCallback(this->_changeTempCallback);
     ComHandler::MapConfigReceivedCallback(this->_configReceivedCallback);
     ComHandler::MapGetConfigCallback(this->_getConfigCallback);
+    ComHandler::MapFormatSdCallback(this->_formatSdCallback);
 
     for(uint8_t i=0;i<PROBE_COUNT;i++){
         this->probeResults[i]=ProbeResult();
@@ -52,7 +57,7 @@ Controller::Controller():Component(){
 }
 
 void Controller::LoadConfigurations(){
-    ComHandler::SendSystemMessage(SystemMessage::BEFORE_FREE_MEM,MessageType::INIT,FreeRam());
+    ComHandler::SendSystemMessage(SystemMessage::BEFORE_FREE_MEM,MessageType::INIT,FreeSRAM());
     ComHandler::SendSystemMessage(SystemMessage::FIRMWARE_INIT,MessageType::INIT);
 
     ComHandler::SendSystemMessage(SystemMessage::LOAD_CONFIG,MessageType::INIT);
@@ -80,7 +85,7 @@ void Controller::LoadConfigurations(){
     this->updateInterval=controllerConfig.updateInterval;
     this->logInterval=controllerConfig.logInterval;
     this->versionInterval=controllerConfig.versionInterval;
-    ComHandler::SendSystemMessage(SystemMessage::AFTER_FREE_MEM,MessageType::INIT,FreeRam());   
+    ComHandler::SendSystemMessage(SystemMessage::AFTER_FREE_MEM,MessageType::INIT,FreeSRAM());   
     ComHandler::SendSystemMessage(SystemMessage::CONFIG_LOADED,MessageType::INIT);
 }
 
@@ -153,7 +158,7 @@ void Controller::ComUpdate(){
     this->comData.currentSP = this->probeControl.GetSetCurrent();
     this->comData.temperatureSP = this->heaterControl.GetSetPoint();
     ComHandler::MsgPacketSerializer(this->comData, PacketType::DATA);
-    Serial.println(" Free RAM: " + String(FreeRam()));
+    Serial.println(" Free RAM: " + String(FreeSRAM()));
 }
 
 void Controller::ConfigReceivedHandler(ConfigType configType,Serializable* config){
@@ -180,7 +185,7 @@ void Controller::GetConfigHandler(ConfigType configType){
             if(success){
                 ComHandler::SendConfig(configType,&config);
             }else{
-                ComHandler::SendErrorMessage(SystemError::CONFIG_LOAD_FAILED,MessageType::ERROR);
+                ComHandler::SendErrorMessage(SystemError::CONFIG_LOAD_FAILED);
             }
             break;
         }
@@ -190,7 +195,7 @@ void Controller::GetConfigHandler(ConfigType configType){
             if(success){
                 ComHandler::SendConfig(configType,&config);
             }else{
-                ComHandler::SendErrorMessage(SystemError::CONFIG_LOAD_FAILED,MessageType::ERROR);
+                ComHandler::SendErrorMessage(SystemError::CONFIG_LOAD_FAILED);
             }
             break;
         }
@@ -200,15 +205,23 @@ void Controller::GetConfigHandler(ConfigType configType){
             if(success){
                 ComHandler::SendConfig(configType,&config);
             }else{
-                ComHandler::SendErrorMessage(SystemError::CONFIG_LOAD_FAILED,MessageType::ERROR);
+                ComHandler::SendErrorMessage(SystemError::CONFIG_LOAD_FAILED);
             }
             break;
         }
         case ConfigType::ALL:{
-            ComHandler::SendErrorMessage(SystemError::CONFIG_LOAD_FAILED,MessageType::ERROR);
+            ComHandler::SendErrorMessage(SystemError::CONFIG_LOAD_FAILED);
             break;
         }
     }
+}
+
+void Controller::FormatSdHandler(){
+    if(this->testController.IsRunning()){
+        ComHandler::SendErrorMessage(SystemError::TEST_RUNNING_ERR,MessageType::ERROR);
+        return;
+    }
+    FileManager::FormatCard();
 }
 
 void Controller::CheckSavedState(){

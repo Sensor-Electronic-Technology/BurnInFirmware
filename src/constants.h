@@ -4,6 +4,7 @@
 #include <EEPROM.h>
 #include <ArduinoComponents.h>
 #include <avr/pgmspace.h>
+#include <SdFat.h>
 
 template <class T> int EEPROM_write(int addr, const T& value) {
     const byte* p = (const byte*)(const void*)&value;
@@ -48,7 +49,19 @@ template <class T> int EEPROM_read(int addr, T& value) {
 
 
 #pragma region Constants
-    #define TEST_ID_LENGTH                  24
+    #define SD_FAT_TYPE 3
+    #define SPI_CLOCK SD_SCK_MHZ(50)
+    #define SD_CS_PIN SS
+    #if HAS_SDIO_CLASS
+    #define SD_CONFIG SdioConfig(FIFO_SDIO)
+    #elif ENABLE_DEDICATED_SPI
+    #define SD_CONFIG SdSpiConfig(SD_CS_PIN, DEDICATED_SPI, SPI_CLOCK)
+    #else  // HAS_SDIO_CLASS
+    #define SD_CONFIG SdSpiConfig(SD_CS_PIN, SHARED_SPI, SPI_CLOCK)
+    #endif  // HAS_SDIO_CLASS
+
+
+    #define TEST_ID_LENGTH                 24
     //Timer
     #define TIMER_PERIOD                   1
     #define TIMER_FACTOR                   1000
@@ -132,11 +145,12 @@ template <class T> int EEPROM_read(int addr, T& value) {
     typedef components::Function<void(int)> ChangeTempCallback;
     typedef components::Function<void(const char* testId)> TestIdCallback;
     typedef components::Function<void(ConfigType)> GetConfigCallback;
+    typedef components::Function<void(void)> FormatSdCallback;
     
 #pragma endregion
 
 #pragma region PrefixDefinitions
-    #define PREFIX_COUNT    22
+    #define PREFIX_COUNT    23
 
     enum PacketType:uint8_t{
         SAVE_STATE=0,               //???
@@ -160,7 +174,8 @@ template <class T> int EEPROM_read(int addr, T& value) {
         LOAD_STATE=18,              //Incoming->Load saved state
         CONFIG_SAVE_STATUS=19,       //Outgoing->Notify PC of config save status
         GET_CONFIG=20,               //Incoming->Request config
-        RECEIVE_CONFIG=21              //Outgoing->Send config
+        RECEIVE_CONFIG=21,           //Outgoing->Send config
+        FORMAT_SD=22,               //Incoming->Format SD Card
     };
 
 /*     const char strPre_00[] PROGMEM="CH";   //0
@@ -188,6 +203,7 @@ template <class T> int EEPROM_read(int addr, T& value) {
     const char strPre_19[] PROGMEM="SCONF";     //22
     const char strPre_20[] PROGMEM="GCONF";     //22
     const char strPre_21[] PROGMEM="RCONF";     //22
+    const char strPre_22[] PROGMEM="FSD";     //22
 
     const char* const prefixes[] PROGMEM = {
         strPre_00,
@@ -211,7 +227,8 @@ template <class T> int EEPROM_read(int addr, T& value) {
         strPre_18,
         strPre_19,
         strPre_20,
-        strPre_21
+        strPre_21,
+        strPre_22
     };
 #pragma endregion
 
@@ -269,7 +286,8 @@ template <class T> int EEPROM_read(int addr, T& value) {
         HEATER_STATE_TRANSITION=26,
         PROBE_TEST_START=27,
         PROBE_TEST_END=28,
-        CURRENT_CHANGED=29
+        CURRENT_CHANGED=29,
+        SD_FORMATTED=30
     };
 
     const char str_01[] PROGMEM=    "------Before Loading Free Memory: %d----------";  //0
@@ -302,6 +320,7 @@ template <class T> int EEPROM_read(int addr, T& value) {
     const char str_28[] PROGMEM=    "Probe Test Started,Current: %d"; //23
     const char str_29[] PROGMEM=    "Probe Test Completed,Current Restored to %d"; //24
     const char str_30[] PROGMEM=    "Current Changed to %d"; //24
+    const char str_31[] PROGMEM=    "SD Card Formatted"; //24
 
     const char* const system_message_table[] PROGMEM={
         str_01,
@@ -333,7 +352,8 @@ template <class T> int EEPROM_read(int addr, T& value) {
         str_27,
         str_28,
         str_29,
-        str_30
+        str_30,
+        str_31
     };
 
 
@@ -369,7 +389,8 @@ template <class T> int EEPROM_read(int addr, T& value) {
         CHANGE_RUNNING_ERR=24,
         MAX_TEMP_ERR=25,
         TEST_RUNNING_ERR=26,
-        TEST_ID_NOT_SET=27
+        TEST_ID_NOT_SET=27,
+        SD_FORMAT_FAILED=28
     };
 
     const char strErr_01[] PROGMEM="Failed to load configuration files. Please contact administrator";
@@ -400,6 +421,7 @@ template <class T> int EEPROM_read(int addr, T& value) {
     const char strErr_26[] PROGMEM="Error: Temperature set point must be <= %d";
     const char strErr_27[] PROGMEM="Error: Cannot perform this action while a test is running";
     const char strErr_28[] PROGMEM="Error: Test Id must be set before starting a test";
+    const char strErr_29[] PROGMEM="Error: Failed to format SD Card, ErrorCode: %d ErrorData: %d";
 
     const char* const system_error_table[] PROGMEM={
         strErr_01,
@@ -429,7 +451,8 @@ template <class T> int EEPROM_read(int addr, T& value) {
         strErr_25,
         strErr_26,
         strErr_27,
-        strErr_28
+        strErr_28,
+        strErr_29
     };
 
 #pragma endregion
