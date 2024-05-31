@@ -141,6 +141,11 @@ public:
         instance->InstanceMsgPacketSerializer(msgPacket,PacketType::MESSAGE);
     }
 
+    static void SendProbeTestDone(){
+        auto instance=ComHandler::Instance();
+        instance->InstanceSendProbeTestDone();
+    }
+
     static void SendErrorMessage(SystemError errIndex,...){
         auto instance=ComHandler::Instance();
         char buffer[BUFFER_SIZE];
@@ -237,6 +242,7 @@ private:
     void ReceiveVersion(const JsonDocument& serialEventDoc);
     void InstanceSendStartResponse(bool success,const char* message);
     void InstanceSendTestCompleted(const char* message);
+    void InstanceSendProbeTestDone();
     void InstanceSendConfigSaved(ConfigType configType,const char* message, bool success);
     void InstanceSendConfig(ConfigType configType,Serializable* config);
 

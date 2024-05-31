@@ -147,7 +147,7 @@ void Controller::SetupComponents(){
     RegisterChild(this->probeControl);
     RegisterChild(this->testController);
     
-    this->CheckSavedState();
+    this->CheckSavedState(0);
 }
 
 void Controller::ComUpdate(){
@@ -224,7 +224,7 @@ void Controller::FormatSdHandler(){
     FileManager::FormatCard();
 }
 
-void Controller::CheckSavedState(){
+void Controller::CheckSavedState(int attempts){
     ComHandler::SendSystemMessage(SystemMessage::CHECK_SAVED_STATE,MessageType::INIT,FreeSRAM());
     SaveState loadState;
     FileResult result=FileManager::LoadState(&loadState);
@@ -240,7 +240,12 @@ void Controller::CheckSavedState(){
         }
         case FileResult::DESERIALIZE_FAILED:
         case FileResult::FAILED_TO_OPEN:{
-            ComHandler::SendErrorMessage(SystemError::SAVED_STATE_FAILED,MessageType::ERROR);
+            if(attempts>2){
+                ComHandler::SendErrorMessage(SystemError::SAVED_STATE_FAILED,MessageType::ERROR);
+                break;
+            }
+            FileManager::ClearState();
+            this->CheckSavedState(attempts+1);
             break;
         }
     }

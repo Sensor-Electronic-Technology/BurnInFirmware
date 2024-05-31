@@ -193,6 +193,16 @@ void ComHandler::InstanceSendRequest(PacketType packetType,const char* request,c
     serializerDoc.clear();
 }
 
+void ComHandler::InstanceSendProbeTestDone() {
+    JsonDocument serializerDoc;
+    char packetStr[BUFFER_SIZE];
+    strcpy_P(packetStr,read_packet_prefix(PacketType::PROBE_TEST_DONE));
+    serializerDoc[F("Prefix")]=packetStr;
+    serializerDoc[F("Packet")]=F("Probe Test Done");
+    serializeJson(serializerDoc,*this->serial);
+    this->serial->println();
+}
+
 void ComHandler::InstanceSendStartResponse(bool success,const char* message){
     JsonDocument serializerDoc;
     char packetStr[BUFFER_SIZE];

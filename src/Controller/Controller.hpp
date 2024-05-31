@@ -24,7 +24,7 @@ public:
     void LoadConfigurations();
     void SetupComponents();
     void ComUpdate();
-    void CheckSavedState();
+    void CheckSavedState(int attempts);
     // other
     void HandleCommand(StationCommand command);
     void Acknowledge(AckType ack);

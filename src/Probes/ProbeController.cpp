@@ -44,9 +44,7 @@ void ProbeController::Initialize(){
     this->probeTestTimer.setTimeout([&]{
         this->TurnOffSrc();
         this->currentSelector.SetCurrent(this->savedCurrent);
-        ComHandler::SendSystemMessage(SystemMessage::PROBE_TEST_END,
-                MessageType::NOTIFY,
-                (uint8_t)this->currentSelector.GetSetCurrent());
+        ComHandler::SendProbeTestDone();
     },this->probeTestTime);
     RegisterChild(this->readTimer);
     RegisterChild(this->probeTestTimer);

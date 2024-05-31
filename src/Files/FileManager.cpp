@@ -114,10 +114,14 @@ bool FileManager::InstanceFormatCard(){
     HeaterControllerConfig heaterConfig;
     ProbeControllerConfig probeConfig;
     ControllerConfig controllerConfig;
-
-    this->LoadConfiguration(&heaterConfig,ConfigType::HEATER_CONFIG);
-    this->LoadConfiguration(&probeConfig,ConfigType::PROBE_CONFIG);
-    this->LoadConfiguration(&controllerConfig,ConfigType::SYSTEM_CONFIG);
+    bool okay=true;
+    okay&=this->LoadConfiguration(&heaterConfig,ConfigType::HEATER_CONFIG);
+    okay&=this->LoadConfiguration(&probeConfig,ConfigType::PROBE_CONFIG);
+    okay&=this->LoadConfiguration(&controllerConfig,ConfigType::SYSTEM_CONFIG);
+    if(!okay){
+        ComHandler::SendErrorMessage(SystemError::SD_FORMAT_FAILED,this->sd.sdErrorCode(),this->sd.sdErrorData());
+        return false;
+    }
     auto success=this->sd.format(&Serial);
     if(!success){
         ComHandler::SendErrorMessage(SystemError::SD_FORMAT_FAILED,this->sd.sdErrorCode(),this->sd.sdErrorData());
@@ -133,5 +137,8 @@ bool FileManager::InstanceFormatCard(){
 bool FileManager::InstanceClearState(){
     char filename[BUFFER_SIZE];
     strcpy_P(filename,strFile_04);
+    if(!this->sd.exists(filename)){
+        return true;
+    }
     return this->sd.remove(filename);
 }

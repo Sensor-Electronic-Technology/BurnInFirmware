@@ -150,7 +150,7 @@ template <class T> int EEPROM_read(int addr, T& value) {
 #pragma endregion
 
 #pragma region PrefixDefinitions
-    #define PREFIX_COUNT    23
+    #define PREFIX_COUNT    24
 
     enum PacketType:uint8_t{
         SAVE_STATE=0,               //???
@@ -176,6 +176,8 @@ template <class T> int EEPROM_read(int addr, T& value) {
         GET_CONFIG=20,               //Incoming->Request config
         RECEIVE_CONFIG=21,           //Outgoing->Send config
         FORMAT_SD=22,               //Incoming->Format SD Card
+        PROBE_TEST_DONE=23,         //Outgoing->Notify PC that probe test is done
+        REQUEST_CONFIG_BACKUP=24,   //Incoming->Request config backup
     };
 
 /*     const char strPre_00[] PROGMEM="CH";   //0
@@ -204,6 +206,8 @@ template <class T> int EEPROM_read(int addr, T& value) {
     const char strPre_20[] PROGMEM="GCONF";     //22
     const char strPre_21[] PROGMEM="RCONF";     //22
     const char strPre_22[] PROGMEM="FSD";     //22
+    const char strPre_23[] PROGMEM="PTD";     //22
+    const char strPre_24[] PROGMEM="RCONFB";     //22 */
 
     const char* const prefixes[] PROGMEM = {
         strPre_00,
@@ -228,7 +232,9 @@ template <class T> int EEPROM_read(int addr, T& value) {
         strPre_19,
         strPre_20,
         strPre_21,
-        strPre_22
+        strPre_22,
+        strPre_23,
+        strPre_24
     };
 #pragma endregion
 
@@ -290,27 +296,27 @@ template <class T> int EEPROM_read(int addr, T& value) {
         SD_FORMATTED=30
     };
 
-    const char str_01[] PROGMEM=    "------Before Loading Free Memory: %d----------";  //0
-    const char str_02[] PROGMEM=   "------Firmware Initialization Starting--------";  //1
-    const char str_03[] PROGMEM=   "Loading configuration files...................";  //2
-    const char str_04[] PROGMEM=   "After Loading Free Memory: %d.................";  //3
-    const char str_05[] PROGMEM=   "Configuration Files Loaded....................";  //4
-    const char str_06[] PROGMEM=    "--------Components Initalizing Starting-------";  //5
-    const char str_07[] PROGMEM=   "Heaters initialized...........................";  //6
-    const char str_08[] PROGMEM=   "Probes initialized............................";  //7
-    const char str_09[] PROGMEM=   "Registering Components........................";  //8
-    const char str_10[] PROGMEM=    "--------Components Initalized-----------------";  //9
-    const char str_11[] PROGMEM=    "-------------Initalizing Timers---------------"; //10
-    const char str_12[] PROGMEM=    "-------Timer Initialization Complete----------"; //11
+    const char str_01[] PROGMEM=    "Before Loading Free Memory: %d";  //0
+    const char str_02[] PROGMEM=   "Firmware Initialization Starting";  //1
+    const char str_03[] PROGMEM=   "Loading configuration files";  //2
+    const char str_04[] PROGMEM=   "After Loading Free Memory: %d";  //3
+    const char str_05[] PROGMEM=   "Configuration Files Loaded";  //4
+    const char str_06[] PROGMEM=    "Components Initalizing Starting";  //5
+    const char str_07[] PROGMEM=   "Heaters initialized";  //6
+    const char str_08[] PROGMEM=   "Probes initialized";  //7
+    const char str_09[] PROGMEM=   "Registering Components";  //8
+    const char str_10[] PROGMEM=    "Components Initalized";  //9
+    const char str_11[] PROGMEM=    "Initalizing Timers"; //10
+    const char str_12[] PROGMEM=    "Timer Initialization Complete"; //11
     const char str_13[] PROGMEM=    "Check for saved state, Free Memory: %d";//12
     const char str_14[] PROGMEM=    "Saved state found, state loaded. Resuming from saved state";//13
     const char str_15[] PROGMEM=    "No saved state found, continuing to normal operation";//14
-    const char str_16[] PROGMEM=    "------ Firmware Initialization Complete-------"; //15
+    const char str_16[] PROGMEM=    "Firmware Initialization Complete"; //15
     const char str_17[] PROGMEM=    "Tuning results saved"; //16
     const char str_18[] PROGMEM=    "Tuning canceled"; //17,
     const char str_19[] PROGMEM=    "Deleting saved state"; //18
     const char str_20[] PROGMEM=    "Saved state deleted"; //19
-    const char str_21[] PROGMEM=    "Controller resetting, please wait......."; //20,
+    const char str_21[] PROGMEM=    "Controller resetting, please wait"; //20,
     const char str_22[] PROGMEM=    "SD Card Initialized"; //21
     const char str_23[] PROGMEM=    "TestController Transition from StateId %d from StateId %d"; //22
     const char str_24[] PROGMEM=    "Test Completed";//23
