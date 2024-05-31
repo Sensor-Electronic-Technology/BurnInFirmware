@@ -75,7 +75,6 @@ template <class T> int EEPROM_read(int addr, T& value) {
     #define TIME_SECS_60mA                  TIME_SECS_120mA
     #define TIME_SECS_150mA                 25200ul
 
-
     #define TEMP_INTERVAL                   100ul   
     #define COM_INTERVAL                    1000ul  //1sec
     #define LOG_INTERVAL                    300000ul //5min
@@ -124,7 +123,8 @@ template <class T> int EEPROM_read(int addr, T& value) {
         STOP_TUNE=9,
         SAVE_TUNE=10,
         CANCEL_TUNE=11,
-        RESET=12
+        RESET=12,
+        REQUEST_RUNNING_TEST=13,
     };
 
     enum AckType:uint8_t{
@@ -146,11 +146,12 @@ template <class T> int EEPROM_read(int addr, T& value) {
     typedef components::Function<void(const char* testId)> TestIdCallback;
     typedef components::Function<void(ConfigType)> GetConfigCallback;
     typedef components::Function<void(void)> FormatSdCallback;
+    typedef components::Function<void(int,int)> UpdateCurrentTempCallback;
     
 #pragma endregion
 
 #pragma region PrefixDefinitions
-    #define PREFIX_COUNT    24
+    #define PREFIX_COUNT    26
 
     enum PacketType:uint8_t{
         SAVE_STATE=0,               //???
@@ -177,37 +178,35 @@ template <class T> int EEPROM_read(int addr, T& value) {
         RECEIVE_CONFIG=21,           //Outgoing->Send config
         FORMAT_SD=22,               //Incoming->Format SD Card
         PROBE_TEST_DONE=23,         //Outgoing->Notify PC that probe test is done
-        REQUEST_CONFIG_BACKUP=24,   //Incoming->Request config backup
+        REQUEST_CONFIG_BACKUP=24,   //Incoming->Request config backup,
+        SEND_RUNNING_TEST=25       //Incoming->Request running test,
     };
-
-/*     const char strPre_00[] PROGMEM="CH";   //0
-    const char strPre_01[] PROGMEM="CP";   //1
-    const char strPre_02[] PROGMEM="CS";   //2 */
-    const char strPre_00[] PROGMEM="ST";   //3
-    const char strPre_01[] PROGMEM="M";    //4
-    const char strPre_02[] PROGMEM="D";    //5
-    const char strPre_03[] PROGMEM="COM";  //6
-    const char strPre_04[] PROGMEM="IDREC";  //7
-    const char strPre_05[] PROGMEM="IDREQ";   //8
-    const char strPre_06[] PROGMEM="VERREC";  //9
-    const char strPre_07[] PROGMEM="VERREQ";  //10
-    const char strPre_08[] PROGMEM="TSTAT";     //11
-    const char strPre_09[] PROGMEM="TCOMP";     //12
-    const char strPre_10[] PROGMEM="TLOAD";     //13
-    const char strPre_11[] PROGMEM="HNOTIFY";    //14
-    const char strPre_12[] PROGMEM="HTUNED";     //15
-    const char strPre_13[] PROGMEM="ACK";     //16
-    const char strPre_14[] PROGMEM="UC";     //17
-    const char strPre_15[] PROGMEM="UT";     //18
-    const char strPre_16[] PROGMEM="TCOM";     //19
-    const char strPre_17[] PROGMEM="TID";     //20
-    const char strPre_18[] PROGMEM="LSTATE";     //21
-    const char strPre_19[] PROGMEM="SCONF";     //22
-    const char strPre_20[] PROGMEM="GCONF";     //22
-    const char strPre_21[] PROGMEM="RCONF";     //22
-    const char strPre_22[] PROGMEM="FSD";     //22
-    const char strPre_23[] PROGMEM="PTD";     //22
-    const char strPre_24[] PROGMEM="RCONFB";     //22 */
+    const char strPre_00[] PROGMEM="ST";   
+    const char strPre_01[] PROGMEM="M";    
+    const char strPre_02[] PROGMEM="D";    
+    const char strPre_03[] PROGMEM="COM";  
+    const char strPre_04[] PROGMEM="IDREC";  
+    const char strPre_05[] PROGMEM="IDREQ";   
+    const char strPre_06[] PROGMEM="VERREC";  
+    const char strPre_07[] PROGMEM="VERREQ";  
+    const char strPre_08[] PROGMEM="TSTAT";     
+    const char strPre_09[] PROGMEM="TCOMP";     
+    const char strPre_10[] PROGMEM="TLOAD";     
+    const char strPre_11[] PROGMEM="HNOTIFY";
+    const char strPre_12[] PROGMEM="HTUNED";
+    const char strPre_13[] PROGMEM="ACK";
+    const char strPre_14[] PROGMEM="UC";
+    const char strPre_15[] PROGMEM="UT";
+    const char strPre_16[] PROGMEM="TCOM";
+    const char strPre_17[] PROGMEM="TID";
+    const char strPre_18[] PROGMEM="LSTATE";
+    const char strPre_19[] PROGMEM="SCONF";
+    const char strPre_20[] PROGMEM="GCONF";
+    const char strPre_21[] PROGMEM="RCONF";
+    const char strPre_22[] PROGMEM="FSD";
+    const char strPre_23[] PROGMEM="PTD";
+    const char strPre_24[] PROGMEM="RCONFB";
+    const char strPre_25[] PROGMEM="RTEST";
 
     const char* const prefixes[] PROGMEM = {
         strPre_00,
@@ -234,7 +233,8 @@ template <class T> int EEPROM_read(int addr, T& value) {
         strPre_21,
         strPre_22,
         strPre_23,
-        strPre_24
+        strPre_24,
+        strPre_25
     };
 #pragma endregion
 
@@ -462,79 +462,3 @@ template <class T> int EEPROM_read(int addr, T& value) {
     };
 
 #pragma endregion
-
-
-
-
-// enum PacketType:uint8_t{
-//     HEATER_CONFIG=0,
-//     PROBE_CONFIG=1,
-//     SYSTEM_CONFIG=2,
-//     SAVE_STATE=3,
-//     MESSAGE=4,
-//     DATA=5,
-//     COMMAND=6,
-//     HEATER_RESPONSE=7, //Pc sends save response
-//     TEST_RESPONSE=8,  //PC sends continue test request
-//     HEATER_REQUEST=9,  //Pc recieves AutoTuneValues and request save response
-//     TEST_REQUEST=10,   //Firmware sends continue test request
-//     ID_RECEIVE=11,     //Set station id
-//     ID_REQUEST=12,     //Request station id-Send to PC
-//     VER_RECIEVE=13,
-//     VER_REQUEST=14,
-//     INIT=15,
-//     TEST_START_STATUS=16, //Notify PC that test has started
-//     TEST_COMPLETED=17,    //Notify PC that test has completed
-//     TEST_LOAD_START=18,   //Notify PC that test is starting from a load state
-// };
-
-// const char* const prefixes[] PROGMEM = {
-//     "CH",   //0
-//     "CP",   //1
-//     "CS",   //2
-//     "ST",   //3
-//     "M",    //4
-//     "D",    //5
-//     "COM",  //6
-//     "HRES", //7
-//     "TRES", //8
-//     "HREQ", //9
-//     "TREQ", //10
-//     "IDREC",  //11
-//     "IDREQ",   //12
-//     "VERREC", //13
-//     "VERREQ",  //14
-//     "INIT",     //15
-//     "TSTAT",     //16
-//     "TCOMP",     //17
-//     "TLOAD"      //18
-
-// };
-
-// const char* const system_error_table[] PROGMEM={
-// /*0*/   "Failed to load configuration files. Please contact administrator",
-// /*1*/   "Failed to load configuration file: %s. Defaults will be loaded. \n Please contact administarator",
-// /*2*/   "Failed to save configuration files.  Please contact administrator",
-// /*3*/   "Failed to save configuration file: %s. Changes will be lost on reset. Please contact administrator",
-// /*4*/   "SD card failed to initialize!! Defaults will be loaded. \n If you continue no changes to the configuration will be saved. Please check connections and contact administrator",
-// /*5*/   "Failed to save heater tuning results!! Please contact administrator",
-// /*6*/   "Failed to load saved state, station will continue to normal operation. Please contact administrator",
-// /*7*/   "Failed to delete saved state! Please contact administrator",
-// /*8*/   "Invalid command recieved! Please contact administrator",
-// /*9*/   "Failed to deserialize data: %s. Please contact administrator",
-// /*10*/  "Failed to serialize data: %s. Please contact administrator",
-// /*11*/  "Invalid message packet prefix recieved: %s."
-// /*12*/  "Prefix not found in message packet",
-// /*13*/  "Failed to transition to idle from running state, test is being hard stopped. \n restart controller before starting another test",
-// /*14*/  "Failed to start, test is already running",
-// /*15*/  "Failed to start, current or saveState was not set",
-// /*16*/  "Failed to pause, test is already paused",
-// /*17*/  "Failed to continue, test is not paused",
-// };
-
-
-
-
-
-
-

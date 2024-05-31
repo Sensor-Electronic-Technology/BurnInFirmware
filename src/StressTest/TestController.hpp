@@ -42,7 +42,7 @@ public:
     bool PauseTest();
     bool ContinueTest();
     bool IsRunning();
-    void SendTestStart();
+    void SendRunningTest();
     void CompleteTest();
     const char* GetTestId();
     void AcknowledgeTestStart();

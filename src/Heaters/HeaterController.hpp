@@ -27,7 +27,7 @@ public:
     void Initialize();
     void ReadTemperatures();
     bool TempOkay();
-    void ChangeSetPoint(uint8_t setPoint);
+    bool ChangeSetPoint(uint8_t setPoint);
     int GetSetPoint();
     void GetResults(HeaterResult* fill);
     void Run();

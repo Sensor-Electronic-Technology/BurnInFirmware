@@ -31,6 +31,7 @@ public:
     void ConfigReceivedHandler(ConfigType,Serializable*);
     void GetConfigHandler(ConfigType configType);
     void FormatSdHandler();
+    void UpdateCurrentTempHandler(int current,int temp);
 
 private:
 
@@ -58,6 +59,7 @@ private:
     ConfigReceivedCallback _configReceivedCallback=[](ConfigType,Serializable*){_NOP();};
     GetConfigCallback      _getConfigCallback=[](ConfigType){_NOP();};
     FormatSdCallback       _formatSdCallback=[](){_NOP();};
+    UpdateCurrentTempCallback _updateCurrentTempCallback=[](int,int){_NOP();};
     ProbeResult            probeResults[PROBE_COUNT];
     HeaterResult           heaterResults[HEATER_COUNT];
     unsigned long          comInterval=COM_INTERVAL;

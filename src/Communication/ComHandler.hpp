@@ -100,6 +100,11 @@ public:
         instance->_formatSdCallback=cbk;
     }
 
+    static void MapUpdateCurrentTempCallback(UpdateCurrentTempCallback cbk){
+        auto instance=ComHandler::Instance();
+        instance->_updateCurrentTempCallback=cbk;
+    }
+
     static void SendStartResponse(bool success,const __FlashStringHelper* msg){
         auto instance=ComHandler::Instance();
         char buffer[BUFFER_SIZE];
@@ -261,4 +266,5 @@ private:
     LoadStateCallback           _loadStateCallback=[](const SaveState&){_NOP();};
     ConfigReceivedCallback      _configReceivedCallback=[](ConfigType,Serializable*){_NOP();};
     FormatSdCallback            _formatSdCallback=[](){_NOP();};
+    UpdateCurrentTempCallback   _updateCurrentTempCallback=[](int,int){_NOP();};
 };

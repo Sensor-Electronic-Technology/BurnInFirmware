@@ -138,6 +138,12 @@ bool TestController::StartTest(SaveState state){
     return this->burn_timer.Start(this->timerDataSate);
 }
 
+void TestController::SendRunningTest(){
+    if(this->IsRunning()){
+        ComHandler::MsgPacketSerializer(this->saveState,PacketType::SEND_RUNNING_TEST);
+    }
+}
+
 void TestController::CompleteTest(){
         ComHandler::SendSystemMessage(SystemMessage::TEST_STATE_COMPLETED,MessageType::NOTIFY);
         this->Reset();

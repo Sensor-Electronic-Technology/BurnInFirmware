@@ -70,10 +70,6 @@ void Controller::LoadConfigurations(){
     FileManager::LoadConfiguration(&probesConfig,ConfigType::PROBE_CONFIG);
     FileManager::LoadConfiguration(&controllerConfig,ConfigType::SYSTEM_CONFIG);
 
-/*     ComHandler::MsgPacketSerializer(heatersConfig,PacketType::HEATER_CONFIG);
-    ComHandler::MsgPacketSerializer(probesConfig,PacketType::PROBE_CONFIG);
-    ComHandler::MsgPacketSerializer(controllerConfig,PacketType::SYSTEM_CONFIG); 
-    FileManager::SaveConfiguration(&heatersConfig,ConfigType::HEATER_CONFIG);*/
     
     this->heaterControl.Setup(heatersConfig);
     this->probeControl.Setup(probesConfig);
@@ -222,6 +218,15 @@ void Controller::FormatSdHandler(){
         return;
     }
     FileManager::FormatCard();
+}
+
+void Controller::UpdateCurrentTempHandler(int current,int temp){
+    if(this->testController.IsRunning()){
+        ComHandler::SendErrorMessage(SystemError::CHANGE_RUNNING_ERR,MessageType::ERROR);
+        return;
+    }
+    this->probeControl.SetCurrent((CurrentValue)current);
+    this->heaterControl.ChangeSetPoint(temp);
 }
 
 void Controller::CheckSavedState(int attempts){
@@ -417,6 +422,10 @@ void Controller::HandleCommand(StationCommand command){
             this->Reset();
             break;
         }
+        case StationCommand::REQUEST_RUNNING_TEST:{
+            this->testController.SendRunningTest();
+            break;
+        }
         default:{
             ComHandler::SendErrorMessage(SystemError::INVALID_COMMAND);
             break;
@@ -429,19 +438,27 @@ void Controller::privateLoop(){
 }
 
 void Controller::UpdateCurrent(int value){
-    if(!this->testController.IsRunning()){
-        this->probeControl.SetCurrent((CurrentValue)value);
-    }else{
-       ComHandler::SendErrorMessage(SystemError::CHANGE_RUNNING_ERR,MessageType::ERROR);
+    if(this->testController.IsRunning()){
+        ComHandler::SendErrorMessage(SystemError::TEST_RUNNING_ERR,MessageType::ERROR);
+        return;
     }
- 
+    this->probeControl.SetCurrent((CurrentValue)value);
+    ProbeControllerConfig probesConfig;
+    FileManager::LoadConfiguration(&probesConfig,ConfigType::PROBE_CONFIG);
+    probesConfig.currentSelectConfig.SetCurrent=(CurrentValue)value;
+    FileManager::SaveConfiguration(&probesConfig,ConfigType::PROBE_CONFIG);
 }
 
 void Controller::UpdateTempSp(int value){
-    if(!this->testController.IsRunning()){
-        this->heaterControl.ChangeSetPoint(value);
-    }else{
-
+    if(this->testController.IsRunning()){
+        ComHandler::SendErrorMessage(SystemError::TEST_RUNNING_ERR,MessageType::ERROR);
+        return;
+    }
+    if(this->heaterControl.ChangeSetPoint(value)){
+        HeaterControllerConfig heatersConfig;
+        FileManager::LoadConfiguration(&heatersConfig,ConfigType::HEATER_CONFIG);
+        heatersConfig.tempSp=value;
+        FileManager::SaveConfiguration(&heatersConfig,ConfigType::HEATER_CONFIG);
     }
 }
 
