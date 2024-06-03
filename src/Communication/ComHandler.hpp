@@ -151,6 +151,11 @@ public:
         instance->InstanceSendProbeTestDone();
     }
 
+    static void NotifyHeaterMode(HeaterMode mode){
+        auto instance=ComHandler::Instance();
+        instance->InstanceNotifyHeaterMode(mode);
+    }
+
     static void SendErrorMessage(SystemError errIndex,...){
         auto instance=ComHandler::Instance();
         char buffer[BUFFER_SIZE];
@@ -250,6 +255,7 @@ private:
     void InstanceSendProbeTestDone();
     void InstanceSendConfigSaved(ConfigType configType,const char* message, bool success);
     void InstanceSendConfig(ConfigType configType,Serializable* config);
+    void InstanceNotifyHeaterMode(HeaterMode mode);
 
 
 private:

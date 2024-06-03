@@ -1,5 +1,4 @@
 #pragma once
-
 #include <Arduino.h>
 #include <EEPROM.h>
 #include <ArduinoComponents.h>
@@ -23,11 +22,12 @@ template <class T> int EEPROM_read(int addr, T& value) {
     return newAddr;
 }//End read any value/type
 
-
 #pragma region Globals
+
     inline char StationId[4];
     inline char FirmwareVersion[8];
     inline bool sdInitialized=false;
+
 #pragma endregion
 
 #define ID_ADDR     10
@@ -35,18 +35,16 @@ template <class T> int EEPROM_read(int addr, T& value) {
 
 #pragma region MACROS
 
-#define read_file_message(msg)   ((const char *)pgm_read_ptr(&(file_result_messages[msg])))
-#define read_system_message(msg) ((const char *)pgm_read_ptr(&(system_message_table[msg])))
-#define read_system_error(msg)   ((const char *)pgm_read_ptr(&(system_error_table[msg])))
+#define read_file_message(msg)      ((const char *)pgm_read_ptr(&(file_result_messages[msg])))
+#define read_system_message(msg)    ((const char *)pgm_read_ptr(&(system_message_table[msg])))
+#define read_system_error(msg)      ((const char *)pgm_read_ptr(&(system_error_table[msg])))
 
-#define read_log_prefix(pre)      ((const char *)pgm_read_ptr(&(log_level_prefixes[pre])))
-#define read_packet_prefix(pre)   ((const char *)pgm_read_ptr(&(prefixes[pre])))
-#define read_filename(pType)      ((const char *)pgm_read_ptr(&(json_filenames[pType])))
+#define read_log_prefix(pre)        ((const char *)pgm_read_ptr(&(log_level_prefixes[pre])))
+#define read_packet_prefix(pre)     ((const char *)pgm_read_ptr(&(prefixes[pre])))
+#define read_filename(pType)        ((const char *)pgm_read_ptr(&(json_filenames[pType])))
 /* #define read_state_filename()     ((const char *)pgm_read_ptr(&(json_filenames[3]))) */
 
-
 #pragma endregion
-
 
 #pragma region Constants
     #define SD_FAT_TYPE 3
@@ -92,6 +90,7 @@ template <class T> int EEPROM_read(int addr, T& value) {
 #pragma endregion
 
 #pragma region ENUMS
+
     enum ConfigType:uint8_t{
         HEATER_CONFIG=0,            //PC to Station config
         PROBE_CONFIG=1,             //PC to stattion config
@@ -133,6 +132,7 @@ template <class T> int EEPROM_read(int addr, T& value) {
         ID_ACK=2,
         TEST_FINISH_ACK=3,   
     };
+
 #pragma endregion
 
 #pragma region Callbacks
@@ -151,7 +151,7 @@ template <class T> int EEPROM_read(int addr, T& value) {
 #pragma endregion
 
 #pragma region PrefixDefinitions
-    #define PREFIX_COUNT    26
+    #define PREFIX_COUNT    28
 
     enum PacketType:uint8_t{
         SAVE_STATE=0,               //???
@@ -179,7 +179,8 @@ template <class T> int EEPROM_read(int addr, T& value) {
         FORMAT_SD=22,               //Incoming->Format SD Card
         PROBE_TEST_DONE=23,         //Outgoing->Notify PC that probe test is done
         REQUEST_CONFIG_BACKUP=24,   //Incoming->Request config backup,
-        SEND_RUNNING_TEST=25       //Incoming->Request running test,
+        SEND_RUNNING_TEST=25,       //Incoming->Request running test,
+        NOTIFY_SW_HEATER_MODE=26,   //Outgoing->Notify PC that in tuning mode
     };
     const char strPre_00[] PROGMEM="ST";   
     const char strPre_01[] PROGMEM="M";    
@@ -206,7 +207,8 @@ template <class T> int EEPROM_read(int addr, T& value) {
     const char strPre_22[] PROGMEM="FSD";
     const char strPre_23[] PROGMEM="PTD";
     const char strPre_24[] PROGMEM="RCONFB";
-    const char strPre_25[] PROGMEM="RTEST";
+    const char strPre_25[] PROGMEM="RTEST";;
+    const char strPre_26[] PROGMEM="SWHEATER";
 
     const char* const prefixes[] PROGMEM = {
         strPre_00,
@@ -234,13 +236,12 @@ template <class T> int EEPROM_read(int addr, T& value) {
         strPre_22,
         strPre_23,
         strPre_24,
-        strPre_25
+        strPre_25,
+        strPre_26
     };
 #pragma endregion
 
 #pragma region FileNames
-
-
     const char strFile_01[] PROGMEM="/hConfigs.txt";  //0
     const char strFile_02[] PROGMEM="/pConfigs.txt";  //1
     const char strFile_03[] PROGMEM="/sConfig.txt";   //2

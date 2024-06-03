@@ -87,13 +87,12 @@ private:
     Heater* heaters[HEATER_COUNT];
     HeaterResult results[HEATER_COUNT];
     AutoTuneResults tuningResults;
-    StationTimer  readTimer,tuningComTimer,debugTuneTimer;
+    StationTimer  readTimer,tuningComTimer;
     Task<HeaterMode>  mode;
     Task<HeaterState> hState;
     Task<TuneState>   tState;
     HeatState heaterState=HeatState::Off;
     TuningSerialData tuningSerialData;
-
     HeaterControllerConfig configuration;
     TuningCompleteCallback tuningCompleteCbk=[](HeaterTuneResult){};
     unsigned long readInterval;

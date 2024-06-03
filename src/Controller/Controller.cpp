@@ -69,6 +69,8 @@ void Controller::LoadConfigurations(){
     FileManager::LoadConfiguration(&heatersConfig,ConfigType::HEATER_CONFIG);
     FileManager::LoadConfiguration(&probesConfig,ConfigType::PROBE_CONFIG);
     FileManager::LoadConfiguration(&controllerConfig,ConfigType::SYSTEM_CONFIG);
+    //Serial.println("ComInterval: "+String(controllerConfig.comInterval));
+    controllerConfig.comInterval=500;
 
     
     this->heaterControl.Setup(heatersConfig);
@@ -114,7 +116,19 @@ void Controller::SetupComponents(){
         }
     },5000,false,true);
 
-    this->comTimer.onInterval([&](){ this->ComUpdate(); }, this->comInterval, true, false);
+    this->comTimer.onInterval([&](){ 
+         this->ComUpdate();
+ /*        AutoTuneResults tuneResults;
+        for(int i=0;i<HEATER_COUNT;i++){
+            tuneResults.results[i].heaterNumber=i+1;
+            tuneResults.results[i].kd=5432;
+            tuneResults.results[i].ki=1234;
+            tuneResults.results[i].kp=4321;
+            tuneResults.results[i].complete=true;
+        }
+        ComHandler::MsgPacketSerializer(tuneResults,PacketType::HEATER_TUNE_COMPLETE); */
+    }, 
+    this->comInterval, true, false);
 
     this->updateTimer.onInterval([&](){
         this->probeControl.GetProbeResults(this->probeResults);
@@ -154,7 +168,7 @@ void Controller::ComUpdate(){
     this->comData.currentSP = this->probeControl.GetSetCurrent();
     this->comData.temperatureSP = this->heaterControl.GetSetPoint();
     ComHandler::MsgPacketSerializer(this->comData, PacketType::DATA);
-    Serial.println(" Free RAM: " + String(FreeSRAM()));
+    //Serial.println(" Free RAM: " + String(FreeSRAM()));
 }
 
 void Controller::ConfigReceivedHandler(ConfigType configType,Serializable* config){
@@ -264,13 +278,13 @@ void Controller::UpdateSerialData(){
         this->probeResults[i].current=random(148,151);
         this->probeResults[i].voltage=random(60,65);
     }
+    this->heaterControl.GetResults(this->heaterResults);
 
-    for(uint8_t i=0;i<HEATER_COUNT;i++){
+/*     for(uint8_t i=0;i<HEATER_COUNT;i++){
         this->heaterResults[i].temperature=random(82,85);
         this->heaterResults[i].tempOkay=true;
-        this->toggler=!this->toggler;
-        this->heaterResults[i].state=this->toggler;
-    }
+        this->heaterResults[i].state=!this->heaterResults[i].state;
+    } */
 }
 
 void Controller::Acknowledge(AckType ack){
@@ -314,14 +328,11 @@ void Controller::HandleCommand(StationCommand command){
         case StationCommand::START:{
             auto tempOkay=this->heaterControl.TempOkay();
             if(tempOkay=true){//TODO: undo bypass for testing
-/*                 if(this->testController.StartTest(this->probeControl.GetSetCurrent())){
-                    this->probeControl.TurnOnSrc();
-                    this->heaterControl.TurnOn();
-                } */
-                if(this->testController.StartTest(CurrentValue::c060)){
-                    this->probeControl.TurnOnSrc();
-                    this->stateLogTimer.start();
-                }
+                if(this->testController.StartTest(this->probeControl.GetSetCurrent())){
+                        this->probeControl.TurnOnSrc();
+                        this->heaterControl.TurnOn();
+                } 
+
             }else{
                 //TODO: Send temperature notification
             }
@@ -345,7 +356,7 @@ void Controller::HandleCommand(StationCommand command){
             if(!this->testController.IsRunning()){
                 this->heaterControl.ToggleHeaters();
             }else{
-                //ComHandler::SendErrorMessage(SystemError::TEST_RUNNING,MessageType::ERROR);
+                ComHandler::SendErrorMessage(SystemError::TEST_RUNNING_ERR);
             }
             break;
         }
@@ -353,7 +364,7 @@ void Controller::HandleCommand(StationCommand command){
             if(!this->testController.IsRunning()){
                 this->probeControl.StartProbeTest();
             }else{
-                //ComHandler::SendErrorMessage(SystemError::TEST_RUNNING,MessageType::ERROR);
+                ComHandler::SendErrorMessage(SystemError::TEST_RUNNING_ERR);
             }
             break;
         }

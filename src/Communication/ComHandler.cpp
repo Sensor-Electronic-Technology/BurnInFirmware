@@ -203,6 +203,16 @@ void ComHandler::InstanceSendProbeTestDone() {
     this->serial->println();
 }
 
+void ComHandler::InstanceNotifyHeaterMode(HeaterMode mode) {
+    JsonDocument serializerDoc;
+    char packetStr[BUFFER_SIZE];
+    strcpy_P(packetStr,read_packet_prefix(PacketType::NOTIFY_SW_HEATER_MODE));
+    serializerDoc[F("Prefix")]=packetStr;
+    serializerDoc[F("Packet")]=F("Probe Test Done");
+    serializeJson(serializerDoc,*this->serial);
+    this->serial->println();
+}
+
 void ComHandler::InstanceSendStartResponse(bool success,const char* message){
     JsonDocument serializerDoc;
     char packetStr[BUFFER_SIZE];

@@ -71,7 +71,6 @@ void HeaterController::Initialize(){
             this->tuningElapsed++;
         }
         this->tuningSerialData.Set(this->results,this->tempSp,this->tuningElapsed,this->isTuning);
-        
         ComHandler::MsgPacketSerializer(this->tuningSerialData,PacketType::TUNE_COM);
     },1000,false,false);
 
@@ -336,11 +335,9 @@ void HeaterController::OnDiscardTuning(){
 #pragma region StateMachineHeating
 
 void HeaterController::RunOn(){
-
     for(uint8_t i=0;i<HEATER_COUNT;i++){
         this->heaters[i]->RunPid();
     }
-
 }
 
 void HeaterController::RunWarmup(){
@@ -364,7 +361,8 @@ bool HeaterController::SwitchToHeating(){
     if(this->mode!=HeaterMode::HEATING){
         this->mode.nextState=HeaterMode::HEATING;
         this->hState.set(HeaterState::HEATER_OFF,HeaterState::HEATER_OFF);
-        this->tuningComTimer.start();
+        this->tuningComTimer.cancel();
+        ComHandler::NotifyHeaterMode(HeaterMode::HEATING);
         return true;
     }
     /* Serial.println(F("Already in Heating Mode")); */
@@ -376,6 +374,7 @@ bool HeaterController::SwitchToAutoTune(){
         this->mode.nextState=HeaterMode::ATUNE;
         this->tState.set(TuneState::TUNE_IDLE,TuneState::TUNE_IDLE);
         this->tuningComTimer.start();
+        ComHandler::NotifyHeaterMode(HeaterMode::ATUNE);
         return true;
     }
     return false;
@@ -410,7 +409,6 @@ void HeaterController::GetResults(HeaterResult* fill){
 
 void HeaterController::privateLoop(){
     this->Run();
-    //this->modeStateMachine.Run();
 }
 #pragma endregion
 

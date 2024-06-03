@@ -71,11 +71,14 @@ void Heater::UpdatePid(HeaterTuneResult newPid){
 void Heater::TurnOn(){
     this->heaterState=HeatState::On;
     this->windowLastTime=millis();
+    this->relayState=false;
     this->pid.Start();
 }
 
 void Heater::TurnOff(){
     this->heaterState=HeatState::Off;
+    this->relayState=false;
+    digitalWrite(this->relayPin,LOW);
 }
 
 void Heater::StartTuning(){
@@ -206,7 +209,7 @@ HeaterResult Heater::Read(){
 }
 
 HeaterResult Heater::GetHeaterResult(){
-    HeaterResult data=this->result;
+    HeaterResult data=this->Read();
     return data;
 }
 
