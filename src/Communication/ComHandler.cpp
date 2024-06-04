@@ -208,7 +208,7 @@ void ComHandler::InstanceNotifyHeaterMode(HeaterMode mode) {
     char packetStr[BUFFER_SIZE];
     strcpy_P(packetStr,read_packet_prefix(PacketType::NOTIFY_SW_HEATER_MODE));
     serializerDoc[F("Prefix")]=packetStr;
-    serializerDoc[F("Packet")]=F("Probe Test Done");
+    serializerDoc[F("Packet")]=(uint8_t)mode;
     serializeJson(serializerDoc,*this->serial);
     this->serial->println();
 }

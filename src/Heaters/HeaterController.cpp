@@ -87,7 +87,6 @@ void HeaterController::Run(){
             this->OnStopTuning();
         }else if(this->mode.is_next(HeaterMode::HEATING)){
             this->OnTurnOff();
-            
         }
         this->mode.transition();
     }
@@ -110,7 +109,6 @@ void HeaterController::TuneRun(){
     if(this->tState){
         if(this->tState.is_next(TuneState::TUNE_RUNNING)){
             this->OnStartTuning();
-            this->tState.transition();
         }else if(this->tState.is_next(TuneState::TUNE_IDLE)){
             this->OnStopTuning();
         }
@@ -285,10 +283,10 @@ bool HeaterController::ChangeSetPoint(uint8_t setPoint){
 }
 
 void HeaterController::TuningRun(){
-    // this->isTuning=true;
+    this->isTuning=true;
     for(uint8_t i=0;i<HEATER_COUNT;i++){
-        //this->heaters[i].RunAutoTune();
-        //this->isTuning&=this->heaters[i].IsComplete();
+        this->heaters[i]->RunAutoTune();
+        this->isTuning&=this->heaters[i]->IsComplete(); 
     }
     // if(this->isTuning){
     //     this->isTuning=false;
@@ -309,6 +307,7 @@ void HeaterController::OnStopTuning(){
     this->isTuning=false;
     this->tuningElapsed=0;
     this->tuningResults.clear();
+
     for(uint8_t i=0;i<HEATER_COUNT;i++){
         this->heaters[i]->StopTuning();
     }
@@ -322,6 +321,9 @@ void HeaterController::OnSaveTuning(){
         auto saveResult=FileManager::SaveConfiguration(&this->configuration,ConfigType::HEATER_CONFIG);
         if(saveResult){
             ComHandler::SendSystemMessage(SystemMessage::TUNING_RESULT_SAVED,MessageType::NOTIFY);
+        }else{
+            ComHandler::SendErrorMessage(SystemError::CONFIG_SAVE_FAILED_FILE,MessageType::ERROR);
+        
         }
     }
 }

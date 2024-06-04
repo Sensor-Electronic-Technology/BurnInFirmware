@@ -30,7 +30,6 @@ typedef struct HeaterResult{
 		this->tempOkay=rhs.tempOkay;
 		return *this;
 	}
-
 }HeaterResult;
 
 struct HeaterTuneResult:Serializable{
@@ -131,7 +130,7 @@ typedef components::Function<void(HeaterTuneResult)> TuningCompleteCallback;
 #define KI_DEFAULT		                5
 #define KD_DEFAULT		                1
 #define DEFAULT_WINDOW	                250
-#define DEFAULT_TEMPSP	                40
+#define DEFAULT_TEMPSP	                85
 
 
 

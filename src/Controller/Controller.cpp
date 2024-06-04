@@ -66,13 +66,15 @@ void Controller::LoadConfigurations(){
     ProbeControllerConfig probesConfig;
     ControllerConfig controllerConfig;
 
-    FileManager::LoadConfiguration(&heatersConfig,ConfigType::HEATER_CONFIG);
+    //FileManager::LoadConfiguration(&heatersConfig,ConfigType::HEATER_CONFIG);
     FileManager::LoadConfiguration(&probesConfig,ConfigType::PROBE_CONFIG);
-    FileManager::LoadConfiguration(&controllerConfig,ConfigType::SYSTEM_CONFIG);
+    FileManager::LoadConfiguration(&controllerConfig,ConfigType::SYSTEM_CONFIG); 
     //Serial.println("ComInterval: "+String(controllerConfig.comInterval));
     controllerConfig.comInterval=500;
+/*     JsonDocument doc;
+    heatersConfig.Serialize(&doc,true);
+    serializeJsonPretty(doc,Serial); */
 
-    
     this->heaterControl.Setup(heatersConfig);
     this->probeControl.Setup(probesConfig);
     this->testController.SetConfig(controllerConfig.burnTimerConfig);

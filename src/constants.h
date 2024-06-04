@@ -74,7 +74,7 @@ template <class T> int EEPROM_read(int addr, T& value) {
     #define TIME_SECS_150mA                 25200ul
 
     #define TEMP_INTERVAL                   100ul   
-    #define COM_INTERVAL                    1000ul  //1sec
+    #define COM_INTERVAL                    250ul  //250ms
     #define LOG_INTERVAL                    300000ul //5min
     #define VER_CHECK_INTERVAL              3600000ul //1hr
     #define UPDATE_INTERVAL                 500ul  //500ms
