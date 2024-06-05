@@ -138,7 +138,7 @@ typedef components::Function<void(HeaterTuneResult)> TuningCompleteCallback;
 #define KP_DEFAULT		                2
 #define KI_DEFAULT		                5
 #define KD_DEFAULT		                1
-#define DEFAULT_WINDOW	                250
+#define DEFAULT_WINDOW	                1000
 #define DEFAULT_TEMPSP	                85
 
 

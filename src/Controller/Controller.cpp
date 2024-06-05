@@ -66,6 +66,9 @@ void Controller::LoadConfigurations(){
     ProbeControllerConfig probesConfig;
     ControllerConfig controllerConfig;
 
+/*     FileManager::SaveConfiguration(&heatersConfig,ConfigType::HEATER_CONFIG);
+    FileManager::SaveConfiguration(&probesConfig,ConfigType::PROBE_CONFIG);
+    FileManager::SaveConfiguration(&controllerConfig,ConfigType::SYSTEM_CONFIG);  */
 
     if(!FileManager::LoadConfiguration(&heatersConfig,ConfigType::HEATER_CONFIG)){
        heatersConfig.Reset();
@@ -74,6 +77,9 @@ void Controller::LoadConfigurations(){
     FileManager::LoadConfiguration(&controllerConfig,ConfigType::SYSTEM_CONFIG); 
 
     controllerConfig.comInterval=500;
+    heatersConfig.tempSp=40;
+    heatersConfig.windowSize=1000;
+    Serial.println("Heater WindowSize: "+String(heatersConfig.windowSize));
 
     this->heaterControl.Setup(heatersConfig);
     this->probeControl.Setup(probesConfig);

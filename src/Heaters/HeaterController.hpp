@@ -99,6 +99,7 @@ private:
     bool isTuning=false;
     bool tuningCompleted=false;
     unsigned long tuningElapsed=0;
+    unsigned long tuningWindowSize=DEFAULT_WINDOW;
     int tempSp=DEFAULT_TEMPSP;
     virtual void privateLoop() override;
 

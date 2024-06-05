@@ -5,6 +5,7 @@ HeaterController::HeaterController(const HeaterControllerConfig& config)
         :Component(),
         readInterval(config.readInterval),
         tempSp(config.tempSp),
+        tuningWindowSize(config.windowSize),
         configuration(config){
 
     this->_tuningCompleteCbk=[&](HeaterTuneResult result){
@@ -12,7 +13,7 @@ HeaterController::HeaterController(const HeaterControllerConfig& config)
     };
 
     for(uint8_t i=0;i<HEATER_COUNT;i++){ 
-        this->heaters[i]=new Heater(config.heaterConfigs[i],this->tempSp);
+        this->heaters[i]=new Heater(config.heaterConfigs[i],this->tempSp,this->tuningWindowSize);
         this->heaters[i]->MapTurningComplete(this->_tuningCompleteCbk);
         RegisterChild(this->heaters[i]);
         this->results[i]=HeaterResult();
@@ -52,8 +53,10 @@ HeaterController::HeaterController():Component(){
 void HeaterController::Setup(const HeaterControllerConfig& config){
     this->tempSp=config.tempSp;
     this->readInterval=config.readInterval;
+    this->tuningWindowSize=config.windowSize;
+    this->configuration=config;
     for(uint8_t i=0;i<HEATER_COUNT;i++){ 
-        this->heaters[i]=new Heater(config.heaterConfigs[i],this->tempSp);
+        this->heaters[i]=new Heater(config.heaterConfigs[i],this->tempSp,this->tuningWindowSize);
         this->heaters[i]->MapTurningComplete(this->_tuningCompleteCbk);
         RegisterChild(this->heaters[i]);
         this->results[i]=HeaterResult();
@@ -253,6 +256,7 @@ bool HeaterController::DiscardTuning(){
 }
 
 void HeaterController::ReceiveWindowSizeHandler(unsigned long windowSize){
+    this->tuningWindowSize=windowSize;
     for(uint8_t i=0;i<HEATER_COUNT;i++){
         this->heaters[i]->SetWindowSize(windowSize);
     }
@@ -323,6 +327,7 @@ void HeaterController::OnStopTuning(){
 }
 
 void HeaterController::OnSaveTuning(){
+    this->configuration.UpdateWindowSize(this->tuningWindowSize);
     for(uint8_t i=0;i<HEATER_COUNT;i++){
         auto newPid=this->tuningResults.results[i];
         this->configuration.UpdateHeaterPid(newPid);

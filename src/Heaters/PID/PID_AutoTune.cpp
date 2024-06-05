@@ -4,7 +4,7 @@
         this->input=in;
         this->outputValue=out;
         this->setPoint=sp;
-        this->sampleTime=period;
+        this->sampleTime=period*1000;
         this->cycles=cyc;
     }
 
@@ -12,7 +12,7 @@
         this->input=in;
         this->outputValue=out;
         this->setPoint=sp;
-        this->sampleTime=period;
+        this->sampleTime=period*1000;
         this->cycles=cyc;
     }
 

@@ -13,9 +13,9 @@ using namespace components;
 class Heater:public Component{
 	typedef void(Heater::*RunFunc)(void);
 public:
-	Heater(const HeaterConfig& config,int tempSp);
+	Heater(const HeaterConfig& config,int tempSp,unsigned long windowSize);
 	Heater();
-	void SetConfiguration(const HeaterConfig& config);
+	void SetConfiguration(const HeaterConfig& config,unsigned long windowSize);
 	void Initialize();
 	void UpdatePid(HeaterTuneResult newPid);
 	void TurnOn();
