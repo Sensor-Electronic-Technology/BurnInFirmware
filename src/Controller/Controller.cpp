@@ -66,20 +66,19 @@ void Controller::LoadConfigurations(){
     ProbeControllerConfig probesConfig;
     ControllerConfig controllerConfig;
 
-    //FileManager::LoadConfiguration(&heatersConfig,ConfigType::HEATER_CONFIG);
+
+    if(!FileManager::LoadConfiguration(&heatersConfig,ConfigType::HEATER_CONFIG)){
+       heatersConfig.Reset();
+    }
     FileManager::LoadConfiguration(&probesConfig,ConfigType::PROBE_CONFIG);
     FileManager::LoadConfiguration(&controllerConfig,ConfigType::SYSTEM_CONFIG); 
-    //Serial.println("ComInterval: "+String(controllerConfig.comInterval));
+
     controllerConfig.comInterval=500;
-/*     JsonDocument doc;
-    heatersConfig.Serialize(&doc,true);
-    serializeJsonPretty(doc,Serial); */
 
     this->heaterControl.Setup(heatersConfig);
     this->probeControl.Setup(probesConfig);
     this->testController.SetConfig(controllerConfig.burnTimerConfig);
     this->testController.SetFinsihedCallback(this->_testFinishedCallback);
-    // this->burnTimer=new BurnInTimer(controllerConfig.burnTimerConfig);
 
     this->comInterval=controllerConfig.comInterval;
     this->updateInterval=controllerConfig.updateInterval;
@@ -120,15 +119,6 @@ void Controller::SetupComponents(){
 
     this->comTimer.onInterval([&](){ 
          this->ComUpdate();
- /*        AutoTuneResults tuneResults;
-        for(int i=0;i<HEATER_COUNT;i++){
-            tuneResults.results[i].heaterNumber=i+1;
-            tuneResults.results[i].kd=5432;
-            tuneResults.results[i].ki=1234;
-            tuneResults.results[i].kp=4321;
-            tuneResults.results[i].complete=true;
-        }
-        ComHandler::MsgPacketSerializer(tuneResults,PacketType::HEATER_TUNE_COMPLETE); */
     }, 
     this->comInterval, true, false);
 
@@ -334,7 +324,6 @@ void Controller::HandleCommand(StationCommand command){
                         this->probeControl.TurnOnSrc();
                         this->heaterControl.TurnOn();
                 } 
-
             }else{
                 //TODO: Send temperature notification
             }

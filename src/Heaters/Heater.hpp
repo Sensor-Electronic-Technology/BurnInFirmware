@@ -24,6 +24,8 @@ public:
 	bool IsTuning();
 	bool IsComplete();
 	bool TempOkay();
+
+	void SetWindowSize(unsigned long windowSize);
 	
 	HeaterResult Read();
 	HeaterResult GetHeaterResult();

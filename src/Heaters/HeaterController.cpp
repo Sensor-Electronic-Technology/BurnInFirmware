@@ -7,13 +7,13 @@ HeaterController::HeaterController(const HeaterControllerConfig& config)
         tempSp(config.tempSp),
         configuration(config){
 
-    this->tuningCompleteCbk=[&](HeaterTuneResult result){
+    this->_tuningCompleteCbk=[&](HeaterTuneResult result){
         this->HeaterRunCompleteHandler(result);
     };
 
     for(uint8_t i=0;i<HEATER_COUNT;i++){ 
         this->heaters[i]=new Heater(config.heaterConfigs[i],this->tempSp);
-        this->heaters[i]->MapTurningComplete(this->tuningCompleteCbk);
+        this->heaters[i]->MapTurningComplete(this->_tuningCompleteCbk);
         RegisterChild(this->heaters[i]);
         this->results[i]=HeaterResult();
     }
@@ -23,9 +23,15 @@ HeaterController::HeaterController(const HeaterControllerConfig& config)
 }
 
 HeaterController::HeaterController():Component(){
-    this->tuningCompleteCbk=[&](HeaterTuneResult result){
+    this->_tuningCompleteCbk=[&](HeaterTuneResult result){
         this->HeaterRunCompleteHandler(result);
     };
+    this->_receiveWindowSizeCbk=[&](unsigned long windowSize){
+        this->ReceiveWindowSizeHandler(windowSize);
+    };
+    
+    ComHandler::MapWindowSizeCallback(this->_receiveWindowSizeCbk);
+
     this->modeRun[HeaterMode::HEATING]=&HeaterController::HeatingRun;
     this->modeRun[HeaterMode::ATUNE]=&HeaterController::TuneRun;
 
@@ -45,11 +51,10 @@ HeaterController::HeaterController():Component(){
 
 void HeaterController::Setup(const HeaterControllerConfig& config){
     this->tempSp=config.tempSp;
-    Serial.println("TempSP: "+String(this->tempSp));
     this->readInterval=config.readInterval;
     for(uint8_t i=0;i<HEATER_COUNT;i++){ 
         this->heaters[i]=new Heater(config.heaterConfigs[i],this->tempSp);
-        this->heaters[i]->MapTurningComplete(this->tuningCompleteCbk);
+        this->heaters[i]->MapTurningComplete(this->_tuningCompleteCbk);
         RegisterChild(this->heaters[i]);
         this->results[i]=HeaterResult();
     }  
@@ -247,6 +252,12 @@ bool HeaterController::DiscardTuning(){
     }
 }
 
+void HeaterController::ReceiveWindowSizeHandler(unsigned long windowSize){
+    for(uint8_t i=0;i<HEATER_COUNT;i++){
+        this->heaters[i]->SetWindowSize(windowSize);
+    }
+}
+
 #pragma endregion
 
 #pragma region StateMachineTuning
@@ -316,13 +327,13 @@ void HeaterController::OnSaveTuning(){
         auto newPid=this->tuningResults.results[i];
         this->configuration.UpdateHeaterPid(newPid);
         this->heaters[newPid.heaterNumber-1]->UpdatePid(newPid);
-        auto saveResult=FileManager::SaveConfiguration(&this->configuration,ConfigType::HEATER_CONFIG);
-        if(saveResult){
-            ComHandler::SendSystemMessage(SystemMessage::TUNING_RESULT_SAVED,MessageType::NOTIFY);
-        }else{
-            ComHandler::SendErrorMessage(SystemError::CONFIG_SAVE_FAILED_FILE,MessageType::ERROR);
-        
-        }
+    }
+    auto saveResult=FileManager::SaveConfiguration(&this->configuration,ConfigType::HEATER_CONFIG);
+    if(saveResult){
+        ComHandler::SendSystemMessage(SystemMessage::TUNING_RESULT_SAVED,MessageType::NOTIFY);
+    }else{
+        ComHandler::SendErrorMessage(SystemError::CONFIG_SAVE_FAILED_FILE,MessageType::ERROR);
+    
     }
 }
 

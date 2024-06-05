@@ -11,13 +11,13 @@ bool FileManager::InstanceLoadConfig(Serializable* config,ConfigType configType)
     //file=SD.open(filename);
     file.open(filename,FILE_READ);
     if(!file){
-        //ComHandler::SendErrorMessage(SystemError::CONFIG_LOAD_FAILED_FILE,filename);
+        ComHandler::SendErrorMessage(SystemError::CONFIG_LOAD_FAILED_FILE,filename);
         return false;
     }
     doc.clear();
     auto error=deserializeJson(doc,file);
     if(error){
-        //ComHandler::SendErrorMessage(SystemError::CONFIG_LOAD_FAILED_FILE,filename);
+        ComHandler::SendErrorMessage(SystemError::CONFIG_LOAD_FAILED_FILE,filename);
         file.close();
         return false;
     }
@@ -38,13 +38,6 @@ FileResult FileManager::InstanceLoadState(Serializable* sysState){
         Serial.println(F("File does not exist"));
         return FileResult::DOES_NOT_EXIST;
     }
-    Serial.println(F("File exists"));
-    /*if(!SD.exists(filename)){
-        //Serial.println(F("File does not exist"));
-        return FileResult::DOES_NOT_EXIST;
-    } */
-    //Serial.println(F("File exists"));
-    //file=SD.open(filename);
     file.open(filename,FILE_READ);
     if(!file){
         return FileResult::FAILED_TO_OPEN;
@@ -72,11 +65,13 @@ bool FileManager::InstanceSaveConfig(Serializable* config,ConfigType configType)
     }
     file.open(filename,FILE_WRITE);
     if(!file){
+        ComHandler::SendErrorMessage(SystemError::CONFIG_SAVE_FAILED_FILE,filename);
         return false;
     }
     config->Serialize(&doc,true);
     if(serializeJsonPretty(doc,fileWriteBuffer)==0){
         file.close();
+        ComHandler::SendErrorMessage(SystemError::CONFIG_SAVE_FAILED_FILE,filename);
         return false;
     }
     fileWriteBuffer.flush();

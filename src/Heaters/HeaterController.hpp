@@ -77,6 +77,8 @@ public:
 
     void OnSaveTuning();
     void OnDiscardTuning();
+
+    void ReceiveWindowSizeHandler(unsigned long windowSize);
 #pragma endregion
 
 
@@ -91,7 +93,8 @@ private:
     HeatState heaterState=HeatState::Off;
     TuningSerialData tuningSerialData;
     HeaterControllerConfig configuration;
-    TuningCompleteCallback tuningCompleteCbk=[](HeaterTuneResult){};
+    TuningCompleteCallback _tuningCompleteCbk=[](HeaterTuneResult){};
+    ReceiveWindowSizeCallback _receiveWindowSizeCbk=[](unsigned long){};
     unsigned long readInterval;
     bool isTuning=false;
     bool tuningCompleted=false;

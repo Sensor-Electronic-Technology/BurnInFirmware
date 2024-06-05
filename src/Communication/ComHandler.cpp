@@ -106,6 +106,10 @@ void ComHandler::MsgPacketDeserialize(JsonDocument& serialEventDoc) {
                 this->_formatSdCallback();
                 break;
             }
+            case PacketType::RECEIVE_WINDOW_SIZE:{
+                auto windowSize=serialEventDoc[F("Pakcet")].as<int>();
+                this->_receiveWindowSizeCallback(windowSize);
+            }
             default:{
                 ComHandler::SendErrorMessage(SystemError::INVALID_PREFIX,prefix);
                 break;

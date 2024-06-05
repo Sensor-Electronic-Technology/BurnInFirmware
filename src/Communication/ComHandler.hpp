@@ -105,6 +105,11 @@ public:
         instance->_updateCurrentTempCallback=cbk;
     }
 
+    static void MapWindowSizeCallback(ReceiveWindowSizeCallback cbk){
+        auto instance=ComHandler::Instance();
+        instance->_receiveWindowSizeCallback=cbk;
+    }
+
     static void SendStartResponse(bool success,const __FlashStringHelper* msg){
         auto instance=ComHandler::Instance();
         char buffer[BUFFER_SIZE];
@@ -271,6 +276,7 @@ private:
     GetConfigCallback           _getConfigCallback=[](ConfigType){_NOP();};
     LoadStateCallback           _loadStateCallback=[](const SaveState&){_NOP();};
     ConfigReceivedCallback      _configReceivedCallback=[](ConfigType,Serializable*){_NOP();};
+    ReceiveWindowSizeCallback   _receiveWindowSizeCallback=[](unsigned long){_NOP();};
     FormatSdCallback            _formatSdCallback=[](){_NOP();};
     UpdateCurrentTempCallback   _updateCurrentTempCallback=[](int,int){_NOP();};
 };

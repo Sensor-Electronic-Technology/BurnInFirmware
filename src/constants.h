@@ -147,6 +147,7 @@ template <class T> int EEPROM_read(int addr, T& value) {
     typedef components::Function<void(ConfigType)> GetConfigCallback;
     typedef components::Function<void(void)> FormatSdCallback;
     typedef components::Function<void(int,int)> UpdateCurrentTempCallback;
+    typedef components::Function<void(unsigned long)> ReceiveWindowSizeCallback;
     
 #pragma endregion
 
@@ -180,7 +181,8 @@ template <class T> int EEPROM_read(int addr, T& value) {
         PROBE_TEST_DONE=23,         //Outgoing->Notify PC that probe test is done
         REQUEST_CONFIG_BACKUP=24,   //Incoming->Request config backup,
         SEND_RUNNING_TEST=25,       //Incoming->Request running test,
-        NOTIFY_SW_HEATER_MODE=26,   //Outgoing->Notify PC that in tuning mode
+        NOTIFY_SW_HEATER_MODE=26,   //Outgoing->Notify PC that in tuning mode,
+        RECEIVE_WINDOW_SIZE=27,     //Incoming->PID tune window size
     };
     const char strPre_00[] PROGMEM="ST";   
     const char strPre_01[] PROGMEM="M";    
@@ -209,6 +211,7 @@ template <class T> int EEPROM_read(int addr, T& value) {
     const char strPre_24[] PROGMEM="RCONFB";
     const char strPre_25[] PROGMEM="RTEST";;
     const char strPre_26[] PROGMEM="SWHEATER";
+    const char strPre_27[] PROGMEM="WINSIZE";
 
     const char* const prefixes[] PROGMEM = {
         strPre_00,
@@ -237,7 +240,8 @@ template <class T> int EEPROM_read(int addr, T& value) {
         strPre_23,
         strPre_24,
         strPre_25,
-        strPre_26
+        strPre_26,
+        strPre_27
     };
 #pragma endregion
 

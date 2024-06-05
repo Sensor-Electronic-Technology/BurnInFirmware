@@ -1,6 +1,6 @@
 #include "PID_AutoTune.hpp"
 
-    PID_AutoTune::PID_AutoTune(float *in,float *out,float sp,unsigned long period,int cyc=10){
+    PID_AutoTune::PID_AutoTune(float *in,float *out,float sp,unsigned long period,int cyc=5){
         this->input=in;
         this->outputValue=out;
         this->setPoint=sp;
@@ -8,7 +8,7 @@
         this->cycles=cyc;
     }
 
-    void PID_AutoTune::Setup(float *in,float *out,float sp,unsigned long period,int cyc=10){
+    void PID_AutoTune::Setup(float *in,float *out,float sp,unsigned long period,int cyc=5){
         this->input=in;
         this->outputValue=out;
         this->setPoint=sp;
@@ -31,6 +31,10 @@
         this->max=-1000000000000;
         this->min=1000000000000;
         this->pAvg=this->iAvg=this->dAvg=0;
+    }
+
+    int PID_AutoTune::GetSampleTimeMs(){
+        return this->sampleTime/1000;
     }
 
     bool PID_AutoTune::Tune(){

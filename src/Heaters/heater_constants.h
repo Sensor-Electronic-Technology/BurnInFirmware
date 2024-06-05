@@ -23,7 +23,7 @@ typedef struct HeaterResult{
 	float temperature=0;
 	bool state=false;
 	bool tempOkay=false;
-
+    
 	HeaterResult operator=(const HeaterResult& rhs){
 		this->temperature=rhs.temperature;
 		this->state=rhs.state;
@@ -36,12 +36,14 @@ struct HeaterTuneResult:Serializable{
     int heaterNumber=-1;
     bool complete=false;
     float kp=0,ki=0,kd=0;
+    int windowSize=1000;
     void clear(){
         this->heaterNumber=-1;
         this->complete=false;
         this->kp=0;
         this->ki=0;
         this->kd=0;
+        this->windowSize=0;
     }
 
     virtual void Serialize(JsonObject *packet,bool initialize){
@@ -49,6 +51,7 @@ struct HeaterTuneResult:Serializable{
         (*packet)[F("kp")]=this->kp;
         (*packet)[F("ki")]=this->ki;
         (*packet)[F("kd")]=this->kd;
+        (*packet)[F("WindowSize")]=this->windowSize;
     }
 
     virtual void Serialize(JsonDocument *doc,bool initialize)override{
@@ -62,6 +65,7 @@ struct HeaterTuneResult:Serializable{
         heaterTune[F("kp")]=this->kp;
         heaterTune[F("ki")]=this->ki;
         heaterTune[F("kd")]=this->kd;
+        heaterTune[F("WindowSize")]=this->windowSize;
     }
     virtual void Deserialize(JsonDocument &doc)  override{   }
     virtual void Deserialize(JsonObject &packet) override{   }
