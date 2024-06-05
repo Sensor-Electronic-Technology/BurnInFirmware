@@ -96,6 +96,11 @@ enum ModeTrigger:uint8_t{
 
 typedef components::Function<void(HeaterTuneResult)> TuningCompleteCallback;
 
+#define HEATER_DEBUG 		0
+#define HEATER_STATE_COUNT 	3
+#define TUNE_STATE_COUNT 	3
+#define MODE_COUNT          2
+
 //NTC-1 Values
 #define NTC1_A	1.159e-3f
 #define NTC1_B  1.429e-4f

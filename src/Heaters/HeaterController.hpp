@@ -9,10 +9,7 @@
 #include "../Task.hpp"
 #include "../Communication/TuningSerialData.hpp"
 
-#define HEATER_DEBUG 		1
-#define HEATER_STATE_COUNT 	3
-#define TUNE_STATE_COUNT 	3
-#define MODE_COUNT          2
+
 
 using namespace components;
 

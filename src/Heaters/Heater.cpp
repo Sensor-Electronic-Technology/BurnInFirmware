@@ -14,7 +14,7 @@ Heater::Heater(const HeaterConfig& config,int tempSp)
     tempSetPoint(tempSp){
     this->pid.Setup(&this->temperature,&this->pidOutput,&this->tempSetPoint,this->kp,this->ki,this->kd);
     this->pid.SetOutputRange(0,this->WindowSize,true);
-    this->autoTuner.Setup(&this->temperature,&this->pidOutput,this->tempSetPoint,this->pid.GetSampleTime(),15);
+    this->autoTuner.Setup(&this->temperature,&this->pidOutput,this->tempSetPoint,this->pid.GetSampleTime(),3);
     this->autoTuner.SetOutputRange(0,this->WindowSize);
     pinMode(this->relayPin,OUTPUT);
     digitalWrite(this->relayPin,LOW);
@@ -29,7 +29,7 @@ Heater::Heater(const HeaterConfig& config,int tempSp)
 Heater::Heater(){
     this->pid.Setup(&this->temperature,&this->pidOutput,&this->tempSetPoint,this->kp,this->ki,this->kd);
     this->pid.SetOutputRange(0,this->WindowSize,true);
-    this->autoTuner.Setup(&this->temperature,&this->pidOutput,this->tempSetPoint,this->pid.GetSampleTime(),15);
+    this->autoTuner.Setup(&this->temperature,&this->pidOutput,this->tempSetPoint,this->pid.GetSampleTime(),3);
     this->autoTuner.SetOutputRange(0,this->WindowSize);
 }
 
@@ -52,12 +52,7 @@ void Heater::SetConfiguration(const HeaterConfig& config){
     this->autoTuner.SetOutputRange(0,this->WindowSize);
     pinMode(this->relayPin,OUTPUT);
     digitalWrite(this->relayPin,LOW);
-/*     timer.setTimeout([&](){
-        this->isTuning=false;
-        this->isComplete=true;
-        this->PrintTuning(true);
-    },10000); */
-    
+
 }
 
 void Heater::Initialize(){
@@ -148,21 +143,30 @@ void Heater::RunAutoTune(){
     this->Read();
     if(this->isTuning){
         if(this->autoTuner.Tune()){
-            if(!this->relayState){
-                this->relayState=true;
-                digitalWrite(this->relayPin,HIGH);
-                //Serial.print("H");Serial.print("[F(");Serial.print(this->id);Serial.print(")]: ");
-                //Serial.print("Output high");Serial.print(" Pid Out: ");Serial.println(pidOutput);
-            }
+            this->relayState=true;
+            digitalWrite(this->relayPin,HIGH);
+            // if(!this->relayState){
+            //     this->relayState=true;
+            //     digitalWrite(this->relayPin,HIGH);
+            //     #if HEATER_DEBUG==1
+            //     Serial.print("H");Serial.print("[F(");Serial.print(this->id);Serial.print(")]: ");
+            //     Serial.print("Output high");Serial.print(" Pid Out: ");Serial.println(pidOutput);
+            //     #endif
+            // }
         }else{
-            if(this->relayState){
-                this->relayState=false;
-                digitalWrite(this->relayPin,LOW);
-                //Serial.print("H");Serial.print("[F(");Serial.print(this->id);Serial.print(")]: ");
-                //Serial.print("Output Low");Serial.print(" Pid Out: ");Serial.println(pidOutput);
-            }
+            this->relayState=false;
+            digitalWrite(this->relayPin,LOW);
+            // if(this->relayState){
+            //     this->relayState=false;
+            //     digitalWrite(this->relayPin,LOW);
+            //     #if HEATER_DEBUG==1
+            //     Serial.print("H");Serial.print("[F(");Serial.print(this->id);Serial.print(")]: ");
+            //     Serial.print("Output Low");Serial.print(" Pid Out: ");Serial.println(pidOutput);
+            //     #endif
+
+            // }
         }
-        this->OutputAction(now);
+        //this->OutputAction(now);
         if(this->autoTuner.Finished()){
             this->isComplete=true;
             this->isTuning=false;
@@ -173,7 +177,6 @@ void Heater::RunAutoTune(){
             result.complete=true;
             result.heaterNumber=this->id;
             this->tuningCompleteCb(result);
-            //this->PrintTuning(true); //debugging
         }
     }
 }

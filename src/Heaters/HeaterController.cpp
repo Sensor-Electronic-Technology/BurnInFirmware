@@ -283,10 +283,8 @@ bool HeaterController::ChangeSetPoint(uint8_t setPoint){
 }
 
 void HeaterController::TuningRun(){
-    this->isTuning=true;
     for(uint8_t i=0;i<HEATER_COUNT;i++){
         this->heaters[i]->RunAutoTune();
-        this->isTuning&=this->heaters[i]->IsComplete(); 
     }
     // if(this->isTuning){
     //     this->isTuning=false;

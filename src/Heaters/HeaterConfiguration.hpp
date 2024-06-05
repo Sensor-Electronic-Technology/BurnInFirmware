@@ -169,10 +169,15 @@ class HeaterControllerConfig:public Serializable{
 public:
 	unsigned long readInterval=TEMP_INTERVAL;
     int tempSp=DEFAULT_TEMPSP;
-	HeaterConfig heaterConfigs[HEATER_COUNT]={
+/* 	HeaterConfig heaterConfigs[HEATER_COUNT]={
 		HeaterConfig(NtcConfig(PIN_HEATER1_TEMP,NTC1_A,NTC1_B,NTC1_C),PidConfig(242.21f,1868.81f,128.49f,1000),1,PIN_HEATER1_HEATER),
 		HeaterConfig(NtcConfig(PIN_HEATER2_TEMP,NTC2_A,NTC2_B,NTC2_C),PidConfig(765.77f,1345.82f,604.67f,1000),2,PIN_HEATER2_HEATER),
 		HeaterConfig(NtcConfig(PIN_HEATER3_TEMP,NTC3_A,NTC3_B,NTC3_C),PidConfig(179.95f,2216.84f,81.62f,1000),3,PIN_HEATER3_HEATER)
+	}; */
+    HeaterConfig heaterConfigs[HEATER_COUNT]={
+		HeaterConfig(NtcConfig(PIN_HEATER1_TEMP,NTC1_A,NTC1_B,NTC1_C),PidConfig(47.5f,1.459f,1020.9f,1000),1,PIN_HEATER1_HEATER),
+		HeaterConfig(NtcConfig(PIN_HEATER2_TEMP,NTC2_A,NTC2_B,NTC2_C),PidConfig(908.22f,906.69f,600.44f,1000),2,PIN_HEATER2_HEATER),
+		HeaterConfig(NtcConfig(PIN_HEATER3_TEMP,NTC3_A,NTC3_B,NTC3_C),PidConfig(30.81f,0.81f,774.15f,1000),3,PIN_HEATER3_HEATER)
 	};
 
     void UpdateHeaterPid(HeaterTuneResult newPid){
