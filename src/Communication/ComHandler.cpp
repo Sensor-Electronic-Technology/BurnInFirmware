@@ -19,33 +19,7 @@ void ComHandler::MsgPacketDeserialize(JsonDocument& serialEventDoc) {
     if(found){
         switch(packetType){
             case PacketType::RECEIVE_CONFIG:{
-                auto packet=serialEventDoc[F("Packet")].as<JsonObject>();
-                ConfigType configType=packet[F("ConfigType")].as<ConfigType>();
-                auto configJson=packet[F("Configuration")].as<JsonObject>();
-                switch(configType){
-                    case ConfigType::PROBE_CONFIG:{
-                        ProbeControllerConfig config;
-                        config.Deserialize(configJson);
-                        this->_configReceivedCallback(configType,&config);
-                        break;
-                    }
-                    case ConfigType::HEATER_CONFIG:{
-                        HeaterControllerConfig config;
-                        config.Deserialize(configJson);
-                        this->_configReceivedCallback(configType,&config);
-                        break;
-                    }
-                    case ConfigType::SYSTEM_CONFIG:{
-                        ControllerConfig config;
-                        config.Deserialize(configJson);
-                        this->_configReceivedCallback(configType,&config);
-                        break;
-                    }
-                    case ConfigType::ALL:{
-                        //ComHandler::SendErrorMessage(SystemError:,configType);
-                        break;
-                    }
-                }
+                this->InstanceReceiveConfig(serialEventDoc);
                 break;
             }
             case PacketType::COMMAND:{
@@ -137,6 +111,57 @@ void ComHandler::ReceiveId(const JsonDocument& serialEventDoc){
     auto id=serialEventDoc[F("Packet")].as<const char*>();
     sprintf(StationId,id);
     EEPROM_write(ID_ADDR,StationId);
+}
+
+void ComHandler::InstanceReceiveConfig(JsonDocument& serialEventDoc){
+    auto packet=serialEventDoc[F("Packet")].as<JsonObject>();
+    ConfigType configType=packet[F("ConfigType")].as<ConfigType>();
+    auto configJson=packet[F("Configuration")].as<JsonObject>();
+    switch(configType){
+        case ConfigType::PROBE_CONFIG:{
+            ProbeControllerConfig config;
+            config.Deserialize(configJson);
+            auto success=FileManager::SaveConfiguration(&config,ConfigType::PROBE_CONFIG);
+            delay(250);
+            if(success){
+                this->InstanceSendConfigSaved(configType,"ProbeControllerConfig Saved",true);
+                this->_restartRequiredCallback();
+            }else{
+                this->InstanceSendConfigSaved(configType,"ProbeControllerConfig Saved",false);
+            }
+            break;
+        }
+        case ConfigType::HEATER_CONFIG:{
+            HeaterControllerConfig config;
+            config.Deserialize(configJson);
+            auto success=FileManager::SaveConfiguration(&config,ConfigType::HEATER_CONFIG);
+            delay(250);
+            if(success){
+                this->InstanceSendConfigSaved(configType,"HeaterControllerConfig Saved",true);
+                this->_restartRequiredCallback();
+            }else{
+                this->InstanceSendConfigSaved(configType,"HeaterControllerConfig Saved",false);
+            }
+            break;
+        }
+        case ConfigType::SYSTEM_CONFIG:{
+            ControllerConfig config;
+            config.Deserialize(configJson);
+            auto success=FileManager::SaveConfiguration(&config,ConfigType::SYSTEM_CONFIG);
+            delay(250);
+            if(success){
+                this->InstanceSendConfigSaved(configType,"ControllerConfig Saved",true);
+                this->_restartRequiredCallback();
+            }else{
+                this->InstanceSendConfigSaved(configType,"ControllerConfig Saved",false);
+            }
+            break;
+        }
+        default:{
+            ComHandler::SendErrorMessage(SystemError::CONFIG_SAVE_FAILED,"Invalid Config Type");
+            break;
+        }
+    }
 }
 
 void ComHandler::InstanceSendVersion(){

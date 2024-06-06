@@ -256,4 +256,5 @@ public:
         this->tempSp=packet[F("TemperatureSetPoint")];
         this->windowSize=packet[F("WindowSize")];
     }
+
 };

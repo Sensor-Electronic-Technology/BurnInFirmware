@@ -9,6 +9,14 @@ struct CurrentSelectorConfig{
     uint8_t currentPin=PIN_CURRENT;
     CurrentValue SetCurrent=DEFAULT_CURRENT;
     bool switchEnabled=true;
+
+    void Reset(){
+        this->currentPin=PIN_CURRENT;
+        this->pin120mA=PIN_CURRENT_120mA;
+        this->pin60mA=PIN_CURRENT_60mA;
+        this->SetCurrent=DEFAULT_CURRENT;
+        this->switchEnabled=true;
+    }
     
     void Deserialize(JsonObject& configJson){
         this->currentPin=configJson[F("CurrentPin")];
@@ -115,6 +123,16 @@ public:
 		ProbeConfig(VoltageSensorConfig(PIN_PROBE5_VOLT),CurrentSensorConfig(PIN_PROBE5_CURRENT)),
 		ProbeConfig(VoltageSensorConfig(PIN_PROBE6_VOLT),CurrentSensorConfig(PIN_PROBE6_CURRENT))
 	};
+
+    void Reset(){
+        this->readInterval=PROBE_READINTERVAL;
+        this->probeTestTime=PROBE_TESTTIME;
+        this->probeTestCurrent=CurrentValue::c060;
+        this->probeCurrentPercent=CURRENT_PERCENT;
+        this->probeConfigs[0]=ProbeConfig(VoltageSensorConfig(PIN_PROBE1_VOLT),CurrentSensorConfig(PIN_PROBE1_CURRENT));
+        this->probeConfigs[1]=ProbeConfig(VoltageSensorConfig(PIN_PROBE2_VOLT),CurrentSensorConfig(PIN_PROBE2_CURRENT));
+        this->probeConfigs[2]=ProbeConfig(VoltageSensorConfig(PIN_PROBE3_VOLT),CurrentSensorConfig(PIN_PROBE3_CURRENT));
+    }
 
     virtual void Serialize(JsonDocument *doc,bool initialize) override{
         JsonObject selectJson;

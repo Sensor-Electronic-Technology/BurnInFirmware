@@ -27,12 +27,12 @@ Controller::Controller():Component(){
         this->StartFromSavedState(state);
     };
 
-    this->_configReceivedCallback=[&](ConfigType type,Serializable* config){
-        this->ConfigReceivedHandler(type,config);
-    };
-
     this->_getConfigCallback=[&](ConfigType configType){
         this->GetConfigHandler(configType);
+    };
+
+    this->_restartRequiredCallback=[&](){
+        this->NeedRestartHandler();
     };
 
     this->_formatSdCallback=[&](){
@@ -43,9 +43,9 @@ Controller::Controller():Component(){
     ComHandler::MapCommandCallback(this->_commandCallback);
     ComHandler::MapChangeCurrentCallback(this->_changeCurrentCallback);
     ComHandler::MapChangeTempCallback(this->_changeTempCallback);
-    ComHandler::MapConfigReceivedCallback(this->_configReceivedCallback);
-    ComHandler::MapGetConfigCallback(this->_getConfigCallback);
+    ComHandler::MapRestartCallback(this->_restartRequiredCallback);
     ComHandler::MapFormatSdCallback(this->_formatSdCallback);
+    ComHandler::MapGetConfigCallback(this->_getConfigCallback);
 
     for(uint8_t i=0;i<PROBE_COUNT;i++){
         this->probeResults[i]=ProbeResult();
@@ -59,27 +59,33 @@ Controller::Controller():Component(){
 void Controller::LoadConfigurations(){
     ComHandler::SendSystemMessage(SystemMessage::BEFORE_FREE_MEM,MessageType::INIT,FreeSRAM());
     ComHandler::SendSystemMessage(SystemMessage::FIRMWARE_INIT,MessageType::INIT);
-
     ComHandler::SendSystemMessage(SystemMessage::LOAD_CONFIG,MessageType::INIT);
 
     HeaterControllerConfig heatersConfig;
     ProbeControllerConfig probesConfig;
     ControllerConfig controllerConfig;
+    
+    
 
-/*     FileManager::SaveConfiguration(&heatersConfig,ConfigType::HEATER_CONFIG);
+/*      FileManager::SaveConfiguration(&heatersConfig,ConfigType::HEATER_CONFIG);
     FileManager::SaveConfiguration(&probesConfig,ConfigType::PROBE_CONFIG);
     FileManager::SaveConfiguration(&controllerConfig,ConfigType::SYSTEM_CONFIG);  */
 
+    
     if(!FileManager::LoadConfiguration(&heatersConfig,ConfigType::HEATER_CONFIG)){
        heatersConfig.Reset();
     }
-    FileManager::LoadConfiguration(&probesConfig,ConfigType::PROBE_CONFIG);
-    FileManager::LoadConfiguration(&controllerConfig,ConfigType::SYSTEM_CONFIG); 
+    if(!FileManager::LoadConfiguration(&probesConfig,ConfigType::PROBE_CONFIG)){
+        probesConfig.Reset();
+    }
 
-    controllerConfig.comInterval=500;
-    heatersConfig.tempSp=40;
-    heatersConfig.windowSize=1000;
-    Serial.println("Heater WindowSize: "+String(heatersConfig.windowSize));
+    if(!FileManager::LoadConfiguration(&controllerConfig,ConfigType::SYSTEM_CONFIG)){
+        controllerConfig.Reset();
+    }
+
+/*     JsonDocument doc;
+    heatersConfig.Serialize(&doc,true);
+    serializeJsonPretty(doc,Serial); */
 
     this->heaterControl.Setup(heatersConfig);
     this->probeControl.Setup(probesConfig);
@@ -169,20 +175,12 @@ void Controller::ComUpdate(){
     //Serial.println(" Free RAM: " + String(FreeSRAM()));
 }
 
-void Controller::ConfigReceivedHandler(ConfigType configType,Serializable* config){
-    auto success=FileManager::SaveConfiguration(config,configType);
-    if(success){
-        if(this->testController.IsRunning()){
-            ComHandler::SendConfigSaveStatus(configType,true,F("Test Running!! Configuration saved, controller will restart and apply changes once the test is completed"));
-            this->needsReset=true;
-        }else{
-            ComHandler::SendConfigSaveStatus(configType,true,F("Configuration saved.  Restarting Controller to apply changes"));
-            delay(1000);
-            this->Reset();
-        }
-    }else{
-        ComHandler::SendConfigSaveStatus(configType,false,F("Configuration failed to save, please try again"));
+void Controller::NeedRestartHandler(){
+    if(this->testController.IsRunning() || this->heaterControl.IsTuning()){
+        this->needsReset=true;
+        return;
     }
+    this->Reset();
 }
 
 void Controller::GetConfigHandler(ConfigType configType){
@@ -217,7 +215,7 @@ void Controller::GetConfigHandler(ConfigType configType){
             }
             break;
         }
-        case ConfigType::ALL:{
+        default:{
             ComHandler::SendErrorMessage(SystemError::CONFIG_LOAD_FAILED);
             break;
         }

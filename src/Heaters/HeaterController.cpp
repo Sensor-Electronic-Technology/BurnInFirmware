@@ -119,6 +119,9 @@ void HeaterController::TuneRun(){
             this->OnStartTuning();
         }else if(this->tState.is_next(TuneState::TUNE_IDLE)){
             this->OnStopTuning();
+        }else if(this->tState.is_next(TuneState::TUNE_COMPLETE)){
+            this->isTuning=false;
+            this->tuningCompleted=true;
         }
         this->tState.transition();
     }
@@ -132,7 +135,7 @@ void HeaterController::TurnOn(){
     if(this->mode==HeaterMode::HEATING){
         this->hState.nextState=HeaterState::HEATER_WARMUP;
     }else{
-        Serial.println(F("Err: Cannot turn on while in tuning mode"));
+        ComHandler::SendErrorMessage(SystemError::HEATER_TRANSITION_ERR);
     }
 }
 
@@ -140,7 +143,7 @@ void HeaterController::TurnOff(){
     if(this->mode==HeaterMode::HEATING){
         this->hState.nextState=HeaterState::HEATER_OFF;
     }else{
-        Serial.println(F("Err: Cannot turn off while in tuning mode"));
+        ComHandler::SendErrorMessage(SystemError::HEATER_TRANSITION_ERR);
     }
 }
 
@@ -155,11 +158,11 @@ bool HeaterController::StartTuning(){
             return true;
         }
         case TuneState::TUNE_COMPLETE:{
-            Serial.println(F("Err: Cannot start tuning while in complete state"));
+            ComHandler::SendErrorMessage(SystemError::TUNE_START_ERR);
             return false;
         }
         case TuneState::TUNE_RUNNING:{
-            Serial.println(F("Err: Auto Tune is already running"));
+            ComHandler::SendErrorMessage(SystemError::TUNE_START_ERR);
             return false;
         }
     }
@@ -172,15 +175,16 @@ bool HeaterController::StopTuning(){
     }
     switch(this->tState.state){
         case TuneState::TUNE_IDLE:{
-            Serial.println(F("Err: Tuning is not running"));
+            ComHandler::SendErrorMessage(SystemError::TUNE_STOP_ERR);
             return false;
         }
         case TuneState::TUNE_COMPLETE:{
-            Serial.println(F("Err: Tuning is completed.  Save or discard to stop"));
+            ComHandler::SendErrorMessage(SystemError::TUNE_STOP_ERR);
             return false;
         }
         case TuneState::TUNE_RUNNING:{
             this->tState.nextState=TuneState::TUNE_IDLE;
+            this->isTuning=false;
             return true;
         }
     }
@@ -188,7 +192,7 @@ bool HeaterController::StopTuning(){
 
 void HeaterController::ToggleHeaters(){
     if(this->mode!=HeaterMode::HEATING){
-        Serial.println(F("Err: Cannot toggle heaters while in tuning mode"));
+        ComHandler::SendErrorMessage(SystemError::HEATER_TRANSITION_ERR);
         return;
     }
     this->hState.nextState=(this->hState.state==HeaterState::HEATER_OFF) ? 
@@ -213,12 +217,12 @@ void HeaterController::OnTurnOff(){
 
 bool HeaterController::SaveTuning(){
     if(this->mode!=HeaterMode::ATUNE){
-        Serial.println(F("Err: In heating mode, noting to save"));
+        ComHandler::SendErrorMessage(SystemError::TUNE_TRANSISITON_ERR);
         return;
     }
     switch (this->tState.state){
         case TuneState::TUNE_IDLE:{
-            Serial.println(F("Err: Tuning is not running"));
+            ComHandler::SendErrorMessage(SystemError::TUNE_SAVE_CMD_ERR);
             return false;
         }
         case TuneState::TUNE_COMPLETE:{
@@ -227,7 +231,7 @@ bool HeaterController::SaveTuning(){
             return true;
         }
         case TuneState::TUNE_RUNNING:{
-            Serial.println(F("Err: Tuning is still running"));
+            ComHandler::SendErrorMessage(SystemError::TUNE_SAVE_CMD_ERR);
             return false;
         }
     }
@@ -235,12 +239,12 @@ bool HeaterController::SaveTuning(){
 
 bool HeaterController::DiscardTuning(){
     if(this->mode!=HeaterMode::ATUNE){
-        Serial.println(F("Err: In heating mode, noting to discard"));
+        ComHandler::SendErrorMessage(SystemError::TUNE_TRANSISITON_ERR);
         return;
     }
     switch (this->tState.state){
         case TuneState::TUNE_IDLE:{
-            Serial.println(F("Err: Tuning is not running"));
+            ComHandler::SendErrorMessage(SystemError::TUNE_DISCARD_CMD_ERR);
             return false;
         }
         case TuneState::TUNE_COMPLETE:{
@@ -249,13 +253,17 @@ bool HeaterController::DiscardTuning(){
             return true;
         }
         case TuneState::TUNE_RUNNING:{
-            Serial.println(F("Err: Tuning is still running"));
+            ComHandler::SendErrorMessage(SystemError::TUNE_DISCARD_CMD_ERR);
             return false;
         }
     }
 }
 
 void HeaterController::ReceiveWindowSizeHandler(unsigned long windowSize){
+    if(this->isTuning){
+        ComHandler::SendErrorMessage(SystemError::TUNE_WINDOW_FAILED);
+        return;
+    }
     this->tuningWindowSize=windowSize;
     for(uint8_t i=0;i<HEATER_COUNT;i++){
         this->heaters[i]->SetWindowSize(windowSize);
@@ -278,6 +286,7 @@ void HeaterController::HeaterRunCompleteHandler(HeaterTuneResult result){
         }
         if(tuningComplete){
             //Send values
+            this->isTuning=false;
             this->tuningCompleted=true;
             this->tState.nextState=TuneState::TUNE_COMPLETE;
             ComHandler::MsgPacketSerializer(this->tuningResults,PacketType::HEATER_TUNE_COMPLETE);
@@ -301,10 +310,6 @@ void HeaterController::TuningRun(){
     for(uint8_t i=0;i<HEATER_COUNT;i++){
         this->heaters[i]->RunAutoTune();
     }
-    // if(this->isTuning){
-    //     this->isTuning=false;
-    //     this->tuningStateMachine.triggerEvent(TuneTrigger::TUNE_FINISHED);
-    // }
 }
 
 void HeaterController::OnStartTuning(){
@@ -331,19 +336,22 @@ void HeaterController::OnSaveTuning(){
     for(uint8_t i=0;i<HEATER_COUNT;i++){
         auto newPid=this->tuningResults.results[i];
         this->configuration.UpdateHeaterPid(newPid);
+        this->configuration.windowSize=this->tuningWindowSize;
         this->heaters[newPid.heaterNumber-1]->UpdatePid(newPid);
     }
     auto saveResult=FileManager::SaveConfiguration(&this->configuration,ConfigType::HEATER_CONFIG);
     if(saveResult){
         ComHandler::SendSystemMessage(SystemMessage::TUNING_RESULT_SAVED,MessageType::NOTIFY);
     }else{
-        ComHandler::SendErrorMessage(SystemError::CONFIG_SAVE_FAILED_FILE,MessageType::ERROR);
-    
+        ComHandler::SendErrorMessage(SystemError::TUNE_SAVE_FAILED);
+
     }
+    
 }
 
 void HeaterController::OnDiscardTuning(){
     this->tuningResults.clear();
+    this->tState.nextState=TuneState::TUNE_IDLE;
 }
 
 #pragma endregion

@@ -28,7 +28,7 @@ public:
     // other
     void HandleCommand(StationCommand command);
     void Acknowledge(AckType ack);
-    void ConfigReceivedHandler(ConfigType,Serializable*);
+    void NeedRestartHandler();
     void GetConfigHandler(ConfigType configType);
     void FormatSdHandler();
     void UpdateCurrentTempHandler(int current,int temp);
@@ -56,10 +56,10 @@ private:
     LoadStateCallback      _loadStateCallback=[](const SaveState&){_NOP();};
     ChangeCurrentCallback  _changeCurrentCallback=[](int){_NOP();};
     ChangeTempCallback     _changeTempCallback=[](int){_NOP();};
-    ConfigReceivedCallback _configReceivedCallback=[](ConfigType,Serializable*){_NOP();};
     GetConfigCallback      _getConfigCallback=[](ConfigType){_NOP();};
     FormatSdCallback       _formatSdCallback=[](){_NOP();};
     UpdateCurrentTempCallback _updateCurrentTempCallback=[](int,int){_NOP();};
+    RestartRequiredCallback _restartRequiredCallback=[](void){_NOP();};
     ProbeResult            probeResults[PROBE_COUNT];
     HeaterResult           heaterResults[HEATER_COUNT];
     unsigned long          comInterval=COM_INTERVAL;

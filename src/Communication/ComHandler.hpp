@@ -10,6 +10,7 @@
 #include "SystemMessagePacket.hpp"
 #include "StartTestFromPacket.hpp"
 #include "../Controller/SaveState.hpp"
+#include "../BurnInConfiguration.hpp"
 #include "avr/pgmspace.h"
 
 #define ARDUINOJSON_DEFAULT_NESTING_LIMIT       50
@@ -85,9 +86,9 @@ public:
         instance->_loadStateCallback=cbk;
     }
 
-    static void MapConfigReceivedCallback(ConfigReceivedCallback cbk){
+    static void MapRestartCallback(RestartRequiredCallback cbk){
         auto instance=ComHandler::Instance();
-        instance->_configReceivedCallback=cbk;
+        instance->_restartRequiredCallback=cbk;
     }
 
     static void MapGetConfigCallback(GetConfigCallback cbk){
@@ -261,6 +262,7 @@ private:
     void InstanceSendConfigSaved(ConfigType configType,const char* message, bool success);
     void InstanceSendConfig(ConfigType configType,Serializable* config);
     void InstanceNotifyHeaterMode(HeaterMode mode);
+    void InstanceReceiveConfig( JsonDocument& serialEventDoc);
 
 
 private:
@@ -275,7 +277,7 @@ private:
     TestIdCallback              _testIdCallback=[](const char*){_NOP();};
     GetConfigCallback           _getConfigCallback=[](ConfigType){_NOP();};
     LoadStateCallback           _loadStateCallback=[](const SaveState&){_NOP();};
-    ConfigReceivedCallback      _configReceivedCallback=[](ConfigType,Serializable*){_NOP();};
+    RestartRequiredCallback     _restartRequiredCallback=[](void){_NOP();};
     ReceiveWindowSizeCallback   _receiveWindowSizeCallback=[](unsigned long){_NOP();};
     FormatSdCallback            _formatSdCallback=[](){_NOP();};
     UpdateCurrentTempCallback   _updateCurrentTempCallback=[](int,int){_NOP();};

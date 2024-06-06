@@ -45,6 +45,15 @@ public:
         }
         ComHandler::SendErrorMessage(SystemError::SD_FORMAT_FAILED,0,0);
     }
+
+    static void FormatNoBackup(){
+        auto instance=FileManager::Instance();
+        if(sdInitialized){
+            instance->sd.format(&Serial);
+            return;
+        }
+        ComHandler::SendErrorMessage(SystemError::SD_FORMAT_FAILED,0,0);
+    }
     
     static bool LoadConfiguration(Serializable* config,ConfigType configType){
         auto instance=FileManager::Instance();

@@ -95,7 +95,6 @@ template <class T> int EEPROM_read(int addr, T& value) {
         HEATER_CONFIG=0,            //PC to Station config
         PROBE_CONFIG=1,             //PC to stattion config
         SYSTEM_CONFIG=2,            //PC to station config
-        ALL=3,               //Station to PC
     };
 
     enum FileResult:uint8_t{
@@ -401,40 +400,45 @@ template <class T> int EEPROM_read(int addr, T& value) {
         MAX_TEMP_ERR=25,
         TEST_RUNNING_ERR=26,
         TEST_ID_NOT_SET=27,
-        SD_FORMAT_FAILED=28
+        SD_FORMAT_FAILED=28,
+        TUNE_SAVE_FAILED=29,
+        TUNE_WINDOW_FAILED=30
     };
 
-    const char strErr_01[] PROGMEM="Failed to load configuration files. Please contact administrator";
-    const char strErr_02[] PROGMEM="Failed to load configuration file: %s. Defaults will be loaded. \n Please contact administarator";
-    const char strErr_03[] PROGMEM="Failed to save configuration files.  Please contact administrator";
-    const char strErr_04[] PROGMEM="Failed to save configuration file: %s. Changes will be lost on reset. Please contact administrator";
-    const char strErr_05[] PROGMEM="SD card failed to initialize!! Defaults will be loaded. \n If you continue no changes to the configuration will be saved. Please check connections and contact administrator";
-    const char strErr_06[] PROGMEM="Failed to save heater tuning results!! Please contact administrator";
-    const char strErr_07[] PROGMEM="Failed to load saved state, station will continue to normal operation. Please contact administrator";
-    const char strErr_08[] PROGMEM="Failed to delete saved state! Please contact administrator";
-    const char strErr_09[] PROGMEM="Invalid command recieved! Please contact administrator";
-    const char strErr_10[] PROGMEM="Failed to deserialize data: %s. Please contact administrator";
-    const char strErr_11[] PROGMEM="Failed to serialize data: %s. Please contact administrator";
-    const char strErr_12[] PROGMEM="Invalid message packet prefix recieved: %s";
-    const char strErr_13[] PROGMEM="Prefix not found in message packet";
-    const char strErr_14[] PROGMEM="Failed to transition to idle from running state, test is being hard stopped. \n restart controller before starting another test";
-    const char strErr_15[] PROGMEM="Failed to start, test is already running";
-    const char strErr_16[] PROGMEM="Failed to start, current or saveState was not set";
-    const char strErr_17[] PROGMEM= "Failed to pause, test is already paused";
-    const char strErr_18[] PROGMEM="Failed to continue, test is not paused";
-    const char strErr_19[] PROGMEM="Failed to stop tuning, tuning is either in idle or complete state.";
-    const char strErr_20[] PROGMEM="Failed to start tuning, tuning is running or complete state.";
-    const char strErr_21[] PROGMEM="Failed to save tuning results, tuning is not in complete state";
-    const char strErr_22[] PROGMEM="Failed to discard tuning, tuning is not in complete state";
-    const char strErr_23[] PROGMEM="Error: Not in Tuning Mode, Switch modes to start tuning";
-    const char strErr_24[] PROGMEM="Error: Not in Heating Mode, Switch modes to Turn On/Off Heaters";
-    const char strErr_25[] PROGMEM="Error: Cannot change current or temperature while a test is running";
-    const char strErr_26[] PROGMEM="Error: Temperature set point must be <= %d";
-    const char strErr_27[] PROGMEM="Error: Cannot perform this action while a test is running";
-    const char strErr_28[] PROGMEM="Error: Test Id must be set before starting a test";
-    const char strErr_29[] PROGMEM="Error: Failed to format SD Card, ErrorCode: %d ErrorData: %d";
+    const char strErr_00[] PROGMEM="Failed to load configuration files. Please contact administrator";
+    const char strErr_01[] PROGMEM="Failed to load configuration file: %s. Defaults will be loaded. \n Please contact administarator";
+    const char strErr_02[] PROGMEM="Failed to save configuration files.  Please contact administrator";
+    const char strErr_03[] PROGMEM="Failed to save configuration file: %s. Changes will be lost on reset. Please contact administrator";
+    const char strErr_04[] PROGMEM="SD card failed to initialize!! Defaults will be loaded. \n If you continue no changes to the configuration will be saved. Please check connections and contact administrator";
+    const char strErr_05[] PROGMEM="Failed to save heater tuning results!! Please contact administrator";
+    const char strErr_06[] PROGMEM="Failed to load saved state, station will continue to normal operation. Please contact administrator";
+    const char strErr_07[] PROGMEM="Failed to delete saved state! Please contact administrator";
+    const char strErr_08[] PROGMEM="Invalid command recieved! Please contact administrator";
+    const char strErr_09[] PROGMEM="Failed to deserialize data: %s. Please contact administrator";
+    const char strErr_10[] PROGMEM="Failed to serialize data: %s. Please contact administrator";
+    const char strErr_11[] PROGMEM="Invalid message packet prefix recieved: %s";
+    const char strErr_12[] PROGMEM="Prefix not found in message packet";
+    const char strErr_13[] PROGMEM="Failed to transition to idle from running state, test is being hard stopped. \n restart controller before starting another test";
+    const char strErr_14[] PROGMEM="Failed to start, test is already running";
+    const char strErr_15[] PROGMEM="Failed to start, current or saveState was not set";
+    const char strErr_16[] PROGMEM= "Failed to pause, test is already paused";
+    const char strErr_17[] PROGMEM="Failed to continue, test is not paused";
+    const char strErr_18[] PROGMEM="Failed to stop tuning, tuning is either in idle or complete state.";
+    const char strErr_19[] PROGMEM="Failed to start tuning, tuning is running or complete state.";
+    const char strErr_20[] PROGMEM="Failed to save tuning results, tuning is not in complete state";
+    const char strErr_21[] PROGMEM="Failed to discard tuning, tuning is not in complete state";
+    const char strErr_22[] PROGMEM="Error: Not in Tuning Mode, Switch modes to start tuning";
+    const char strErr_23[] PROGMEM="Error: Not in Heating Mode, Switch modes to Turn On/Off Heaters";
+    const char strErr_24[] PROGMEM="Error: Cannot change current or temperature while a test is running";
+    const char strErr_25[] PROGMEM="Error: Temperature set point must be <= %d";
+    const char strErr_26[] PROGMEM="Error: Cannot perform this action while a test is running";
+    const char strErr_27[] PROGMEM="Error: Test Id must be set before starting a test";
+    const char strErr_28[] PROGMEM="Error: Failed to format SD Card, ErrorCode: %d ErrorData: %d";
+    const char strErr_29[] PROGMEM="Error: Failed to save tuning results.  Please try again discard results";
+    const char strErr_30[] PROGMEM="Error: Failed to set tuning window size, tuning is currently running. To set the tuning please stop the current tune process and try again";
 
     const char* const system_error_table[] PROGMEM={
+        strErr_00,
         strErr_01,
         strErr_02,
         strErr_03,
@@ -463,7 +467,8 @@ template <class T> int EEPROM_read(int addr, T& value) {
         strErr_26,
         strErr_27,
         strErr_28,
-        strErr_29
+        strErr_29,
+        strErr_30
     };
 
 #pragma endregion

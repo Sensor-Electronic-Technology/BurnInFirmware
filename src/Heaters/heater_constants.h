@@ -36,7 +36,7 @@ struct HeaterTuneResult:Serializable{
     int heaterNumber=-1;
     bool complete=false;
     float kp=0,ki=0,kd=0;
-    int windowSize=1000;
+    unsigned long windowSize=1000;
     void clear(){
         this->heaterNumber=-1;
         this->complete=false;
@@ -93,9 +93,6 @@ enum ModeTrigger:uint8_t{
     ATUNE_START,
     HEATING_START
 };
-
-
-
 
 
 typedef components::Function<void(HeaterTuneResult)> TuningCompleteCallback;

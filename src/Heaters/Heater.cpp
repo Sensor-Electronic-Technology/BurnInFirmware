@@ -19,13 +19,39 @@ Heater::Heater(const HeaterConfig& config,int tempSp,unsigned long windowSize)
     Serial.println("Window Size="+String(this->autoTuner.GetSampleTimeMs()));
     pinMode(this->relayPin,OUTPUT);
     digitalWrite(this->relayPin,LOW);
+    /* Debugging simu timer */
+    this->timer.setTimeout([this](){
+        this->isComplete=true;
+        this->isTuning=false;
+        HeaterTuneResult result;
+        result.kd=this->kd;
+        result.ki=this->ki;
+        result.kp=this->kp;
+        result.windowSize=this->WindowSize;
+        result.complete=true;
+        result.heaterNumber=this->id;
+        this->tuningCompleteCb(result);
+    },5000);
+    
 }
 
 Heater::Heater(){
     this->pid.Setup(&this->temperature,&this->pidOutput,&this->tempSetPoint,this->kp,this->ki,this->kd);
     this->pid.SetOutputRange(0,this->WindowSize,true);
     this->autoTuner.Setup(&this->temperature,&this->pidOutput,this->tempSetPoint,WindowSize,5);
-    this->autoTuner.SetOutputRange(0,WindowSize);
+    /* Debugging simu timer */
+    this->timer.setTimeout([this](){
+        this->isComplete=true;
+        this->isTuning=false;
+        HeaterTuneResult result;
+        result.kd=this->kd;
+        result.ki=this->ki;
+        result.kp=this->kp;
+        result.windowSize=this->WindowSize;
+        result.complete=true;
+        result.heaterNumber=this->id;
+        this->tuningCompleteCb(result);
+    },5000);
 }
 
 void Heater::SetConfiguration(const HeaterConfig& config,unsigned long windowSize){
@@ -80,8 +106,8 @@ void Heater::StartTuning(){
 
 void Heater::StopTuning(){
     this->isTuning=false;
+    //this->timer.cancel();
     //this->PrintTuning(false);
-    Serial.println("Heater "+String(this->id)+" Stopped Tuning");
     this->TurnOff();
 }
 
@@ -189,9 +215,7 @@ HeaterResult Heater::Read(){
 }
 
 void Heater::SetWindowSize(unsigned long windowSize){
-    if(!this->isTuning){
-        this->autoTuner.Setup(&this->temperature,&this->pidOutput,this->tempSetPoint,(windowSize*1000),5);
-    }
+    this->autoTuner.Setup(&this->temperature,&this->pidOutput,this->tempSetPoint,windowSize,5);
 }
 
 HeaterResult Heater::GetHeaterResult(){
@@ -209,5 +233,5 @@ bool Heater::TempOkay(){
 
 void Heater::privateLoop(){
     //(this->*run[this->mode])();
-    //this->timer.loop();
+    this->timer.loop();
 }
