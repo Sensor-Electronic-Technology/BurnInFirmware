@@ -57,7 +57,7 @@ private:
     ChangeCurrentCallback  _changeCurrentCallback=[](int){_NOP();};
     ChangeTempCallback     _changeTempCallback=[](int){_NOP();};
     GetConfigCallback      _getConfigCallback=[](ConfigType){_NOP();};
-    FormatSdCallback       _formatSdCallback=[](){_NOP();};
+    //FormatSdCallback       _formatSdCallback=[](){_NOP();};
     UpdateCurrentTempCallback _updateCurrentTempCallback=[](int,int){_NOP();};
     RestartRequiredCallback _restartRequiredCallback=[](void){_NOP();};
     ProbeResult            probeResults[PROBE_COUNT];

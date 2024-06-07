@@ -35,16 +35,16 @@ Controller::Controller():Component(){
         this->NeedRestartHandler();
     };
 
-    this->_formatSdCallback=[&](){
+/*     this->_formatSdCallback=[&](){
         this->FormatSdHandler();
-    };
+    }; */
 
     ComHandler::MapAckCallback(this->_ackCallback);
     ComHandler::MapCommandCallback(this->_commandCallback);
     ComHandler::MapChangeCurrentCallback(this->_changeCurrentCallback);
     ComHandler::MapChangeTempCallback(this->_changeTempCallback);
     ComHandler::MapRestartCallback(this->_restartRequiredCallback);
-    ComHandler::MapFormatSdCallback(this->_formatSdCallback);
+    // ComHandler::MapFormatSdCallback(this->_formatSdCallback);
     ComHandler::MapGetConfigCallback(this->_getConfigCallback);
 
     for(uint8_t i=0;i<PROBE_COUNT;i++){
@@ -65,13 +65,10 @@ void Controller::LoadConfigurations(){
     ProbeControllerConfig probesConfig;
     ControllerConfig controllerConfig;
     
-    
-
-/*      FileManager::SaveConfiguration(&heatersConfig,ConfigType::HEATER_CONFIG);
+/*     FileManager::SaveConfiguration(&heatersConfig,ConfigType::HEATER_CONFIG);
     FileManager::SaveConfiguration(&probesConfig,ConfigType::PROBE_CONFIG);
-    FileManager::SaveConfiguration(&controllerConfig,ConfigType::SYSTEM_CONFIG);  */
+    FileManager::SaveConfiguration(&controllerConfig,ConfigType::SYSTEM_CONFIG); */ 
 
-    
     if(!FileManager::LoadConfiguration(&heatersConfig,ConfigType::HEATER_CONFIG)){
        heatersConfig.Reset();
     }
@@ -223,11 +220,7 @@ void Controller::GetConfigHandler(ConfigType configType){
 }
 
 void Controller::FormatSdHandler(){
-    if(this->testController.IsRunning()){
-        ComHandler::SendErrorMessage(SystemError::TEST_RUNNING_ERR,MessageType::ERROR);
-        return;
-    }
-    FileManager::FormatCard();
+    FileManager::FormatNoBackup();
 }
 
 void Controller::UpdateCurrentTempHandler(int current,int temp){
@@ -430,6 +423,15 @@ void Controller::HandleCommand(StationCommand command){
         }
         case StationCommand::REQUEST_RUNNING_TEST:{
             this->testController.SendRunningTest();
+            break;
+        }
+        case StationCommand::FORMAT_SD:{
+            if(!this->testController.IsRunning() && !this->heaterControl.IsTuning()){
+                this->FormatSdHandler();
+                this->Reset();
+            }else{
+                ComHandler::SendErrorMessage(SystemError::TEST_RUNNING_ERR);
+            }
             break;
         }
         default:{

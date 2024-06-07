@@ -32,6 +32,7 @@ public:
         auto instance=FileManager::Instance();
         if(!instance->sd.begin(SD_CONFIG)){
             sdInitialized=false;
+            ComHandler::SendErrorMessage(SystemError::SD_INIT_FAILED);
             return;
         }
         sdInitialized=true;
@@ -49,7 +50,12 @@ public:
     static void FormatNoBackup(){
         auto instance=FileManager::Instance();
         if(sdInitialized){
-            instance->sd.format(&Serial);
+            auto success=instance->sd.format(&Serial);
+            if(!success){
+                ComHandler::SendErrorMessage(SystemError::SD_FORMAT_FAILED,instance->sd.sdErrorCode(),instance->sd.sdErrorData());
+            }else{
+                ComHandler::SendSystemMessage(SystemMessage::SD_FORMATTED,MessageType::NOTIFY);
+            }
             return;
         }
         ComHandler::SendErrorMessage(SystemError::SD_FORMAT_FAILED,0,0);

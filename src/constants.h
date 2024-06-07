@@ -123,6 +123,7 @@ template <class T> int EEPROM_read(int addr, T& value) {
         CANCEL_TUNE=11,
         RESET=12,
         REQUEST_RUNNING_TEST=13,
+        FORMAT_SD=14,
     };
 
     enum AckType:uint8_t{
@@ -144,7 +145,7 @@ template <class T> int EEPROM_read(int addr, T& value) {
     typedef components::Function<void(int)> ChangeTempCallback;
     typedef components::Function<void(const char* testId)> TestIdCallback;
     typedef components::Function<void(ConfigType)> GetConfigCallback;
-    typedef components::Function<void(void)> FormatSdCallback;
+    // typedef components::Function<void(void)> FormatSdCallback;
     typedef components::Function<void(int,int)> UpdateCurrentTempCallback;
     typedef components::Function<void(unsigned long)> ReceiveWindowSizeCallback;
     
@@ -176,12 +177,11 @@ template <class T> int EEPROM_read(int addr, T& value) {
         CONFIG_SAVE_STATUS=19,       //Outgoing->Notify PC of config save status
         GET_CONFIG=20,               //Incoming->Request config
         RECEIVE_CONFIG=21,           //Outgoing->Send config
-        FORMAT_SD=22,               //Incoming->Format SD Card
-        PROBE_TEST_DONE=23,         //Outgoing->Notify PC that probe test is done
-        REQUEST_CONFIG_BACKUP=24,   //Incoming->Request config backup,
-        SEND_RUNNING_TEST=25,       //Incoming->Request running test,
-        NOTIFY_SW_HEATER_MODE=26,   //Outgoing->Notify PC that in tuning mode,
-        RECEIVE_WINDOW_SIZE=27,     //Incoming->PID tune window size
+        PROBE_TEST_DONE=22,         //Outgoing->Notify PC that probe test is done
+        REQUEST_CONFIG_BACKUP=23,   //Incoming->Request config backup,
+        SEND_RUNNING_TEST=24,       //Incoming->Request running test,
+        NOTIFY_SW_HEATER_MODE=25,   //Outgoing->Notify PC that in tuning mode,
+        RECEIVE_WINDOW_SIZE=26,     //Incoming->PID tune window size
     };
     const char strPre_00[] PROGMEM="ST";   
     const char strPre_01[] PROGMEM="M";    
@@ -205,12 +205,11 @@ template <class T> int EEPROM_read(int addr, T& value) {
     const char strPre_19[] PROGMEM="SCONF";
     const char strPre_20[] PROGMEM="GCONF";
     const char strPre_21[] PROGMEM="RCONF";
-    const char strPre_22[] PROGMEM="FSD";
-    const char strPre_23[] PROGMEM="PTD";
-    const char strPre_24[] PROGMEM="RCONFB";
-    const char strPre_25[] PROGMEM="RTEST";;
-    const char strPre_26[] PROGMEM="SWHEATER";
-    const char strPre_27[] PROGMEM="WINSIZE";
+    const char strPre_22[] PROGMEM="PTD";
+    const char strPre_23[] PROGMEM="RCONFB";
+    const char strPre_24[] PROGMEM="RTEST";;
+    const char strPre_25[] PROGMEM="SWHEATER";
+    const char strPre_26[] PROGMEM="WINSIZE";
 
     const char* const prefixes[] PROGMEM = {
         strPre_00,
@@ -239,8 +238,7 @@ template <class T> int EEPROM_read(int addr, T& value) {
         strPre_23,
         strPre_24,
         strPre_25,
-        strPre_26,
-        strPre_27
+        strPre_26
     };
 #pragma endregion
 
@@ -300,39 +298,40 @@ template <class T> int EEPROM_read(int addr, T& value) {
         SD_FORMATTED=30
     };
 
-    const char str_01[] PROGMEM=    "Before Loading Free Memory: %d";  //0
-    const char str_02[] PROGMEM=   "Firmware Initialization Starting";  //1
-    const char str_03[] PROGMEM=   "Loading configuration files";  //2
-    const char str_04[] PROGMEM=   "After Loading Free Memory: %d";  //3
-    const char str_05[] PROGMEM=   "Configuration Files Loaded";  //4
-    const char str_06[] PROGMEM=    "Components Initalizing Starting";  //5
-    const char str_07[] PROGMEM=   "Heaters initialized";  //6
-    const char str_08[] PROGMEM=   "Probes initialized";  //7
-    const char str_09[] PROGMEM=   "Registering Components";  //8
-    const char str_10[] PROGMEM=    "Components Initalized";  //9
-    const char str_11[] PROGMEM=    "Initalizing Timers"; //10
-    const char str_12[] PROGMEM=    "Timer Initialization Complete"; //11
-    const char str_13[] PROGMEM=    "Check for saved state, Free Memory: %d";//12
-    const char str_14[] PROGMEM=    "Saved state found, state loaded. Resuming from saved state";//13
-    const char str_15[] PROGMEM=    "No saved state found, continuing to normal operation";//14
-    const char str_16[] PROGMEM=    "Firmware Initialization Complete"; //15
-    const char str_17[] PROGMEM=    "Tuning results saved"; //16
-    const char str_18[] PROGMEM=    "Tuning canceled"; //17,
-    const char str_19[] PROGMEM=    "Deleting saved state"; //18
-    const char str_20[] PROGMEM=    "Saved state deleted"; //19
-    const char str_21[] PROGMEM=    "Controller resetting, please wait"; //20,
-    const char str_22[] PROGMEM=    "SD Card Initialized"; //21
-    const char str_23[] PROGMEM=    "TestController Transition from StateId %d from StateId %d"; //22
-    const char str_24[] PROGMEM=    "Test Completed";//23
-    const char str_25[] PROGMEM=    "Heater mode switched to auto tune";//23
-    const char str_26[] PROGMEM=    "Heater mode switched to heating";//23
-    const char str_27[] PROGMEM=    "TestController Transition from StateId %d from StateId %d"; //22
-    const char str_28[] PROGMEM=    "Probe Test Started,Current: %d"; //23
-    const char str_29[] PROGMEM=    "Probe Test Completed,Current Restored to %d"; //24
-    const char str_30[] PROGMEM=    "Current Changed to %d"; //24
-    const char str_31[] PROGMEM=    "SD Card Formatted"; //24
+    const char str_00[] PROGMEM=    "Before Loading Free Memory: %d";  
+    const char str_01[] PROGMEM=   "Firmware Initialization Starting";  
+    const char str_02[] PROGMEM=   "Loading configuration files";  
+    const char str_03[] PROGMEM=   "After Loading Free Memory: %d";  
+    const char str_04[] PROGMEM=   "Configuration Files Loaded";  
+    const char str_05[] PROGMEM=    "Components Initalizing Starting";  
+    const char str_06[] PROGMEM=   "Heaters initialized";  
+    const char str_07[] PROGMEM=   "Probes initialized";  
+    const char str_08[] PROGMEM=   "Registering Components"; 
+    const char str_09[] PROGMEM=    "Components Initalized"; 
+    const char str_10[] PROGMEM=    "Initalizing Timers"; 
+    const char str_11[] PROGMEM=    "Timer Initialization Complete"; 
+    const char str_12[] PROGMEM=    "Check for saved state, Free Memory: %d";
+    const char str_13[] PROGMEM=    "Saved state found, state loaded. Resuming from saved state";
+    const char str_14[] PROGMEM=    "No saved state found, continuing to normal operation";
+    const char str_15[] PROGMEM=    "Firmware Initialization Complete"; 
+    const char str_16[] PROGMEM=    "Tuning results saved"; 
+    const char str_17[] PROGMEM=    "Tuning canceled"; 
+    const char str_18[] PROGMEM=    "Deleting saved state"; 
+    const char str_19[] PROGMEM=    "Saved state deleted"; 
+    const char str_20[] PROGMEM=    "Controller resetting, please wait"; 
+    const char str_21[] PROGMEM=    "SD Card Initialized"; 
+    const char str_22[] PROGMEM=    "TestController Transition from StateId %d from StateId %d"; 
+    const char str_23[] PROGMEM=    "Test Completed";
+    const char str_24[] PROGMEM=    "Heater mode switched to auto tune";
+    const char str_25[] PROGMEM=    "Heater mode switched to heating";
+    const char str_26[] PROGMEM=    "TestController Transition from StateId %d from StateId %d"; 
+    const char str_27[] PROGMEM=    "Probe Test Started,Current: %d"; 
+    const char str_28[] PROGMEM=    "Probe Test Completed,Current Restored to %d"; 
+    const char str_29[] PROGMEM=    "Current Changed to %d"; 
+    const char str_30[] PROGMEM=    "SD Card Formatted, please re-upload configurations before tuning or running tests"; 
 
     const char* const system_message_table[] PROGMEM={
+        str_00,
         str_01,
         str_02,
         str_03,
@@ -362,8 +361,7 @@ template <class T> int EEPROM_read(int addr, T& value) {
         str_27,
         str_28,
         str_29,
-        str_30,
-        str_31
+        str_30
     };
 
 
@@ -402,7 +400,7 @@ template <class T> int EEPROM_read(int addr, T& value) {
         TEST_ID_NOT_SET=27,
         SD_FORMAT_FAILED=28,
         TUNE_SAVE_FAILED=29,
-        TUNE_WINDOW_FAILED=30
+        TUNE_WINDOW_FAILED=30,
     };
 
     const char strErr_00[] PROGMEM="Failed to load configuration files. Please contact administrator";

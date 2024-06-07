@@ -345,8 +345,7 @@ void HeaterController::OnSaveTuning(){
     }else{
         ComHandler::SendErrorMessage(SystemError::TUNE_SAVE_FAILED);
 
-    }
-    
+    } 
 }
 
 void HeaterController::OnDiscardTuning(){

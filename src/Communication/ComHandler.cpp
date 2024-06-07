@@ -1,5 +1,6 @@
 #include "ComHandler.hpp"
 #include "../Files/FileManager.hpp"
+#include "../free_memory.h"
 
 ComHandler* ComHandler::instance=nullptr;
 
@@ -76,10 +77,6 @@ void ComHandler::MsgPacketDeserialize(JsonDocument& serialEventDoc) {
                 this->_getConfigCallback(configType);
                 break;
             }
-            case PacketType::FORMAT_SD:{
-                this->_formatSdCallback();
-                break;
-            }
             case PacketType::RECEIVE_WINDOW_SIZE:{
                 auto windowSize=serialEventDoc[F("Pakcet")].as<int>();
                 this->_receiveWindowSizeCallback(windowSize);
@@ -116,6 +113,9 @@ void ComHandler::ReceiveId(const JsonDocument& serialEventDoc){
 void ComHandler::InstanceReceiveConfig(JsonDocument& serialEventDoc){
     auto packet=serialEventDoc[F("Packet")].as<JsonObject>();
     ConfigType configType=packet[F("ConfigType")].as<ConfigType>();
+    //this->serial->println("Received Config");
+    //serializeJsonPretty(packet,*this->serial);
+    this->serial->println("Free Ram: "+String(FreeSRAM()));
     auto configJson=packet[F("Configuration")].as<JsonObject>();
     switch(configType){
         case ConfigType::PROBE_CONFIG:{
@@ -135,7 +135,6 @@ void ComHandler::InstanceReceiveConfig(JsonDocument& serialEventDoc){
             HeaterControllerConfig config;
             config.Deserialize(configJson);
             auto success=FileManager::SaveConfiguration(&config,ConfigType::HEATER_CONFIG);
-            delay(250);
             if(success){
                 this->InstanceSendConfigSaved(configType,"HeaterControllerConfig Saved",true);
                 this->_restartRequiredCallback();
@@ -148,9 +147,9 @@ void ComHandler::InstanceReceiveConfig(JsonDocument& serialEventDoc){
             ControllerConfig config;
             config.Deserialize(configJson);
             auto success=FileManager::SaveConfiguration(&config,ConfigType::SYSTEM_CONFIG);
-            delay(250);
             if(success){
                 this->InstanceSendConfigSaved(configType,"ControllerConfig Saved",true);
+                delay(1000);
                 this->_restartRequiredCallback();
             }else{
                 this->InstanceSendConfigSaved(configType,"ControllerConfig Saved",false);

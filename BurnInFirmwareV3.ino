@@ -19,11 +19,6 @@ void setup(){
     pinMode(LED_BUILTIN,OUTPUT);
     Serial.begin(38400);
     ComHandler::SetSerial(&Serial);
-    sdInitialized=true;
-/*     if(!SD.begin(SS)){
-        ComHandler::SendErrorMessage(SystemError::SD_INIT_FAILED);
-        sdInitialized=false;
-    } */
     FileManager::Init();
     ComHandler::SendSystemMessage(SystemMessage::SD_INIT,MessageType::GENERAL);
     Serial.print(F("Free SRAM: "));

@@ -96,10 +96,10 @@ public:
         instance->_getConfigCallback=cbk;
     }
 
-    static void MapFormatSdCallback(FormatSdCallback cbk){
+/*     static void MapFormatSdCallback(FormatSdCallback cbk){
         auto instance=ComHandler::Instance();
         instance->_formatSdCallback=cbk;
-    }
+    } */
 
     static void MapUpdateCurrentTempCallback(UpdateCurrentTempCallback cbk){
         auto instance=ComHandler::Instance();
@@ -150,6 +150,9 @@ public:
         msgPacket.message=buffer;
         msgPacket.messageType=msgType;
         instance->InstanceMsgPacketSerializer(msgPacket,PacketType::MESSAGE);
+        if(msgType==MessageType::NOTIFY){
+            //delay(500);
+        }
     }
 
     static void SendProbeTestDone(){
@@ -279,6 +282,6 @@ private:
     LoadStateCallback           _loadStateCallback=[](const SaveState&){_NOP();};
     RestartRequiredCallback     _restartRequiredCallback=[](void){_NOP();};
     ReceiveWindowSizeCallback   _receiveWindowSizeCallback=[](unsigned long){_NOP();};
-    FormatSdCallback            _formatSdCallback=[](){_NOP();};
+    // FormatSdCallback            _formatSdCallback=[](){_NOP();};
     UpdateCurrentTempCallback   _updateCurrentTempCallback=[](int,int){_NOP();};
 };
