@@ -5,10 +5,27 @@ FileManager* FileManager::instance=nullptr;
 bool FileManager::InstanceLoadConfig(Serializable* config,ConfigType configType){
     JsonDocument doc;
     //File file;
-    File file;
+    FsFile file;
     char filename[BUFFER_SIZE];
     strcpy_P(filename,read_filename(configType));
-    //file=SD.open(filename);
+    if(!this->sd.exists(filename)){
+        WriteBufferingStream fileWriteBuffer{file, 64};
+        file.open(filename,FILE_WRITE);
+        if(!file){
+            ComHandler::SendErrorMessage(SystemError::CONFIG_SAVE_FAILED_FILE,filename);
+            return false;
+        }
+        config->Serialize(&doc,true);
+        if(serializeJsonPretty(doc,fileWriteBuffer)==0){
+            file.close();
+            ComHandler::SendErrorMessage(SystemError::CONFIG_SAVE_FAILED_FILE,filename);
+            return false;
+        }
+        fileWriteBuffer.flush();
+        file.close();
+        doc.clear();
+        return false;
+    }
     file.open(filename,FILE_READ);
     if(!file){
         ComHandler::SendErrorMessage(SystemError::CONFIG_LOAD_FAILED_FILE,filename);
@@ -29,13 +46,10 @@ bool FileManager::InstanceLoadConfig(Serializable* config,ConfigType configType)
 FileResult FileManager::InstanceLoadState(Serializable* sysState){
     JsonDocument doc;
     //File file;
-    File file;
+    FsFile file;
     char filename[BUFFER_SIZE];
     strcpy_P(filename,strFile_04);
-    Serial.print(F("State File: "));
-    Serial.println(filename);
     if(!this->sd.exists(filename)){
-        Serial.println(F("File does not exist"));
         return FileResult::DOES_NOT_EXIST;
     }
     file.open(filename,FILE_READ);

@@ -42,7 +42,6 @@ public:
 
 private:
 	void OutputAction(unsigned long now);
-	void PrintTuning(bool completed);	
 
 
 private:

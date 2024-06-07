@@ -41,7 +41,6 @@ private:
     void TestFinished();
     void Reset();
     void UpdateSerialData();
-    void UpdateCurrent(int value);
     void UpdateTempSp(int value);
     void StartFromSavedState(const SaveState& savedState);
 
@@ -54,11 +53,8 @@ private:
     TestFinsihedCallback   _testFinishedCallback=[](){_NOP();};
     AckCallback            _ackCallback=[](AckType){_NOP();};
     LoadStateCallback      _loadStateCallback=[](const SaveState&){_NOP();};
-    ChangeCurrentCallback  _changeCurrentCallback=[](int){_NOP();};
-    ChangeTempCallback     _changeTempCallback=[](int){_NOP();};
     GetConfigCallback      _getConfigCallback=[](ConfigType){_NOP();};
     //FormatSdCallback       _formatSdCallback=[](){_NOP();};
-    UpdateCurrentTempCallback _updateCurrentTempCallback=[](int,int){_NOP();};
     RestartRequiredCallback _restartRequiredCallback=[](void){_NOP();};
     ProbeResult            probeResults[PROBE_COUNT];
     HeaterResult           heaterResults[HEATER_COUNT];

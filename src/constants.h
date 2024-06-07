@@ -141,12 +141,8 @@ template <class T> int EEPROM_read(int addr, T& value) {
     typedef components::Function<void(void)> TestFinsihedCallback;
     typedef components::Function<void(void)> TestAckCallback;
     typedef components::Function<void(AckType)> AckCallback;
-    typedef components::Function<void(int)> ChangeCurrentCallback;
-    typedef components::Function<void(int)> ChangeTempCallback;
     typedef components::Function<void(const char* testId)> TestIdCallback;
     typedef components::Function<void(ConfigType)> GetConfigCallback;
-    // typedef components::Function<void(void)> FormatSdCallback;
-    typedef components::Function<void(int,int)> UpdateCurrentTempCallback;
     typedef components::Function<void(unsigned long)> ReceiveWindowSizeCallback;
     
 #pragma endregion
@@ -169,19 +165,17 @@ template <class T> int EEPROM_read(int addr, T& value) {
         HEATER_NOTIFY=11,           //Outgoing->Notify PC of a single heater tuning results
         HEATER_TUNE_COMPLETE=12,    //Outgoing->notfiy PC that all heaters have been tuned,
         ACK=13,                     //Outgoing->Acknowledge PC of command
-        UPDATE_CURRENT=14,          //Incoming update current
-        UPDATE_TEMP=15,             //Incoming update temperature
-        TUNE_COM=16,                //Outgoing->tuning serial data,
-        SEND_TEST_ID=17,            //Incoming->Start test
-        LOAD_STATE=18,              //Incoming->Load saved state
-        CONFIG_SAVE_STATUS=19,       //Outgoing->Notify PC of config save status
-        GET_CONFIG=20,               //Incoming->Request config
-        RECEIVE_CONFIG=21,           //Outgoing->Send config
-        PROBE_TEST_DONE=22,         //Outgoing->Notify PC that probe test is done
-        REQUEST_CONFIG_BACKUP=23,   //Incoming->Request config backup,
-        SEND_RUNNING_TEST=24,       //Incoming->Request running test,
-        NOTIFY_SW_HEATER_MODE=25,   //Outgoing->Notify PC that in tuning mode,
-        RECEIVE_WINDOW_SIZE=26,     //Incoming->PID tune window size
+        TUNE_COM=14,                //Outgoing->tuning serial data,
+        SEND_TEST_ID=15,            //Incoming->Start test
+        LOAD_STATE=16,              //Incoming->Load saved state
+        CONFIG_SAVE_STATUS=17,       //Outgoing->Notify PC of config save status
+        GET_CONFIG=18,               //Incoming->Request config
+        RECEIVE_CONFIG=19,           //Outgoing->Send config
+        PROBE_TEST_DONE=20,         //Outgoing->Notify PC that probe test is done
+        REQUEST_CONFIG_BACKUP=21,   //Incoming->Request config backup,
+        SEND_RUNNING_TEST=22,       //Incoming->Request running test,
+        NOTIFY_SW_HEATER_MODE=23,   //Outgoing->Notify PC that in tuning mode,
+        RECEIVE_WINDOW_SIZE=24,     //Incoming->PID tune window size
     };
     const char strPre_00[] PROGMEM="ST";   
     const char strPre_01[] PROGMEM="M";    
@@ -197,19 +191,17 @@ template <class T> int EEPROM_read(int addr, T& value) {
     const char strPre_11[] PROGMEM="HNOTIFY";
     const char strPre_12[] PROGMEM="HTUNED";
     const char strPre_13[] PROGMEM="ACK";
-    const char strPre_14[] PROGMEM="UC";
-    const char strPre_15[] PROGMEM="UT";
-    const char strPre_16[] PROGMEM="TCOM";
-    const char strPre_17[] PROGMEM="TID";
-    const char strPre_18[] PROGMEM="LSTATE";
-    const char strPre_19[] PROGMEM="SCONF";
-    const char strPre_20[] PROGMEM="GCONF";
-    const char strPre_21[] PROGMEM="RCONF";
-    const char strPre_22[] PROGMEM="PTD";
-    const char strPre_23[] PROGMEM="RCONFB";
-    const char strPre_24[] PROGMEM="RTEST";;
-    const char strPre_25[] PROGMEM="SWHEATER";
-    const char strPre_26[] PROGMEM="WINSIZE";
+    const char strPre_14[] PROGMEM="TCOM";
+    const char strPre_15[] PROGMEM="TID";
+    const char strPre_16[] PROGMEM="LSTATE";
+    const char strPre_17[] PROGMEM="SCONF";
+    const char strPre_18[] PROGMEM="GCONF";
+    const char strPre_19[] PROGMEM="RCONF";
+    const char strPre_20[] PROGMEM="PTD";
+    const char strPre_21[] PROGMEM="RCONFB";
+    const char strPre_22[] PROGMEM="RTEST";;
+    const char strPre_23[] PROGMEM="SWHEATER";
+    const char strPre_24[] PROGMEM="WINSIZE";
 
     const char* const prefixes[] PROGMEM = {
         strPre_00,
@@ -236,9 +228,7 @@ template <class T> int EEPROM_read(int addr, T& value) {
         strPre_21,
         strPre_22,
         strPre_23,
-        strPre_24,
-        strPre_25,
-        strPre_26
+        strPre_24
     };
 #pragma endregion
 

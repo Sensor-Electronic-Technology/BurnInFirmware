@@ -149,7 +149,7 @@ void HeaterController::TurnOff(){
 
 bool HeaterController::StartTuning(){
     if(this->mode!=HeaterMode::ATUNE){
-        Serial.println(F("Err: Heaters are not in tuning mode"));
+        ComHandler::SendErrorMessage(SystemError::TUNE_TRANSISITON_ERR);
         return false;
     }
     switch(this->tState.state){
@@ -170,7 +170,7 @@ bool HeaterController::StartTuning(){
 
 bool HeaterController::StopTuning(){
     if(this->mode!=HeaterMode::ATUNE){
-        Serial.println(F("Err: Heaters are not in tuning mode"));
+        ComHandler::SendErrorMessage(SystemError::TUNE_TRANSISITON_ERR);
         return false;
     }
     switch(this->tState.state){
@@ -388,7 +388,6 @@ bool HeaterController::SwitchToHeating(){
         ComHandler::NotifyHeaterMode(HeaterMode::HEATING);
         return true;
     }
-    /* Serial.println(F("Already in Heating Mode")); */
     return false;
 }
 

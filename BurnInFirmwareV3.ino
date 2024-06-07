@@ -11,7 +11,6 @@
 #include "src/Controller/Controller.hpp"
 #include "src/StressTest/TestController.hpp" 
 #include "src/free_memory.h"
-#include "src/Heaters/HeaterTests.hpp"
 
 Controller controller;
 

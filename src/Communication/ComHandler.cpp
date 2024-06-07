@@ -50,16 +50,6 @@ void ComHandler::MsgPacketDeserialize(JsonDocument& serialEventDoc) {
                 this->_ackCallback(ackType);
                 break;
             }
-            case PacketType::UPDATE_CURRENT:{
-                auto current=serialEventDoc[F("Packet")].as<int>();
-                this->_changeCurrentCallback(current);
-                break;
-            }
-            case PacketType::UPDATE_TEMP:{
-                auto temp=serialEventDoc[F("Packet")].as<int>();
-                this->_changeTempCallback(temp);
-                break;
-            }
             case PacketType::SEND_TEST_ID:{
                 auto testId=serialEventDoc[F("Packet")].as<const char*>();
                 this->_testIdCallback(testId);
@@ -113,8 +103,6 @@ void ComHandler::ReceiveId(const JsonDocument& serialEventDoc){
 void ComHandler::InstanceReceiveConfig(JsonDocument& serialEventDoc){
     auto packet=serialEventDoc[F("Packet")].as<JsonObject>();
     ConfigType configType=packet[F("ConfigType")].as<ConfigType>();
-    //this->serial->println("Received Config");
-    //serializeJsonPretty(packet,*this->serial);
     this->serial->println("Free Ram: "+String(FreeSRAM()));
     auto configJson=packet[F("Configuration")].as<JsonObject>();
     switch(configType){
@@ -122,12 +110,12 @@ void ComHandler::InstanceReceiveConfig(JsonDocument& serialEventDoc){
             ProbeControllerConfig config;
             config.Deserialize(configJson);
             auto success=FileManager::SaveConfiguration(&config,ConfigType::PROBE_CONFIG);
-            delay(250);
+            delay(500);
             if(success){
-                this->InstanceSendConfigSaved(configType,"ProbeControllerConfig Saved",true);
+                this->InstanceSendConfigSaved(configType,F("ProbeControllerConfig Saved"),true);
                 this->_restartRequiredCallback();
             }else{
-                this->InstanceSendConfigSaved(configType,"ProbeControllerConfig Saved",false);
+                this->InstanceSendConfigSaved(configType,F("ProbeControllerConfig Saved"),false);
             }
             break;
         }
@@ -135,11 +123,12 @@ void ComHandler::InstanceReceiveConfig(JsonDocument& serialEventDoc){
             HeaterControllerConfig config;
             config.Deserialize(configJson);
             auto success=FileManager::SaveConfiguration(&config,ConfigType::HEATER_CONFIG);
+            delay(500);
             if(success){
-                this->InstanceSendConfigSaved(configType,"HeaterControllerConfig Saved",true);
+                this->InstanceSendConfigSaved(configType,F("HeaterControllerConfig Saved"),true);
                 this->_restartRequiredCallback();
             }else{
-                this->InstanceSendConfigSaved(configType,"HeaterControllerConfig Saved",false);
+                this->InstanceSendConfigSaved(configType,F("HeaterControllerConfig Saved"),false);
             }
             break;
         }
@@ -148,11 +137,11 @@ void ComHandler::InstanceReceiveConfig(JsonDocument& serialEventDoc){
             config.Deserialize(configJson);
             auto success=FileManager::SaveConfiguration(&config,ConfigType::SYSTEM_CONFIG);
             if(success){
-                this->InstanceSendConfigSaved(configType,"ControllerConfig Saved",true);
-                delay(1000);
+                this->InstanceSendConfigSaved(configType,F("ControllerConfig Saved"),true);
+                delay(500);
                 this->_restartRequiredCallback();
             }else{
-                this->InstanceSendConfigSaved(configType,"ControllerConfig Saved",false);
+                this->InstanceSendConfigSaved(configType,F("ControllerConfig Saved"),false);
             }
             break;
         }
@@ -205,22 +194,6 @@ void ComHandler::InstanceMsgPacketSerializer(const T& data,PacketType packetType
     this->serial->println();
 }
 
-template <typename T> 
-void ComHandler::InstanceSendRequest(PacketType packetType,const char* request,const T& data) {
-    JsonDocument serializerDoc;
-    Derived_from<T,Serializable>();
-    serializerDoc.clear();
-    char packetStr[BUFFER_SIZE];
-    strcpy_P(packetStr,read_packet_prefix(packetType));
-    serializerDoc[F("Prefix")]=packetStr;
-    serializerDoc[F("RequestText")]=request;
-    auto packet=serializerDoc[F("Packet")].to<JsonObject>();
-    data.Serialize(&packet,true);
-    serializeJson(serializerDoc,*this->serial);
-    this->serial->println();
-    serializerDoc.clear();
-}
-
 void ComHandler::InstanceSendProbeTestDone() {
     JsonDocument serializerDoc;
     char packetStr[BUFFER_SIZE];
@@ -265,14 +238,17 @@ void ComHandler::InstanceSendTestCompleted(const char* message){
     serializerDoc.clear();
 }
 
-void ComHandler::InstanceSendConfigSaved(ConfigType configType,const char* message, bool success){
+void ComHandler::InstanceSendConfigSaved(ConfigType configType,const __FlashStringHelper* msg, bool success){
     JsonDocument serializerDoc;
+    char buffer[BUFFER_SIZE];
+    PGM_P msgMem=reinterpret_cast<PGM_P>(msg);
+    strcpy_P(buffer,msgMem);
     char packetStr[BUFFER_SIZE];
     strcpy_P(packetStr,read_packet_prefix(PacketType::CONFIG_SAVE_STATUS));
     serializerDoc[F("Prefix")]=packetStr;
     JsonObject packet=serializerDoc[F("Packet")].to<JsonObject>();
     packet[F("Type")]=configType;
-    packet[F("Message")]=message;
+    packet[F("Message")]=buffer;
     packet[F("Status")]=success;
     serializeJson(serializerDoc,*this->serial);
     this->serial->println();

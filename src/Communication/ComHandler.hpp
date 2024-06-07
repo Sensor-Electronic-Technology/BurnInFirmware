@@ -66,16 +66,6 @@ public:
         instance->_ackCallback=ckb;
     }
 
-    static void MapChangeCurrentCallback(ChangeCurrentCallback cbk){
-        auto instance=ComHandler::Instance();
-        instance->_changeCurrentCallback=cbk;
-    }
-
-    static void MapChangeTempCallback(ChangeTempCallback cbk){
-        auto instance=ComHandler::Instance();
-        instance->_changeTempCallback=cbk;
-    }
-
     static void MapTestIdCallback(TestIdCallback cbk){
         auto instance=ComHandler::Instance();
         instance->_testIdCallback=cbk;
@@ -94,16 +84,6 @@ public:
     static void MapGetConfigCallback(GetConfigCallback cbk){
         auto instance=ComHandler::Instance();
         instance->_getConfigCallback=cbk;
-    }
-
-/*     static void MapFormatSdCallback(FormatSdCallback cbk){
-        auto instance=ComHandler::Instance();
-        instance->_formatSdCallback=cbk;
-    } */
-
-    static void MapUpdateCurrentTempCallback(UpdateCurrentTempCallback cbk){
-        auto instance=ComHandler::Instance();
-        instance->_updateCurrentTempCallback=cbk;
     }
 
     static void MapWindowSizeCallback(ReceiveWindowSizeCallback cbk){
@@ -180,20 +160,6 @@ public:
         instance->InstanceMsgPacketSerializer(msgPacket,PacketType::MESSAGE);
     }
 
-    static void SendCustomMessage(__FlashStringHelper* format,MessageType msgType,...){
-        auto instance=ComHandler::Instance();
-        SystemMessagePacket msgPacket;
-        char buffer[BUFFER_SIZE];
-        PGM_P pointer=reinterpret_cast<PGM_P>(format);
-        va_list(args);
-        va_start(args,format);
-        vsnprintf_P(buffer,sizeof(buffer),pointer,args);
-        va_end(args);
-        msgPacket.message=buffer;
-        msgPacket.messageType=msgType;
-        instance->InstanceMsgPacketSerializer(msgPacket,PacketType::MESSAGE);
-    }
-
     static void HandleSerial(){
         auto instance=ComHandler::Instance();
         JsonDocument serialEventDoc;
@@ -211,10 +177,7 @@ public:
 
     static void SendConfigSaveStatus(ConfigType configType,bool success,const __FlashStringHelper* msg){
         auto instance=ComHandler::Instance();
-        char buffer[BUFFER_SIZE];
-        PGM_P msgMem=reinterpret_cast<PGM_P>(msg);
-        strcpy_P(buffer,msgMem);
-        instance->InstanceSendConfigSaved(configType,buffer,success);
+        instance->InstanceSendConfigSaved(configType,msg,success);
     }
 
     static void SendConfig(ConfigType configType,Serializable* config){
@@ -252,8 +215,6 @@ private:
      */
     template <typename T> 
     void InstanceMsgPacketSerializer(const T& data,PacketType packetType);
-    template <typename T> 
-    void InstanceSendRequest(PacketType packetType,const char* request,const T& data);
     // void InstanceSendMessage(const char* message);
     void InstanceSendId();
     void ReceiveId(const JsonDocument& serialEventDoc);
@@ -262,7 +223,7 @@ private:
     void InstanceSendStartResponse(bool success,const char* message);
     void InstanceSendTestCompleted(const char* message);
     void InstanceSendProbeTestDone();
-    void InstanceSendConfigSaved(ConfigType configType,const char* message, bool success);
+    void InstanceSendConfigSaved(ConfigType configType,const __FlashStringHelper* msg, bool success);
     void InstanceSendConfig(ConfigType configType,Serializable* config);
     void InstanceNotifyHeaterMode(HeaterMode mode);
     void InstanceReceiveConfig( JsonDocument& serialEventDoc);
@@ -275,13 +236,9 @@ private:
     bool serialEventEnabled;
     CommandCallback             _commandCallback=[](StationCommand){};
     AckCallback                 _ackCallback=[](AckType){_NOP();};
-    ChangeCurrentCallback       _changeCurrentCallback=[](int){_NOP();};
-    ChangeTempCallback          _changeTempCallback=[](int){_NOP();};
     TestIdCallback              _testIdCallback=[](const char*){_NOP();};
     GetConfigCallback           _getConfigCallback=[](ConfigType){_NOP();};
     LoadStateCallback           _loadStateCallback=[](const SaveState&){_NOP();};
     RestartRequiredCallback     _restartRequiredCallback=[](void){_NOP();};
     ReceiveWindowSizeCallback   _receiveWindowSizeCallback=[](unsigned long){_NOP();};
-    // FormatSdCallback            _formatSdCallback=[](){_NOP();};
-    UpdateCurrentTempCallback   _updateCurrentTempCallback=[](int,int){_NOP();};
 };

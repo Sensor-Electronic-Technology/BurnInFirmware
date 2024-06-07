@@ -2,21 +2,12 @@
 #include "../free_memory.h"
 
 Controller::Controller():Component(){
-    //ComHandler::MapCommandCallback(this->_commandCallback);
     this->_commandCallback=[&](StationCommand command){
         this->HandleCommand(command);
     };
     
     this->_testFinishedCallback=[&](){
         this->TestFinished();
-    };
-
-    this->_changeCurrentCallback=[&](int value){
-        this->UpdateCurrent(value);
-    };
-
-    this->_changeTempCallback=[&](int value){
-        this->UpdateTempSp(value);
     };
 
     this->_ackCallback=[&](AckType ack){
@@ -35,16 +26,9 @@ Controller::Controller():Component(){
         this->NeedRestartHandler();
     };
 
-/*     this->_formatSdCallback=[&](){
-        this->FormatSdHandler();
-    }; */
-
     ComHandler::MapAckCallback(this->_ackCallback);
     ComHandler::MapCommandCallback(this->_commandCallback);
-    ComHandler::MapChangeCurrentCallback(this->_changeCurrentCallback);
-    ComHandler::MapChangeTempCallback(this->_changeTempCallback);
     ComHandler::MapRestartCallback(this->_restartRequiredCallback);
-    // ComHandler::MapFormatSdCallback(this->_formatSdCallback);
     ComHandler::MapGetConfigCallback(this->_getConfigCallback);
 
     for(uint8_t i=0;i<PROBE_COUNT;i++){
@@ -79,6 +63,8 @@ void Controller::LoadConfigurations(){
     if(!FileManager::LoadConfiguration(&controllerConfig,ConfigType::SYSTEM_CONFIG)){
         controllerConfig.Reset();
     }
+    //probesConfig.probeTestCurrent=CurrentValue::c060;
+    //probesConfig.probeTestTime=PROBE_TESTTIME;
 
 /*     JsonDocument doc;
     heatersConfig.Serialize(&doc,true);
@@ -169,7 +155,6 @@ void Controller::ComUpdate(){
     this->comData.currentSP = this->probeControl.GetSetCurrent();
     this->comData.temperatureSP = this->heaterControl.GetSetPoint();
     ComHandler::MsgPacketSerializer(this->comData, PacketType::DATA);
-    //Serial.println(" Free RAM: " + String(FreeSRAM()));
 }
 
 void Controller::NeedRestartHandler(){
@@ -221,15 +206,6 @@ void Controller::GetConfigHandler(ConfigType configType){
 
 void Controller::FormatSdHandler(){
     FileManager::FormatNoBackup();
-}
-
-void Controller::UpdateCurrentTempHandler(int current,int temp){
-    if(this->testController.IsRunning()){
-        ComHandler::SendErrorMessage(SystemError::CHANGE_RUNNING_ERR,MessageType::ERROR);
-        return;
-    }
-    this->probeControl.SetCurrent((CurrentValue)current);
-    this->heaterControl.ChangeSetPoint(temp);
 }
 
 void Controller::CheckSavedState(int attempts){
@@ -340,7 +316,6 @@ void Controller::HandleCommand(StationCommand command){
             break;
         }
         case StationCommand::TOGGLE_HEAT:{
-            //Serial.println("Toggle Heat");
             if(!this->testController.IsRunning()){
                 this->heaterControl.ToggleHeaters();
             }else{
@@ -443,18 +418,6 @@ void Controller::HandleCommand(StationCommand command){
 
 void Controller::privateLoop(){
 
-}
-
-void Controller::UpdateCurrent(int value){
-    if(this->testController.IsRunning()){
-        ComHandler::SendErrorMessage(SystemError::TEST_RUNNING_ERR,MessageType::ERROR);
-        return;
-    }
-    this->probeControl.SetCurrent((CurrentValue)value);
-    ProbeControllerConfig probesConfig;
-    FileManager::LoadConfiguration(&probesConfig,ConfigType::PROBE_CONFIG);
-    probesConfig.currentSelectConfig.SetCurrent=(CurrentValue)value;
-    FileManager::SaveConfiguration(&probesConfig,ConfigType::PROBE_CONFIG);
 }
 
 void Controller::UpdateTempSp(int value){
