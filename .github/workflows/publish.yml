@@ -1,7 +1,6 @@
 ﻿name: BurnInFirmware-Publish
 on:
-  release:
-    types: [published]
+  push:
 jobs:
   check:
     name: Check Version
