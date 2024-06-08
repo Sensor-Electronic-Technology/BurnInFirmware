@@ -16,26 +16,26 @@ jobs:
         id: check_ver
         with:
           repo: Sensor-Electronic-Technology/BurnInFirmware
-  getvar:
-    name: print the latest verson
-    runs-on: ubuntu-latest
-    needs: check
-    outputs:
-      url: https://github.com/Sensor-Electronic-Technology/BurnInFirmware/releases/tag/${{fromJson(needs.check.outputs.result).versions.latest.name}}
-    steps:
-      - run: |
-          echo '${{ fromJson(needs.check.outputs.result).versions.latest.name }}'
-          echo '${{ fromJson(needs.check.outputs.result).stable-version }}'
+  # getvar:
+  #   name: print the latest verson
+  #   runs-on: ubuntu-latest
+  #   needs: check
+  #   outputs:
+  #     url: https://github.com/Sensor-Electronic-Technology/BurnInFirmware/releases/tag/${{fromJson(needs.check.outputs.result).versions.latest.name}}
+  #   steps:
+  #     - run: |
+  #         echo '${{ fromJson(needs.check.outputs.result).versions.latest.name }}'
+  #         echo '${{ fromJson(needs.check.outputs.result).stable-version }}'
 
   deploy:
-    needs: getvar
+    needs: check
     runs-on:
      group: burn-in-runners
     steps:
       - uses: actions/checkout@v4
       - run: |
           cd /home/setitech/Documents/StationSoft/
-          wget '${{needs.outputs.url}}'
+          wget 'https://github.com/Sensor-Electronic-Technology/BurnInFirmware/releases/tag/${{fromJson(needs.check.outputs.result).versions.latest.name}}'
 
   # print: # Just for show the output
   #   name: Print the result from check
