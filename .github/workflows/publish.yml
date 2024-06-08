@@ -35,7 +35,7 @@ jobs:
       - uses: actions/checkout@v4
       - run: |
           cd /home/setitech/Documents/StationSoft/
-          wget ${{needs.outputs.url}}
+          wget '${{needs.outputs.url}}'
 
   # print: # Just for show the output
   #   name: Print the result from check
