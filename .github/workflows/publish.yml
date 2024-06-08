@@ -16,6 +16,12 @@ jobs:
         id: check_ver
         with:
           repo: Sensor-Electronic-Technology/BurnInFirmware
+  printv2:
+    name: print the latest verson
+    runs-on: ubuntu-latest
+    needs: check
+    steps:
+      - run: echo "Leatest Version:$latest-version"
 
   print: # Just for show the output
     name: Print the result from check
