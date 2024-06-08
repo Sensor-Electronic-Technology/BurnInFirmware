@@ -2,24 +2,27 @@
 on:
   push:
 jobs:
-  build:
+  check:
+    name: Check Version
     runs-on: ubuntu-latest
+    outputs:
+      # output as this job,
+      # see https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idoutputs
+      is_update: ${{ steps.check_ver.outputs.is_update }}
+      result: ${{ steps.check_ver.outputs.result }}
+      docker_tags: ${{ steps.check_ver.outputs.docker_tags }}
     steps:
-      - uses: actions/checkout@v4
-      - name: "call action"
-        id: last_release
-        uses: InsonusK/get-latest-release@v1.0.1
+      - uses: mogeko/latest-version@v1
+        id: check_ver
         with:
-          myToken: ${{ github.token }}
-          exclude_types: "release"
-          view_top: 1
-      - name: "Print result"
-        run: |
-          echo "id: ${{ steps.last_release.outputs.id }}"
-          echo "name: ${{ steps.last_release.outputs.name }}"
-          echo "tag_name: ${{ steps.last_release.outputs.tag_name }}"
-          echo "created_at: ${{ steps.last_release.outputs.created_at }}"
-          echo "draft: ${{ steps.last_release.outputs.draft }}"
-          echo "prerelease: ${{ steps.last_release.outputs.prerelease }}"
-          echo "url: ${{ steps.last_release.outputs.url }}"
-          echo "html_url: ${{ steps.last_release.outputs.html_url }}"
+          repo: Sensor-Electronic-Technology/BurnInFirmware
+
+  print: # Just for show the output
+    name: Print the result from check
+    runs-on: ubuntu-latest
+    needs: check
+    steps:
+      - run: |
+          echo '${{ needs.check.outputs.is_update }}'
+          echo '${{ needs.check.outputs.result }}' | jq '.'
+          echo '${{ needs.check.outputs.docker_tags }}'
