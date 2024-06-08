@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: check
     steps:
-      - run: echo '${{ latest-version }}'
+      - run: echo '${{ needs.check.outputs.result.version.latest.name }}'
 
   print: # Just for show the output
     name: Print the result from check
