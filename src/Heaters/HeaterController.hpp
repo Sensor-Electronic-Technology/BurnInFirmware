@@ -83,7 +83,7 @@ public:
 
 
 private:
-    Heater* heaters[HEATER_COUNT];
+    Heater heaters[HEATER_COUNT];
     HeaterResult results[HEATER_COUNT];
     AutoTuneResults tuningResults;
     StationTimer  readTimer,tuningComTimer;

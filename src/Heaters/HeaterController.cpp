@@ -12,10 +12,16 @@ HeaterController::HeaterController(const HeaterControllerConfig& config)
         this->HeaterRunCompleteHandler(result);
     };
 
-    for(uint8_t i=0;i<HEATER_COUNT;i++){ 
+/*     for(uint8_t i=0;i<HEATER_COUNT;i++){ 
         this->heaters[i]=new Heater(config.heaterConfigs[i],this->tempSp,this->tuningWindowSize);
-        this->heaters[i]->MapTurningComplete(this->_tuningCompleteCbk);
+        this->heaters[i].MapTurningComplete(this->_tuningCompleteCbk);
         RegisterChild(this->heaters[i]);
+        this->results[i]=HeaterResult();
+    } */
+   for(uint8_t i=0;i<HEATER_COUNT;i++){ 
+        this->heaters[i].SetConfiguration(config.heaterConfigs[i],this->tuningWindowSize);
+        this->heaters[i].MapTurningComplete(this->_tuningCompleteCbk);
+        RegisterChild(&this->heaters[i]);
         this->results[i]=HeaterResult();
     }
     this->mode.set(HeaterMode::HEATING,HeaterMode::HEATING);
@@ -55,12 +61,18 @@ void HeaterController::Setup(const HeaterControllerConfig& config){
     this->readInterval=config.readInterval;
     this->tuningWindowSize=config.windowSize;
     this->configuration=config;
-    for(uint8_t i=0;i<HEATER_COUNT;i++){ 
+/*     for(uint8_t i=0;i<HEATER_COUNT;i++){ 
         this->heaters[i]=new Heater(config.heaterConfigs[i],this->tempSp,this->tuningWindowSize);
-        this->heaters[i]->MapTurningComplete(this->_tuningCompleteCbk);
+        this->heaters[i].MapTurningComplete(this->_tuningCompleteCbk);
         RegisterChild(this->heaters[i]);
         this->results[i]=HeaterResult();
-    }  
+    }   */
+    for(uint8_t i=0;i<HEATER_COUNT;i++){ 
+        this->heaters[i].SetConfiguration(config.heaterConfigs[i],this->tuningWindowSize);
+        this->heaters[i].MapTurningComplete(this->_tuningCompleteCbk);
+        RegisterChild(&this->heaters[i]);
+        this->results[i]=HeaterResult();
+    }
     this->mode.set(HeaterMode::HEATING,HeaterMode::HEATING);
     this->hState.set(HeaterState::HEATER_OFF,HeaterState::HEATER_OFF);
     this->tState.set(TuneState::TUNE_IDLE,TuneState::TUNE_IDLE);
@@ -68,7 +80,7 @@ void HeaterController::Setup(const HeaterControllerConfig& config){
 
 void HeaterController::Initialize(){
     for(uint8_t i=0;i<HEATER_COUNT;i++){ 
-        this->heaters[i]->Initialize();
+        this->heaters[i].Initialize();
     }
     this->heaterState=HeatState::Off;
     for(uint8_t i=0;i<100;i++){
@@ -202,14 +214,14 @@ void HeaterController::ToggleHeaters(){
 void HeaterController::OnTurnOn(){
     this->heaterState=HeatState::On;
     for(uint8_t i=0;i<HEATER_COUNT;i++){
-        this->heaters[i]->TurnOn();
+        this->heaters[i].TurnOn();
     }
 }
 
 void HeaterController::OnTurnOff(){
     this->heaterState=HeatState::Off;
     for(uint8_t i=0;i<HEATER_COUNT;i++){
-        this->heaters[i]->TurnOff();
+        this->heaters[i].TurnOff();
     }
 }
 
@@ -266,7 +278,7 @@ void HeaterController::ReceiveWindowSizeHandler(unsigned long windowSize){
     }
     this->tuningWindowSize=windowSize;
     for(uint8_t i=0;i<HEATER_COUNT;i++){
-        this->heaters[i]->SetWindowSize(windowSize);
+        this->heaters[i].SetWindowSize(windowSize);
     }
 }
 
@@ -301,14 +313,14 @@ bool HeaterController::ChangeSetPoint(uint8_t setPoint){
     }
     this->tempSp=setPoint;
     for(uint8_t i=0;i<HEATER_COUNT;i++){
-        this->heaters[i]->ChangeSetpoint(setPoint);
+        this->heaters[i].ChangeSetpoint(setPoint);
     }
     return true;
 }
 
 void HeaterController::TuningRun(){
     for(uint8_t i=0;i<HEATER_COUNT;i++){
-        this->heaters[i]->RunAutoTune();
+        this->heaters[i].RunAutoTune();
     }
 }
 
@@ -317,7 +329,7 @@ void HeaterController::OnStartTuning(){
     this->tuningElapsed=0;
     this->tuningResults.clear();
     for(uint8_t i=0;i<HEATER_COUNT;i++){
-        this->heaters[i]->StartTuning();
+        this->heaters[i].StartTuning();
     }
 }
 
@@ -327,7 +339,7 @@ void HeaterController::OnStopTuning(){
     this->tuningResults.clear();
 
     for(uint8_t i=0;i<HEATER_COUNT;i++){
-        this->heaters[i]->StopTuning();
+        this->heaters[i].StopTuning();
     }
 }
 
@@ -337,7 +349,7 @@ void HeaterController::OnSaveTuning(){
         auto newPid=this->tuningResults.results[i];
         this->configuration.UpdateHeaterPid(newPid);
         this->configuration.windowSize=this->tuningWindowSize;
-        this->heaters[newPid.heaterNumber-1]->UpdatePid(newPid);
+        this->heaters[newPid.heaterNumber-1].UpdatePid(newPid);
     }
     auto saveResult=FileManager::SaveConfiguration(&this->configuration,ConfigType::HEATER_CONFIG);
     if(saveResult){
@@ -359,13 +371,13 @@ void HeaterController::OnDiscardTuning(){
 
 void HeaterController::RunOn(){
     for(uint8_t i=0;i<HEATER_COUNT;i++){
-        this->heaters[i]->RunPid();
+        this->heaters[i].RunPid();
     }
 }
 
 void HeaterController::RunWarmup(){
     for(uint8_t i=0;i<HEATER_COUNT;i++){
-        this->heaters[i]->RunPid();
+        this->heaters[i].RunPid();
     }
     if(this->TempOkay()){
         this->hState.nextState=HeaterState::HEATER_ON;
@@ -410,7 +422,7 @@ int HeaterController::GetSetPoint(){
 
 void HeaterController::ReadTemperatures(){
     for(uint8_t i=0;i<HEATER_COUNT;i++){
-        results[i]=heaters[i]->Read();
+        results[i]=heaters[i].Read();
         //results[i]=heaters[i]->GetHeaterResult();
     }
 }
@@ -425,7 +437,7 @@ bool HeaterController::TempOkay(){
 
 void HeaterController::GetResults(HeaterResult* fill){
     for(uint8_t i=0;i<HEATER_COUNT;i++){
-       fill[i]=this->heaters[i]->GetHeaterResult();
+       fill[i]=this->heaters[i].GetHeaterResult();
     }
 }
 

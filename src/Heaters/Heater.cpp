@@ -19,7 +19,7 @@ Heater::Heater(const HeaterConfig& config,int tempSp,unsigned long windowSize)
     pinMode(this->relayPin,OUTPUT);
     digitalWrite(this->relayPin,LOW);
     /* Debugging simu timer */
-    this->timer.setTimeout([this](){
+    this->timer.setTimeout([&](){
         this->isComplete=true;
         this->isTuning=false;
         HeaterTuneResult result;
@@ -29,17 +29,20 @@ Heater::Heater(const HeaterConfig& config,int tempSp,unsigned long windowSize)
         result.windowSize=this->WindowSize;
         result.complete=true;
         result.heaterNumber=this->id;
+        this->TurnOff();
         this->tuningCompleteCb(result);
     },5000);
-    
+    RegisterChild(this->timer);   
 }
 
 Heater::Heater(){
+    this->WindowSize=1000;
     this->pid.Setup(&this->temperature,&this->pidOutput,&this->tempSetPoint,this->kp,this->ki,this->kd);
     this->pid.SetOutputRange(0,this->WindowSize,true);
     this->autoTuner.Setup(&this->temperature,&this->pidOutput,this->tempSetPoint,WindowSize,5);
+    this->autoTuner.SetOutputRange(0,this->WindowSize);
     /* Debugging simu timer */
-    this->timer.setTimeout([this](){
+    this->timer.setTimeout([&](){
         this->isComplete=true;
         this->isTuning=false;
         HeaterTuneResult result;
@@ -49,8 +52,10 @@ Heater::Heater(){
         result.windowSize=this->WindowSize;
         result.complete=true;
         result.heaterNumber=this->id;
+        this->TurnOff();
         this->tuningCompleteCb(result);
     },5000);
+    RegisterChild(this->timer);
 }
 
 void Heater::SetConfiguration(const HeaterConfig& config,unsigned long windowSize){
@@ -95,15 +100,15 @@ void Heater::TurnOff(){
 }
 
 void Heater::StartTuning(){
-    this->autoTuner.StartTuning();
     this->isComplete=false;
     this->isTuning=true;
+    this->autoTuner.StartTuning();
     //this->timer.start();
-    
 }
 
 void Heater::StopTuning(){
     this->isTuning=false;
+    //this->timer.cancel();
     this->TurnOff();
 }
 
@@ -195,5 +200,5 @@ bool Heater::TempOkay(){
 
 void Heater::privateLoop(){
     //(this->*run[this->mode])();
-    this->timer.loop();
+    //this->timer.loop();
 }

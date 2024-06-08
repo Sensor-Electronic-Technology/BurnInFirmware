@@ -37,7 +37,7 @@ void StationTimer::start() {
     if(this->_intervaling && this->_fireImmediately){
         this->_timeout_callback();
     }
-    this->_deadline = millisTime() + this->_period;  
+    this->_deadline = millis() + this->_period;  
 }
 
 void StationTimer::reset() {
