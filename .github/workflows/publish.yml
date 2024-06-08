@@ -16,7 +16,7 @@ jobs:
         id: check_ver
         with:
           repo: Sensor-Electronic-Technology/BurnInFirmware
-  printv2:
+  getvar:
     name: print the latest verson
     runs-on: ubuntu-latest
     needs: check
@@ -27,12 +27,22 @@ jobs:
           echo '${{ printv2.outputs.url }}'
           echo '${{ fromJson(needs.check.outputs.result).stable-version }}'
 
-  print: # Just for show the output
-    name: Print the result from check
-    runs-on: ubuntu-latest
-    needs: check
+  deploy:
+    needs: getvar
+    runs-on:
+     group: burn-in-runners
     steps:
+      - uses: actions/checkout@v5
       - run: |
-          echo '${{ needs.check.outputs.is_update }}'
-          echo '${{ needs.check.outputs.result }}' | jq '.'
-          echo '${{ needs.check.outputs.docker_tags }}'
+          cd /home/setitech/Documents/StationSoft/
+          wget ${{needs.outputs.url}}
+
+  # print: # Just for show the output
+  #   name: Print the result from check
+  #   runs-on: ubuntu-latest
+  #   needs: check
+  #   steps:
+  #     - run: |
+  #         echo '${{ needs.check.outputs.is_update }}'
+  #         echo '${{ needs.check.outputs.result }}' | jq '.'
+  #         echo '${{ needs.check.outputs.docker_tags }}'
