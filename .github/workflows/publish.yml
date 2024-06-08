@@ -24,7 +24,7 @@ jobs:
       url: https://github.com/Sensor-Electronic-Technology/BurnInFirmware/releases/tag/${{fromJson(needs.check.outputs.result).versions.latest.name}}
     steps:
       - run: |
-          echo '${{ outputs.url }}'
+          echo '${{ printv2.outputs.url }}'
           echo '${{ fromJson(needs.check.outputs.result).stable-version }}'
 
   print: # Just for show the output
