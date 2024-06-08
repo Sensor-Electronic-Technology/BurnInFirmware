@@ -16,12 +16,20 @@ jobs:
         id: check_ver
         with:
           repo: Sensor-Electronic-Technology/BurnInFirmware
+      - id: result
+        uses: gr2m/get-json-paths-action@v1.x
+        with:
+          json: ${{ steps.check_ver.outputs.result }}
+          latest-version: "versions.latest.name"
+          stable-version: "stable_version"
   printv2:
     name: print the latest verson
     runs-on: ubuntu-latest
     needs: check
     steps:
-      - run: echo '${{ needs.check.outputs.result.versions.latest.name }}'
+      - run: |
+          echo '${{ needs.check.result.outputs.latest-version }}'
+          echo '${{ needs.check.result.outputs.stable-version }}'
 
   print: # Just for show the output
     name: Print the result from check
