@@ -11,15 +11,8 @@ HeaterController::HeaterController(const HeaterControllerConfig& config)
     this->_tuningCompleteCbk=[&](HeaterTuneResult result){
         this->HeaterRunCompleteHandler(result);
     };
-
-/*     for(uint8_t i=0;i<HEATER_COUNT;i++){ 
-        this->heaters[i]=new Heater(config.heaterConfigs[i],this->tempSp,this->tuningWindowSize);
-        this->heaters[i].MapTurningComplete(this->_tuningCompleteCbk);
-        RegisterChild(this->heaters[i]);
-        this->results[i]=HeaterResult();
-    } */
    for(uint8_t i=0;i<HEATER_COUNT;i++){ 
-        this->heaters[i].SetConfiguration(config.heaterConfigs[i],this->tuningWindowSize);
+        this->heaters[i].SetConfiguration(config.heaterConfigs[i],this->tuningWindowSize,this->tempSp);
         this->heaters[i].MapTurningComplete(this->_tuningCompleteCbk);
         RegisterChild(&this->heaters[i]);
         this->results[i]=HeaterResult();
@@ -68,7 +61,7 @@ void HeaterController::Setup(const HeaterControllerConfig& config){
         this->results[i]=HeaterResult();
     }   */
     for(uint8_t i=0;i<HEATER_COUNT;i++){ 
-        this->heaters[i].SetConfiguration(config.heaterConfigs[i],this->tuningWindowSize);
+        this->heaters[i].SetConfiguration(config.heaterConfigs[i],this->tuningWindowSize,this->tempSp);
         this->heaters[i].MapTurningComplete(this->_tuningCompleteCbk);
         RegisterChild(&this->heaters[i]);
         this->results[i]=HeaterResult();

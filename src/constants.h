@@ -148,7 +148,7 @@ template <class T> int EEPROM_read(int addr, T& value) {
 #pragma endregion
 
 #pragma region PrefixDefinitions
-    #define PREFIX_COUNT    28
+    #define PREFIX_COUNT    25
 
     enum PacketType:uint8_t{
         SAVE_STATE=0,               //???
@@ -175,7 +175,7 @@ template <class T> int EEPROM_read(int addr, T& value) {
         REQUEST_CONFIG_BACKUP=21,   //Incoming->Request config backup,
         SEND_RUNNING_TEST=22,       //Incoming->Request running test,
         NOTIFY_SW_HEATER_MODE=23,   //Outgoing->Notify PC that in tuning mode,
-        RECEIVE_WINDOW_SIZE=24,     //Incoming->PID tune window size
+        RECEIVE_WINDOW_SIZE=24     //Incoming->PID tune window size
     };
     const char strPre_00[] PROGMEM="ST";   
     const char strPre_01[] PROGMEM="M";    

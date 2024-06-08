@@ -15,7 +15,7 @@ class Heater:public Component{
 public:
 	Heater(const HeaterConfig& config,int tempSp,unsigned long windowSize);
 	Heater();
-	void SetConfiguration(const HeaterConfig& config,unsigned long windowSize);
+	void SetConfiguration(const HeaterConfig& config,unsigned long windowSize,int tempSp);
 	void Initialize();
 	void UpdatePid(HeaterTuneResult newPid);
 	void TurnOn();

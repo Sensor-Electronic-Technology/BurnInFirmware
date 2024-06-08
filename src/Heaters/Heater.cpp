@@ -58,7 +58,7 @@ Heater::Heater(){
     RegisterChild(this->timer);
 }
 
-void Heater::SetConfiguration(const HeaterConfig& config,unsigned long windowSize){
+void Heater::SetConfiguration(const HeaterConfig& config,unsigned long windowSize,int tempSp){
     this->id=config.HeaterId;
     this->ntc.Setup(config.ntcConfig);
     this->relayPin=config.Pin;
@@ -67,15 +67,14 @@ void Heater::SetConfiguration(const HeaterConfig& config,unsigned long windowSiz
     this->kd=config.pidConfig.kd;
     this->tempDeviation=config.tempDeviation;
     this->WindowSize=windowSize;
-    this->tempSetPoint=DEFAULT_TEMPSP;
+    this->tempSetPoint=tempSp;
     this->heaterState=HeatState::Off;
     this->pid.Setup(&this->temperature,&this->pidOutput,&this->tempSetPoint,this->kp,this->ki,this->kd);
     this->pid.SetOutputRange(0,this->WindowSize,true);
-    this->autoTuner.Setup(&this->temperature,&this->pidOutput,this->tempSetPoint,this->pid.GetSampleTime(),5);
-    this->autoTuner.SetOutputRange(0,this->pid.GetSampleTime());
+    this->autoTuner.Setup(&this->temperature,&this->pidOutput,this->tempSetPoint,windowSize,5);
+    this->autoTuner.SetOutputRange(0,windowSize);
     pinMode(this->relayPin,OUTPUT);
     digitalWrite(this->relayPin,LOW);
-
 }
 
 void Heater::Initialize(){
