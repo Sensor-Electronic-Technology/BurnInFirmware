@@ -34,7 +34,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          cd /home/setitech/Documents/StationSoft/
+          cd /home/setitech/Documents/StationSoft/StationService/app
           curl -L 'https://github.com/Sensor-Electronic-Technology/BurnInFirmware/releases/download/${{fromJson(needs.check.outputs.result).versions.latest.name}}/BurnInFirmwareV3.ino.hex' > BurnInFirmwareV3.ino.hex 
 
   # print: # Just for show the output
