@@ -1,6 +1,7 @@
 ﻿name: BurnInFirmware-Publish
 on:
-  push:
+  release:
+    types: [published]
 jobs:
   check:
     name: Check Version
@@ -16,17 +17,6 @@ jobs:
         id: check_ver
         with:
           repo: Sensor-Electronic-Technology/BurnInFirmware
-  # getvar:
-  #   name: print the latest verson
-  #   runs-on: ubuntu-latest
-  #   needs: check
-  #   outputs:
-  #     url: https://github.com/Sensor-Electronic-Technology/BurnInFirmware/releases/tag/${{fromJson(needs.check.outputs.result).versions.latest.name}}
-  #   steps:
-  #     - run: |
-  #         echo '${{ fromJson(needs.check.outputs.result).versions.latest.name }}'
-  #         echo '${{ fromJson(needs.check.outputs.result).stable-version }}'
-
   deploy:
     needs: check
     runs-on:
@@ -34,7 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          cd /home/setitech/Documents/StationSoft/StationService/app
+          cd /home/setitech/Documents/StationSoft/StationService/app/updates/
           curl -L 'https://github.com/Sensor-Electronic-Technology/BurnInFirmware/releases/download/${{fromJson(needs.check.outputs.result).versions.latest.name}}/BurnInFirmwareV3.ino.hex' > BurnInFirmwareV3.ino.hex 
 
   # print: # Just for show the output
