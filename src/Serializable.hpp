@@ -1,6 +1,7 @@
 #pragma once
 #include <ArduinoJson.h>
 #include "constants.h"
+#include <ArduinoComponents.h>
 
 using namespace std;
 
@@ -38,6 +39,8 @@ public:
     virtual void Serialize(JsonObject *packet,bool initialize)=0;
 };
 
+
+typedef components::Function<void(ConfigType,Serializable*)> ConfigReceivedCallback;
 
 
 

@@ -5,10 +5,13 @@
 #include "../TestTimer/burn_timer_includes.h"
 #include "../Communication/ComHandler.hpp"
 #include "../StationTimer.hpp"
+#include "../constants.h"
 
 #define STATE_COUNT         3
 #define TRANSITION_COUNT    5
 #define TEST_START_PERIOD   10000ul
+#define TEST_COMP_PERIOD    10000ul
+
 
 enum class TestState{
     TEST_IDLE=0,
@@ -22,46 +25,29 @@ class TestController:public Component{
     typedef void(TestController::*StateRun)(void);
 public:
 
-    TestController(const BurnTimerConfig timerConfig)
-        :Component(),burn_timer(timerConfig){
-        this->burn_timer.SetCallback([&](){
-            ComHandler::SendSystemMessage(SystemMessage::TEST_STATE_COMPLETED,MessageType::NOTIFY);
-            this->Reset();
-            this->_finishedCallback();
-        });
-        RegisterChild(ackTimer);
-    }
+    TestController(const BurnTimerConfig timerConfig);
 
-    TestController():Component(){  }
+    TestController();
 
-    void SetConfig(const BurnTimerConfig timerConfig){
-        this->burn_timer.SetConfig(timerConfig);
-        this->burn_timer.SetCallback([&](){
-            ComHandler::SendSystemMessage(SystemMessage::TEST_STATE_COMPLETED,MessageType::NOTIFY);
-            this->Reset();
-            this->_finishedCallback();
-        });
-        RegisterChild(ackTimer);
-    }
+    void SetConfig(const BurnTimerConfig timerConfig);
     void Run();
     void SetFinsihedCallback(TestFinsihedCallback callback);
     void Tick(bool probesOkay[PROBE_COUNT]);
+    void SetTestId(const char* id);
+    void ClearTestId();
 
     //Start Test
     bool StartTest(CurrentValue current);
-    bool StartTest(const TimerData& savedState);
+    bool StartTest(SaveState state);
     bool PauseTest();
     bool ContinueTest();
     bool IsRunning();
-    void SendTestStart();
-    void AcknowledgeTestStart(){
-        this->ackTimer.cancel();
-    }
-
-    void GetProbeRunTimeOkay(bool *probeRtOkay){
-        this->burn_timer.GetProbeTimeOkay(probeRtOkay);
-    }
-
+    void SendRunningTest();
+    void CompleteTest();
+    const char* GetTestId();
+    void AcknowledgeTestStart();
+    void AcknowledgeTestComplete();
+    void GetProbeRunTimeOkay(bool *probeRtOkay);
     void Reset();
     void SetCurrent(CurrentValue current);
     const TimerData& GetTimerData();
@@ -73,14 +59,15 @@ private:
 private:
     BurnInTimer            burn_timer;
     CurrentValue            stressCurrent;
-    TimerData               savedState;
+    TimerData               timerDataSate;
+    SaveState               saveState;
     bool                    currentSet=false;   
     bool                    savedStateLoaded=false;
     bool                    acknowledge=false;
-    StationTimer            ackTimer;
-    TestFinsihedCallback    _finishedCallback=[](){_NOP();}; 
+    bool                    testIdSet=false;
+    StationTimer            ackStartTimer,ackCompleteTimer;
+    String                  testId;
+    TestFinsihedCallback    _finishedCallback=[](){_NOP();};
+    TestIdCallback         _testIdCallback=[](const char*){_NOP();};
     StateRun                stateRuns[STATE_COUNT];
-
-
-
 };

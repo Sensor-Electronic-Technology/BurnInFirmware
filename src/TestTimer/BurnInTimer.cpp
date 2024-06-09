@@ -18,8 +18,8 @@
         if(!this->testTimer.running){
             switch(current){
                 case CurrentValue::c060:{
-                    //this->testTimer.duration_secs=this->durSec60mA;
-                    this->testTimer.duration_secs=60;
+                    this->testTimer.duration_secs=this->durSec60mA;
+                    //this->testTimer.duration_secs=60;
                     break;
                 }
                 case CurrentValue::c120:{

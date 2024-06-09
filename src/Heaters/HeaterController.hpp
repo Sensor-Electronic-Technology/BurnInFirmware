@@ -9,10 +9,7 @@
 #include "../Task.hpp"
 #include "../Communication/TuningSerialData.hpp"
 
-#define HEATER_DEBUG 		1
-#define HEATER_STATE_COUNT 	3
-#define TUNE_STATE_COUNT 	3
-#define MODE_COUNT          2
+
 
 using namespace components;
 
@@ -27,7 +24,7 @@ public:
     void Initialize();
     void ReadTemperatures();
     bool TempOkay();
-    void ChangeSetPoint(uint8_t setPoint);
+    bool ChangeSetPoint(uint8_t setPoint);
     int GetSetPoint();
     void GetResults(HeaterResult* fill);
     void Run();
@@ -80,26 +77,29 @@ public:
 
     void OnSaveTuning();
     void OnDiscardTuning();
+
+    void ReceiveWindowSizeHandler(unsigned long windowSize);
 #pragma endregion
 
 
 private:
-    Heater* heaters[HEATER_COUNT];
+    Heater heaters[HEATER_COUNT];
     HeaterResult results[HEATER_COUNT];
     AutoTuneResults tuningResults;
-    StationTimer  readTimer,tuningComTimer,debugTuneTimer;
+    StationTimer  readTimer,tuningComTimer;
     Task<HeaterMode>  mode;
     Task<HeaterState> hState;
     Task<TuneState>   tState;
     HeatState heaterState=HeatState::Off;
     TuningSerialData tuningSerialData;
-
     HeaterControllerConfig configuration;
-    TuningCompleteCallback tuningCompleteCbk=[](HeaterTuneResult){};
+    TuningCompleteCallback _tuningCompleteCbk=[](HeaterTuneResult){};
+    ReceiveWindowSizeCallback _receiveWindowSizeCbk=[](unsigned long){};
     unsigned long readInterval;
     bool isTuning=false;
     bool tuningCompleted=false;
     unsigned long tuningElapsed=0;
+    unsigned long tuningWindowSize=DEFAULT_WINDOW;
     int tempSp=DEFAULT_TEMPSP;
     virtual void privateLoop() override;
 

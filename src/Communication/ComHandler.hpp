@@ -1,16 +1,22 @@
 #pragma once
-#include <SD.h>
+
 #include <ArduinoJson.h>
 #include "../Heaters/HeaterConfiguration.hpp"
 #include "../Probes/ProbeConfiguration.hpp"
+#include "../Probes/probe_constants.h"
 #include "../Controller/ControllerConfiguration.hpp"
 #include "../Serializable.hpp"
 #include "../constants.h"
 #include "SystemMessagePacket.hpp"
+#include "StartTestFromPacket.hpp"
+#include "../Controller/SaveState.hpp"
+#include "../BurnInConfiguration.hpp"
 #include "avr/pgmspace.h"
 
 #define ARDUINOJSON_DEFAULT_NESTING_LIMIT       50
 #define BUFFER_SIZE                             255
+
+typedef components::Function<void(const SaveState&)> LoadStateCallback;
 
 class ComHandler{
 public:
@@ -25,8 +31,6 @@ public:
         auto instance=ComHandler::Instance();
         if(instance->serial!=nullptr){
             instance->serialEventEnabled=true;
-            //instance->SendVersion();
-            //instance->serial->flush();
         }
     }
 
@@ -62,14 +66,29 @@ public:
         instance->_ackCallback=ckb;
     }
 
-    static void MapChangeCurrentCallback(ChangeCurrentCallback cbk){
+    static void MapTestIdCallback(TestIdCallback cbk){
         auto instance=ComHandler::Instance();
-        instance->_changeCurrentCallback=cbk;
+        instance->_testIdCallback=cbk;
     }
 
-    static void MapChangeTempCallback(ChangeTempCallback cbk){
+    static void MapLoadStateCallback(LoadStateCallback cbk){
         auto instance=ComHandler::Instance();
-        instance->_changeTempCallback=cbk;
+        instance->_loadStateCallback=cbk;
+    }
+
+    static void MapRestartCallback(RestartRequiredCallback cbk){
+        auto instance=ComHandler::Instance();
+        instance->_restartRequiredCallback=cbk;
+    }
+
+    static void MapGetConfigCallback(GetConfigCallback cbk){
+        auto instance=ComHandler::Instance();
+        instance->_getConfigCallback=cbk;
+    }
+
+    static void MapWindowSizeCallback(ReceiveWindowSizeCallback cbk){
+        auto instance=ComHandler::Instance();
+        instance->_receiveWindowSizeCallback=cbk;
     }
 
     static void SendStartResponse(bool success,const __FlashStringHelper* msg){
@@ -78,6 +97,24 @@ public:
         PGM_P msgMem=reinterpret_cast<PGM_P>(msg);
         strcpy_P(buffer,msgMem);
         instance->InstanceSendStartResponse(success,buffer);
+    }
+
+    static void SendStartFromLoad(const SaveState& saveState){
+        auto instance=ComHandler::Instance();
+        instance->InstanceMsgPacketSerializer(saveState,PacketType::TEST_LOAD_START);
+    }
+
+    static void SendSavedState(const SaveState& saveState){
+        auto instance=ComHandler::Instance();
+        instance->InstanceMsgPacketSerializer(saveState,PacketType::SAVE_STATE);
+    }
+
+    static void SendTestCompleted(const __FlashStringHelper* msg){
+        auto instance=ComHandler::Instance();
+        char buffer[BUFFER_SIZE];
+        PGM_P msgMem=reinterpret_cast<PGM_P>(msg);
+        strcpy_P(buffer,msgMem);
+        instance->InstanceSendTestCompleted(buffer);
     }
 
     static void SendSystemMessage(SystemMessage msgIndex,MessageType msgType,...){
@@ -93,6 +130,19 @@ public:
         msgPacket.message=buffer;
         msgPacket.messageType=msgType;
         instance->InstanceMsgPacketSerializer(msgPacket,PacketType::MESSAGE);
+        if(msgType==MessageType::NOTIFY){
+            //delay(500);
+        }
+    }
+
+    static void SendProbeTestDone(){
+        auto instance=ComHandler::Instance();
+        instance->InstanceSendProbeTestDone();
+    }
+
+    static void NotifyHeaterMode(HeaterMode mode){
+        auto instance=ComHandler::Instance();
+        instance->InstanceNotifyHeaterMode(mode);
     }
 
     static void SendErrorMessage(SystemError errIndex,...){
@@ -110,36 +160,6 @@ public:
         instance->InstanceMsgPacketSerializer(msgPacket,PacketType::MESSAGE);
     }
 
-    static void SendCustomMessage(__FlashStringHelper* format,MessageType msgType,...){
-        auto instance=ComHandler::Instance();
-        SystemMessagePacket msgPacket;
-        char buffer[BUFFER_SIZE];
-        PGM_P pointer=reinterpret_cast<PGM_P>(format);
-        va_list(args);
-        va_start(args,format);
-        vsnprintf_P(buffer,sizeof(buffer),pointer,args);
-        va_end(args);
-        msgPacket.message=buffer;
-        msgPacket.messageType=msgType;
-        instance->InstanceMsgPacketSerializer(msgPacket,PacketType::MESSAGE);
-    }
-
-    static void SendStartFromLoad(bool success,const __FlashStringHelper* msg){
-        auto instance=ComHandler::Instance();
-        char buffer[BUFFER_SIZE];
-        PGM_P msgMem=reinterpret_cast<PGM_P>(msg);
-        strcpy_P(buffer,msgMem);
-        instance->InstanceSendTestStartFromLoad(success,buffer);
-    }
-
-    static void SendTestCompleted(const __FlashStringHelper* msg){
-        auto instance=ComHandler::Instance();
-        char buffer[BUFFER_SIZE];
-        PGM_P msgMem=reinterpret_cast<PGM_P>(msg);
-        strcpy_P(buffer,msgMem);
-        instance->InstanceSendTestCompleted(buffer);
-    }
-
     static void HandleSerial(){
         auto instance=ComHandler::Instance();
         JsonDocument serialEventDoc;
@@ -153,6 +173,17 @@ public:
             instance->MsgPacketDeserialize(serialEventDoc);
             instance->serialEventEnabled=true;
         }
+    }
+
+    static void SendConfigSaveStatus(ConfigType configType,bool success,const __FlashStringHelper* msg){
+        auto instance=ComHandler::Instance();
+        instance->InstanceSendConfigSaved(configType,msg,success);
+    }
+
+    static void SendConfig(ConfigType configType,Serializable* config){
+        auto instance=ComHandler::Instance();
+        instance->InstanceSendConfig(configType,config);
+        
     }
 
     template<typename T> 
@@ -184,16 +215,18 @@ private:
      */
     template <typename T> 
     void InstanceMsgPacketSerializer(const T& data,PacketType packetType);
-    template <typename T> 
-    void InstanceSendRequest(PacketType packetType,const char* request,const T& data);
     // void InstanceSendMessage(const char* message);
     void InstanceSendId();
     void ReceiveId(const JsonDocument& serialEventDoc);
     void InstanceSendVersion();
     void ReceiveVersion(const JsonDocument& serialEventDoc);
     void InstanceSendStartResponse(bool success,const char* message);
-    void InstanceSendTestStartFromLoad(bool success,const char* message);
     void InstanceSendTestCompleted(const char* message);
+    void InstanceSendProbeTestDone();
+    void InstanceSendConfigSaved(ConfigType configType,const __FlashStringHelper* msg, bool success);
+    void InstanceSendConfig(ConfigType configType,Serializable* config);
+    void InstanceNotifyHeaterMode(HeaterMode mode);
+    void InstanceReceiveConfig( JsonDocument& serialEventDoc);
 
 
 private:
@@ -203,6 +236,9 @@ private:
     bool serialEventEnabled;
     CommandCallback             _commandCallback=[](StationCommand){};
     AckCallback                 _ackCallback=[](AckType){_NOP();};
-    ChangeCurrentCallback       _changeCurrentCallback=[](int){_NOP();};
-    ChangeTempCallback          _changeTempCallback=[](int){_NOP();};
+    TestIdCallback              _testIdCallback=[](const char*){_NOP();};
+    GetConfigCallback           _getConfigCallback=[](ConfigType){_NOP();};
+    LoadStateCallback           _loadStateCallback=[](const SaveState&){_NOP();};
+    RestartRequiredCallback     _restartRequiredCallback=[](void){_NOP();};
+    ReceiveWindowSizeCallback   _receiveWindowSizeCallback=[](unsigned long){_NOP();};
 };

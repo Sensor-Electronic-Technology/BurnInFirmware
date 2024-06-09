@@ -1,9 +1,9 @@
 #pragma once
-
 #include <Arduino.h>
 #include <EEPROM.h>
 #include <ArduinoComponents.h>
 #include <avr/pgmspace.h>
+#include <SdFat.h>
 
 template <class T> int EEPROM_write(int addr, const T& value) {
     const byte* p = (const byte*)(const void*)&value;
@@ -22,11 +22,12 @@ template <class T> int EEPROM_read(int addr, T& value) {
     return newAddr;
 }//End read any value/type
 
-
 #pragma region Globals
+
     inline char StationId[4];
     inline char FirmwareVersion[8];
     inline bool sdInitialized=false;
+
 #pragma endregion
 
 #define ID_ADDR     10
@@ -34,18 +35,31 @@ template <class T> int EEPROM_read(int addr, T& value) {
 
 #pragma region MACROS
 
-#define read_file_message(msg)   ((const char *)pgm_read_ptr(&(file_result_messages[msg])))
-#define read_system_message(msg) ((const char *)pgm_read_ptr(&(system_message_table[msg])))
-#define read_system_error(msg)   ((const char *)pgm_read_ptr(&(system_error_table[msg])))
+#define read_file_message(msg)      ((const char *)pgm_read_ptr(&(file_result_messages[msg])))
+#define read_system_message(msg)    ((const char *)pgm_read_ptr(&(system_message_table[msg])))
+#define read_system_error(msg)      ((const char *)pgm_read_ptr(&(system_error_table[msg])))
 
-#define read_log_prefix(pre)      ((const char *)pgm_read_ptr(&(log_level_prefixes[pre])))
-#define read_packet_prefix(pre)   ((const char *)pgm_read_ptr(&(prefixes[pre])))
-#define read_filename(pType)      ((const char *)pgm_read_ptr(&(json_filenames[pType])))
+#define read_log_prefix(pre)        ((const char *)pgm_read_ptr(&(log_level_prefixes[pre])))
+#define read_packet_prefix(pre)     ((const char *)pgm_read_ptr(&(prefixes[pre])))
+#define read_filename(pType)        ((const char *)pgm_read_ptr(&(json_filenames[pType])))
+/* #define read_state_filename()     ((const char *)pgm_read_ptr(&(json_filenames[3]))) */
 
 #pragma endregion
 
-
 #pragma region Constants
+    #define SD_FAT_TYPE 3
+    #define SPI_CLOCK SD_SCK_MHZ(50)
+    #define SD_CS_PIN SS
+    #if HAS_SDIO_CLASS
+    #define SD_CONFIG SdioConfig(FIFO_SDIO)
+    #elif ENABLE_DEDICATED_SPI
+    #define SD_CONFIG SdSpiConfig(SD_CS_PIN, DEDICATED_SPI, SPI_CLOCK)
+    #else  // HAS_SDIO_CLASS
+    #define SD_CONFIG SdSpiConfig(SD_CS_PIN, SHARED_SPI, SPI_CLOCK)
+    #endif  // HAS_SDIO_CLASS
+
+
+    #define TEST_ID_LENGTH                 24
     //Timer
     #define TIMER_PERIOD                   1
     #define TIMER_FACTOR                   1000
@@ -59,9 +73,8 @@ template <class T> int EEPROM_read(int addr, T& value) {
     #define TIME_SECS_60mA                  TIME_SECS_120mA
     #define TIME_SECS_150mA                 25200ul
 
-
     #define TEMP_INTERVAL                   100ul   
-    #define COM_INTERVAL                    1000ul  //1sec
+    #define COM_INTERVAL                    250ul  //250ms
     #define LOG_INTERVAL                    300000ul //5min
     #define VER_CHECK_INTERVAL              3600000ul //1hr
     #define UPDATE_INTERVAL                 500ul  //500ms
@@ -77,6 +90,13 @@ template <class T> int EEPROM_read(int addr, T& value) {
 #pragma endregion
 
 #pragma region ENUMS
+
+    enum ConfigType:uint8_t{
+        HEATER_CONFIG=0,            //PC to Station config
+        PROBE_CONFIG=1,             //PC to stattion config
+        SYSTEM_CONFIG=2,            //PC to station config
+    };
+
     enum FileResult:uint8_t{
         DOES_NOT_EXIST,
         FAILED_TO_OPEN,
@@ -101,14 +121,18 @@ template <class T> int EEPROM_read(int addr, T& value) {
         STOP_TUNE=9,
         SAVE_TUNE=10,
         CANCEL_TUNE=11,
-        RESET=12
+        RESET=12,
+        REQUEST_RUNNING_TEST=13,
+        FORMAT_SD=14,
     };
 
     enum AckType:uint8_t{
         TEST_START_ACK=0,
         VER_ACK=1,
-        ID_ACK=2   
+        ID_ACK=2,
+        TEST_FINISH_ACK=3,   
     };
+
 #pragma endregion
 
 #pragma region Callbacks
@@ -117,56 +141,67 @@ template <class T> int EEPROM_read(int addr, T& value) {
     typedef components::Function<void(void)> TestFinsihedCallback;
     typedef components::Function<void(void)> TestAckCallback;
     typedef components::Function<void(AckType)> AckCallback;
-    typedef components::Function<void(int)> ChangeCurrentCallback;
-    typedef components::Function<void(int)> ChangeTempCallback;
+    typedef components::Function<void(const char* testId)> TestIdCallback;
+    typedef components::Function<void(ConfigType)> GetConfigCallback;
+    typedef components::Function<void(unsigned long)> ReceiveWindowSizeCallback;
+    
 #pragma endregion
 
 #pragma region PrefixDefinitions
-    #define PREFIX_COUNT    19
+    #define PREFIX_COUNT    25
 
     enum PacketType:uint8_t{
-        HEATER_CONFIG=0,            //PC to Station config
-        PROBE_CONFIG=1,             //PC to stattion config
-        SYSTEM_CONFIG=2,            //PC to station config
-        SAVE_STATE=3,               //???
-        MESSAGE=4,                  //outgoing->message of speficied type
-        DATA=5,                     //outgoing-> readings and state data
-        COMMAND=6,                  //incoming-> route to Controller
-        ID_RECEIVE=7,               //Set station id
-        ID_REQUEST=8,               //Request station id-Send to PC
-        VER_RECIEVE=9,              //incoming-> new firmware version
-        VER_REQUEST=10,             //incoming-> request version and send
-        TEST_START_STATUS=11,       //outgoing->Notify PC that test has started
-        TEST_COMPLETED=12,          //outgoing->Notify PC that test has completed
-        TEST_LOAD_START=13,         //outgoing->Notify PC that test is starting from a load state
-        HEATER_NOTIFY=14,           //Outgoing->Notify PC of a single heater tuning results
-        HEATER_TUNE_COMPLETE=15,    //Outgoing->notfiy PC that all heaters have been tuned,
-        ACK=16,                     //Outgoing->Acknowledge PC of command
-        UPDATE_CURRENT=17,          //Incoming update current
-        UPDATE_TEMP=18,             //Incoming update temperature
-        TUNE_COM=19               //Outgoing->tuning serial data
+        SAVE_STATE=0,               //???
+        MESSAGE=1,                  //outgoing->message of speficied type
+        DATA=2,                     //outgoing-> readings and state data
+        COMMAND=3,                  //incoming-> route to Controller
+        ID_RECEIVE=4,               //Set station id
+        ID_REQUEST=5,               //Request station id-Send to PC
+        VER_RECIEVE=6,              //incoming-> new firmware version
+        VER_REQUEST=7,             //incoming-> request version and send
+        TEST_START_STATUS=8,       //outgoing->Notify PC that test has started
+        TEST_COMPLETED=9,          //outgoing->Notify PC that test has completed
+        TEST_LOAD_START=10,         //outgoing->Notify PC that test is starting from a load state
+        HEATER_NOTIFY=11,           //Outgoing->Notify PC of a single heater tuning results
+        HEATER_TUNE_COMPLETE=12,    //Outgoing->notfiy PC that all heaters have been tuned,
+        ACK=13,                     //Outgoing->Acknowledge PC of command
+        TUNE_COM=14,                //Outgoing->tuning serial data,
+        SEND_TEST_ID=15,            //Incoming->Start test
+        LOAD_STATE=16,              //Incoming->Load saved state
+        CONFIG_SAVE_STATUS=17,       //Outgoing->Notify PC of config save status
+        GET_CONFIG=18,               //Incoming->Request config
+        RECEIVE_CONFIG=19,           //Outgoing->Send config
+        PROBE_TEST_DONE=20,         //Outgoing->Notify PC that probe test is done
+        REQUEST_CONFIG_BACKUP=21,   //Incoming->Request config backup,
+        SEND_RUNNING_TEST=22,       //Incoming->Request running test,
+        NOTIFY_SW_HEATER_MODE=23,   //Outgoing->Notify PC that in tuning mode,
+        RECEIVE_WINDOW_SIZE=24     //Incoming->PID tune window size
     };
-
-    const char strPre_00[] PROGMEM="CH";   //0
-    const char strPre_01[] PROGMEM="CP";   //1
-    const char strPre_02[] PROGMEM="CS";   //2
-    const char strPre_03[] PROGMEM="ST";   //3
-    const char strPre_04[] PROGMEM="M";    //4
-    const char strPre_05[] PROGMEM="D";    //5
-    const char strPre_06[] PROGMEM="COM";  //6
-    const char strPre_07[] PROGMEM="IDREC";  //7
-    const char strPre_08[] PROGMEM="IDREQ";   //8
-    const char strPre_09[] PROGMEM="VERREC";  //9
-    const char strPre_10[] PROGMEM="VERREQ";  //10
-    const char strPre_11[] PROGMEM="TSTAT";     //11
-    const char strPre_12[] PROGMEM="TCOMP";     //12
-    const char strPre_13[] PROGMEM="TLOAD";     //13
-    const char strPre_14[] PROGMEM="HNOTIFY";    //14
-    const char strPre_15[] PROGMEM="HTUNED";     //15
-    const char strPre_16[] PROGMEM="ACK";     //16
-    const char strPre_17[] PROGMEM="UC";     //17
-    const char strPre_18[] PROGMEM="UT";     //18
-    const char strPre_19[] PROGMEM="TCOM";     //19
+    const char strPre_00[] PROGMEM="ST";   
+    const char strPre_01[] PROGMEM="M";    
+    const char strPre_02[] PROGMEM="D";    
+    const char strPre_03[] PROGMEM="COM";  
+    const char strPre_04[] PROGMEM="IDREC";  
+    const char strPre_05[] PROGMEM="IDREQ";   
+    const char strPre_06[] PROGMEM="VERREC";  
+    const char strPre_07[] PROGMEM="VERREQ";  
+    const char strPre_08[] PROGMEM="TSTAT";     
+    const char strPre_09[] PROGMEM="TCOMP";     
+    const char strPre_10[] PROGMEM="TLOAD";     
+    const char strPre_11[] PROGMEM="HNOTIFY";
+    const char strPre_12[] PROGMEM="HTUNED";
+    const char strPre_13[] PROGMEM="ACK";
+    const char strPre_14[] PROGMEM="TCOM";
+    const char strPre_15[] PROGMEM="TID";
+    const char strPre_16[] PROGMEM="LSTATE";
+    const char strPre_17[] PROGMEM="SCONF";
+    const char strPre_18[] PROGMEM="GCONF";
+    const char strPre_19[] PROGMEM="RCONF";
+    const char strPre_20[] PROGMEM="PTD";
+    const char strPre_21[] PROGMEM="RCONFB";
+    const char strPre_22[] PROGMEM="RTEST";;
+    const char strPre_23[] PROGMEM="SWHEATER";
+    const char strPre_24[] PROGMEM="WINSIZE";
 
     const char* const prefixes[] PROGMEM = {
         strPre_00,
@@ -188,13 +223,16 @@ template <class T> int EEPROM_read(int addr, T& value) {
         strPre_16,
         strPre_17,
         strPre_18,
-        strPre_19
+        strPre_19,
+        strPre_20,
+        strPre_21,
+        strPre_22,
+        strPre_23,
+        strPre_24
     };
 #pragma endregion
 
 #pragma region FileNames
-
-
     const char strFile_01[] PROGMEM="/hConfigs.txt";  //0
     const char strFile_02[] PROGMEM="/pConfigs.txt";  //1
     const char strFile_03[] PROGMEM="/sConfig.txt";   //2
@@ -203,11 +241,8 @@ template <class T> int EEPROM_read(int addr, T& value) {
     const char* const json_filenames[] PROGMEM = {
         strFile_01,
         strFile_02,
-        strFile_03,
-        strFile_04
+        strFile_03
     };
-
-
 
 #pragma endregion
 
@@ -249,41 +284,44 @@ template <class T> int EEPROM_read(int addr, T& value) {
         HEATER_STATE_TRANSITION=26,
         PROBE_TEST_START=27,
         PROBE_TEST_END=28,
-        CURRENT_CHANGED=29
+        CURRENT_CHANGED=29,
+        SD_FORMATTED=30
     };
 
-    const char str_01[] PROGMEM=    "------Before Loading Free Memory: %d----------";  //0
-    const char str_02[] PROGMEM=   "------Firmware Initialization Starting--------";  //1
-    const char str_03[] PROGMEM=   "Loading configuration files...................";  //2
-    const char str_04[] PROGMEM=    "After Loading Free Memory: %d.................";  //3
-    const char str_05[] PROGMEM=   "Configuration Files Loaded....................";  //4
-    const char str_06[] PROGMEM=    "--------Components Initalizing Starting-------";  //5
-    const char str_07[] PROGMEM=   "Heaters initialized...........................";  //6
-    const char str_08[] PROGMEM=   "Probes initialized............................";  //7
-    const char str_09[] PROGMEM=   "Registering Components........................";  //8
-    const char str_10[] PROGMEM=    "--------Components Initalized-----------------";  //9
-    const char str_11[] PROGMEM=    "-------------Initalizing Timers---------------"; //10
-    const char str_12[] PROGMEM=    "-------Timer Initialization Complete----------"; //11
-    const char str_13[] PROGMEM=    "Check for saved state, Free Memory: %d";//12
-    const char str_14[] PROGMEM=    "Saved state found, state loaded. Resuming from saved state";//13
-    const char str_15[] PROGMEM=    "No saved state found, continuing to normal operation";//14
-    const char str_16[] PROGMEM=    "------ Firmware Initialization Complete-------"; //15
-    const char str_17[] PROGMEM=    "Tuning results saved"; //16
-    const char str_18[] PROGMEM=    "Tuning canceled"; //17,
-    const char str_19[] PROGMEM=    "Deleting saved state"; //18
-    const char str_20[] PROGMEM=    "Saved state deleted"; //19
-    const char str_21[] PROGMEM=    "Controller resetting, please wait......."; //20,
-    const char str_22[] PROGMEM=    "SD Card Initialized"; //21
-    const char str_23[] PROGMEM=    "TestController Transition from StateId %d from StateId %d"; //22
-    const char str_24[] PROGMEM=    "Test Completed";//23
-    const char str_25[] PROGMEM=    "Heater mode switched to auto tune";//23
-    const char str_26[] PROGMEM=    "Heater mode switched to heating";//23
-    const char str_27[] PROGMEM=    "TestController Transition from StateId %d from StateId %d"; //22
-    const char str_28[] PROGMEM=    "Probe Test Started,Current: %d"; //23
-    const char str_29[] PROGMEM=    "Probe Test Completed,Current Restored to %d"; //24
-    const char str_30[] PROGMEM=    "Current Changed to %d"; //24
+    const char str_00[] PROGMEM=    "Before Loading Free Memory: %d";  
+    const char str_01[] PROGMEM=   "Firmware Initialization Starting";  
+    const char str_02[] PROGMEM=   "Loading configuration files";  
+    const char str_03[] PROGMEM=   "After Loading Free Memory: %d";  
+    const char str_04[] PROGMEM=   "Configuration Files Loaded";  
+    const char str_05[] PROGMEM=    "Components Initalizing Starting";  
+    const char str_06[] PROGMEM=   "Heaters initialized";  
+    const char str_07[] PROGMEM=   "Probes initialized";  
+    const char str_08[] PROGMEM=   "Registering Components"; 
+    const char str_09[] PROGMEM=    "Components Initalized"; 
+    const char str_10[] PROGMEM=    "Initalizing Timers"; 
+    const char str_11[] PROGMEM=    "Timer Initialization Complete"; 
+    const char str_12[] PROGMEM=    "Check for saved state, Free Memory: %d";
+    const char str_13[] PROGMEM=    "Saved state found, state loaded. Resuming from saved state";
+    const char str_14[] PROGMEM=    "No saved state found, continuing to normal operation";
+    const char str_15[] PROGMEM=    "Firmware Initialization Complete"; 
+    const char str_16[] PROGMEM=    "Tuning results saved"; 
+    const char str_17[] PROGMEM=    "Tuning canceled"; 
+    const char str_18[] PROGMEM=    "Deleting saved state"; 
+    const char str_19[] PROGMEM=    "Saved state deleted"; 
+    const char str_20[] PROGMEM=    "Controller resetting, please wait"; 
+    const char str_21[] PROGMEM=    "SD Card Initialized"; 
+    const char str_22[] PROGMEM=    "TestController Transition from StateId %d from StateId %d"; 
+    const char str_23[] PROGMEM=    "Test Completed";
+    const char str_24[] PROGMEM=    "Heater mode switched to auto tune";
+    const char str_25[] PROGMEM=    "Heater mode switched to heating";
+    const char str_26[] PROGMEM=    "TestController Transition from StateId %d from StateId %d"; 
+    const char str_27[] PROGMEM=    "Probe Test Started,Current: %d"; 
+    const char str_28[] PROGMEM=    "Probe Test Completed,Current Restored to %d"; 
+    const char str_29[] PROGMEM=    "Current Changed to %d"; 
+    const char str_30[] PROGMEM=    "SD Card Formatted, please re-upload configurations before tuning or running tests"; 
 
     const char* const system_message_table[] PROGMEM={
+        str_00,
         str_01,
         str_02,
         str_03,
@@ -348,38 +386,47 @@ template <class T> int EEPROM_read(int addr, T& value) {
         HEATER_TRANSITION_ERR=23,
         CHANGE_RUNNING_ERR=24,
         MAX_TEMP_ERR=25,
-        TEST_RUNNING_ERR=26
+        TEST_RUNNING_ERR=26,
+        TEST_ID_NOT_SET=27,
+        SD_FORMAT_FAILED=28,
+        TUNE_SAVE_FAILED=29,
+        TUNE_WINDOW_FAILED=30,
     };
 
-    const char strErr_01[] PROGMEM="Failed to load configuration files. Please contact administrator";
-    const char strErr_02[] PROGMEM="Failed to load configuration file: %s. Defaults will be loaded. \n Please contact administarator";
-    const char strErr_03[] PROGMEM="Failed to save configuration files.  Please contact administrator";
-    const char strErr_04[] PROGMEM="Failed to save configuration file: %s. Changes will be lost on reset. Please contact administrator";
-    const char strErr_05[] PROGMEM="SD card failed to initialize!! Defaults will be loaded. \n If you continue no changes to the configuration will be saved. Please check connections and contact administrator";
-    const char strErr_06[] PROGMEM="Failed to save heater tuning results!! Please contact administrator";
-    const char strErr_07[] PROGMEM="Failed to load saved state, station will continue to normal operation. Please contact administrator";
-    const char strErr_08[] PROGMEM="Failed to delete saved state! Please contact administrator";
-    const char strErr_09[] PROGMEM="Invalid command recieved! Please contact administrator";
-    const char strErr_10[] PROGMEM="Failed to deserialize data: %s. Please contact administrator";
-    const char strErr_11[] PROGMEM="Failed to serialize data: %s. Please contact administrator";
-    const char strErr_12[] PROGMEM="Invalid message packet prefix recieved: %s";
-    const char strErr_13[] PROGMEM="Prefix not found in message packet";
-    const char strErr_14[] PROGMEM="Failed to transition to idle from running state, test is being hard stopped. \n restart controller before starting another test";
-    const char strErr_15[] PROGMEM="Failed to start, test is already running";
-    const char strErr_16[] PROGMEM="Failed to start, current or saveState was not set";
-    const char strErr_17[] PROGMEM= "Failed to pause, test is already paused";
-    const char strErr_18[] PROGMEM="Failed to continue, test is not paused";
-    const char strErr_19[] PROGMEM="Failed to stop tuning, tuning is either in idle or complete state.";
-    const char strErr_20[] PROGMEM="Failed to start tuning, tuning is running or complete state.";
-    const char strErr_21[] PROGMEM="Failed to save tuning results, tuning is not in complete state";
-    const char strErr_22[] PROGMEM="Failed to discard tuning, tuning is not in complete state";
-    const char strErr_23[] PROGMEM="Error: Not in Tuning Mode, Switch modes to start tuning";
-    const char strErr_24[] PROGMEM="Error: Not in Heating Mode, Switch modes to Turn On/Off Heaters";
-    const char strErr_25[] PROGMEM="Error: Cannot change current or temperature while a test is running";
-    const char strErr_26[] PROGMEM="Error: Temperature set point must be <= %d";
-    const char strErr_27[] PROGMEM="Error: Cannot perform this action while a test is running";
+    const char strErr_00[] PROGMEM="Failed to load configuration files. Please contact administrator";
+    const char strErr_01[] PROGMEM="Failed to load configuration file: %s. Defaults will be loaded. \n Please contact administarator";
+    const char strErr_02[] PROGMEM="Failed to save configuration files.  Please contact administrator";
+    const char strErr_03[] PROGMEM="Failed to save configuration file: %s. Changes will be lost on reset. Please contact administrator";
+    const char strErr_04[] PROGMEM="SD card failed to initialize!! Defaults will be loaded. \n If you continue no changes to the configuration will be saved. Please check connections and contact administrator";
+    const char strErr_05[] PROGMEM="Failed to save heater tuning results!! Please contact administrator";
+    const char strErr_06[] PROGMEM="Failed to load saved state, station will continue to normal operation. Please contact administrator";
+    const char strErr_07[] PROGMEM="Failed to delete saved state! Please contact administrator";
+    const char strErr_08[] PROGMEM="Invalid command recieved! Please contact administrator";
+    const char strErr_09[] PROGMEM="Failed to deserialize data: %s. Please contact administrator";
+    const char strErr_10[] PROGMEM="Failed to serialize data: %s. Please contact administrator";
+    const char strErr_11[] PROGMEM="Invalid message packet prefix recieved: %s";
+    const char strErr_12[] PROGMEM="Prefix not found in message packet";
+    const char strErr_13[] PROGMEM="Failed to transition to idle from running state, test is being hard stopped. \n restart controller before starting another test";
+    const char strErr_14[] PROGMEM="Failed to start, test is already running";
+    const char strErr_15[] PROGMEM="Failed to start, current or saveState was not set";
+    const char strErr_16[] PROGMEM= "Failed to pause, test is already paused";
+    const char strErr_17[] PROGMEM="Failed to continue, test is not paused";
+    const char strErr_18[] PROGMEM="Failed to stop tuning, tuning is either in idle or complete state.";
+    const char strErr_19[] PROGMEM="Failed to start tuning, tuning is running or complete state.";
+    const char strErr_20[] PROGMEM="Failed to save tuning results, tuning is not in complete state";
+    const char strErr_21[] PROGMEM="Failed to discard tuning, tuning is not in complete state";
+    const char strErr_22[] PROGMEM="Error: Not in Tuning Mode, Switch modes to start tuning";
+    const char strErr_23[] PROGMEM="Error: Not in Heating Mode, Switch modes to Turn On/Off Heaters";
+    const char strErr_24[] PROGMEM="Error: Cannot change current or temperature while a test is running";
+    const char strErr_25[] PROGMEM="Error: Temperature set point must be <= %d";
+    const char strErr_26[] PROGMEM="Error: Cannot perform this action while a test is running";
+    const char strErr_27[] PROGMEM="Error: Test Id must be set before starting a test";
+    const char strErr_28[] PROGMEM="Error: Failed to format SD Card, ErrorCode: %d ErrorData: %d";
+    const char strErr_29[] PROGMEM="Error: Failed to save tuning results.  Please try again discard results";
+    const char strErr_30[] PROGMEM="Error: Failed to set tuning window size, tuning is currently running. To set the tuning please stop the current tune process and try again";
 
     const char* const system_error_table[] PROGMEM={
+        strErr_00,
         strErr_01,
         strErr_02,
         strErr_03,
@@ -406,83 +453,10 @@ template <class T> int EEPROM_read(int addr, T& value) {
         strErr_24,
         strErr_25,
         strErr_26,
-        strErr_27
+        strErr_27,
+        strErr_28,
+        strErr_29,
+        strErr_30
     };
 
 #pragma endregion
-
-
-
-
-// enum PacketType:uint8_t{
-//     HEATER_CONFIG=0,
-//     PROBE_CONFIG=1,
-//     SYSTEM_CONFIG=2,
-//     SAVE_STATE=3,
-//     MESSAGE=4,
-//     DATA=5,
-//     COMMAND=6,
-//     HEATER_RESPONSE=7, //Pc sends save response
-//     TEST_RESPONSE=8,  //PC sends continue test request
-//     HEATER_REQUEST=9,  //Pc recieves AutoTuneValues and request save response
-//     TEST_REQUEST=10,   //Firmware sends continue test request
-//     ID_RECEIVE=11,     //Set station id
-//     ID_REQUEST=12,     //Request station id-Send to PC
-//     VER_RECIEVE=13,
-//     VER_REQUEST=14,
-//     INIT=15,
-//     TEST_START_STATUS=16, //Notify PC that test has started
-//     TEST_COMPLETED=17,    //Notify PC that test has completed
-//     TEST_LOAD_START=18,   //Notify PC that test is starting from a load state
-// };
-
-// const char* const prefixes[] PROGMEM = {
-//     "CH",   //0
-//     "CP",   //1
-//     "CS",   //2
-//     "ST",   //3
-//     "M",    //4
-//     "D",    //5
-//     "COM",  //6
-//     "HRES", //7
-//     "TRES", //8
-//     "HREQ", //9
-//     "TREQ", //10
-//     "IDREC",  //11
-//     "IDREQ",   //12
-//     "VERREC", //13
-//     "VERREQ",  //14
-//     "INIT",     //15
-//     "TSTAT",     //16
-//     "TCOMP",     //17
-//     "TLOAD"      //18
-
-// };
-
-// const char* const system_error_table[] PROGMEM={
-// /*0*/   "Failed to load configuration files. Please contact administrator",
-// /*1*/   "Failed to load configuration file: %s. Defaults will be loaded. \n Please contact administarator",
-// /*2*/   "Failed to save configuration files.  Please contact administrator",
-// /*3*/   "Failed to save configuration file: %s. Changes will be lost on reset. Please contact administrator",
-// /*4*/   "SD card failed to initialize!! Defaults will be loaded. \n If you continue no changes to the configuration will be saved. Please check connections and contact administrator",
-// /*5*/   "Failed to save heater tuning results!! Please contact administrator",
-// /*6*/   "Failed to load saved state, station will continue to normal operation. Please contact administrator",
-// /*7*/   "Failed to delete saved state! Please contact administrator",
-// /*8*/   "Invalid command recieved! Please contact administrator",
-// /*9*/   "Failed to deserialize data: %s. Please contact administrator",
-// /*10*/  "Failed to serialize data: %s. Please contact administrator",
-// /*11*/  "Invalid message packet prefix recieved: %s."
-// /*12*/  "Prefix not found in message packet",
-// /*13*/  "Failed to transition to idle from running state, test is being hard stopped. \n restart controller before starting another test",
-// /*14*/  "Failed to start, test is already running",
-// /*15*/  "Failed to start, current or saveState was not set",
-// /*16*/  "Failed to pause, test is already paused",
-// /*17*/  "Failed to continue, test is not paused",
-// };
-
-
-
-
-
-
-

@@ -2,7 +2,6 @@
 #include "../free_memory.h"
 
 Controller::Controller():Component(){
-    //ComHandler::MapCommandCallback(this->_commandCallback);
     this->_commandCallback=[&](StationCommand command){
         this->HandleCommand(command);
     };
@@ -11,35 +10,26 @@ Controller::Controller():Component(){
         this->TestFinished();
     };
 
-    this->_changeCurrentCallback=[&](int value){
-        this->UpdateCurrent(value);
-    };
-
-    this->_changeTempCallback=[&](int value){
-        this->UpdateTempSp(value);
-    };
-
     this->_ackCallback=[&](AckType ack){
-        switch(ack){
-            case AckType::TEST_START_ACK:{
-                this->testController.AcknowledgeTestStart();
-                break;
-            }
-            case AckType::VER_ACK:{
-                this->versionTimer.cancel();
-                break;
-            }
-            case AckType::ID_ACK:{
-                this->idTimer.cancel();
-                break;
-            }
-        }
+        this->Acknowledge(ack);
+    };
+
+    this->_loadStateCallback=[&](const SaveState& state){
+        this->StartFromSavedState(state);
+    };
+
+    this->_getConfigCallback=[&](ConfigType configType){
+        this->GetConfigHandler(configType);
+    };
+
+    this->_restartRequiredCallback=[&](){
+        this->NeedRestartHandler();
     };
 
     ComHandler::MapAckCallback(this->_ackCallback);
     ComHandler::MapCommandCallback(this->_commandCallback);
-    ComHandler::MapChangeCurrentCallback(this->_changeCurrentCallback);
-    ComHandler::MapChangeTempCallback(this->_changeTempCallback);
+    ComHandler::MapRestartCallback(this->_restartRequiredCallback);
+    ComHandler::MapGetConfigCallback(this->_getConfigCallback);
 
     for(uint8_t i=0;i<PROBE_COUNT;i++){
         this->probeResults[i]=ProbeResult();
@@ -51,31 +41,45 @@ Controller::Controller():Component(){
 }
 
 void Controller::LoadConfigurations(){
-    ComHandler::SendSystemMessage(SystemMessage::BEFORE_FREE_MEM,MessageType::INIT,FreeRam());
+    ComHandler::SendSystemMessage(SystemMessage::BEFORE_FREE_MEM,MessageType::INIT,FreeSRAM());
     ComHandler::SendSystemMessage(SystemMessage::FIRMWARE_INIT,MessageType::INIT);
-
     ComHandler::SendSystemMessage(SystemMessage::LOAD_CONFIG,MessageType::INIT);
 
-
-    //FileManager::Load(&heatersConfig,PacketType::HEATER_CONFIG);
-    //FileManager::Load(&probesConfig,PacketType::PROBE_CONFIG);
-    //FileManager::Load(&controllerConfig,PacketType::SYSTEM_CONFIG);
-
-    // ComHandler::MsgPacketSerializer(heatersConfig,PacketType::HEATER_CONFIG);
-    // ComHandler::MsgPacketSerializer(probesConfig,PacketType::PROBE_CONFIG);
-    // ComHandler::MsgPacketSerializer(controllerConfig,PacketType::SYSTEM_CONFIG);
+    HeaterControllerConfig heatersConfig;
+    ProbeControllerConfig probesConfig;
+    ControllerConfig controllerConfig;
     
+/*     FileManager::SaveConfiguration(&heatersConfig,ConfigType::HEATER_CONFIG);
+    FileManager::SaveConfiguration(&probesConfig,ConfigType::PROBE_CONFIG);
+    FileManager::SaveConfiguration(&controllerConfig,ConfigType::SYSTEM_CONFIG); */ 
+
+    if(!FileManager::LoadConfiguration(&heatersConfig,ConfigType::HEATER_CONFIG)){
+       heatersConfig.Reset();
+    }
+    if(!FileManager::LoadConfiguration(&probesConfig,ConfigType::PROBE_CONFIG)){
+        probesConfig.Reset();
+    }
+
+    if(!FileManager::LoadConfiguration(&controllerConfig,ConfigType::SYSTEM_CONFIG)){
+        controllerConfig.Reset();
+    }
+    //probesConfig.probeTestCurrent=CurrentValue::c060;
+    //probesConfig.probeTestTime=PROBE_TESTTIME;
+
+/*     JsonDocument doc;
+    heatersConfig.Serialize(&doc,true);
+    serializeJsonPretty(doc,Serial); */
+
     this->heaterControl.Setup(heatersConfig);
     this->probeControl.Setup(probesConfig);
     this->testController.SetConfig(controllerConfig.burnTimerConfig);
     this->testController.SetFinsihedCallback(this->_testFinishedCallback);
-    // this->burnTimer=new BurnInTimer(controllerConfig.burnTimerConfig);
 
     this->comInterval=controllerConfig.comInterval;
     this->updateInterval=controllerConfig.updateInterval;
     this->logInterval=controllerConfig.logInterval;
     this->versionInterval=controllerConfig.versionInterval;
-    ComHandler::SendSystemMessage(SystemMessage::AFTER_FREE_MEM,MessageType::INIT,FreeRam());   
+    ComHandler::SendSystemMessage(SystemMessage::AFTER_FREE_MEM,MessageType::INIT,FreeSRAM());   
     ComHandler::SendSystemMessage(SystemMessage::CONFIG_LOADED,MessageType::INIT);
 }
 
@@ -101,21 +105,17 @@ void Controller::SetupComponents(){
 
     this->stateLogTimer.onInterval([&](){
         if(this->testController.IsRunning()){
-            this->saveState.Set(CurrentValue::c150,85,this->testController.GetTimerData());
-            FileManager::Save(&this->saveState,PacketType::SAVE_STATE);
+            this->saveState.Set(CurrentValue::c150,85,
+                                this->testController.GetTimerData(),
+                                this->testController.GetTestId());
+            FileManager::SaveState(&this->saveState);
         }
-    },30000);
-    
-    this->comTimer.onInterval([&](){
-        this->UpdateSerialData();
-        bool probeRtOkay[PROBE_COUNT]={false,false,false,false,false,false};
-        this->testController.GetProbeRunTimeOkay(probeRtOkay);
-        this->comData.Set(this->probeResults,this->heaterResults,probeRtOkay,*(this->testController.GetBurnTimer()));
-        this->comData.currentSP=this->probeControl.GetSetCurrent();
-        this->comData.temperatureSP=this->heaterControl.GetSetPoint();
-        ComHandler::MsgPacketSerializer(this->comData,PacketType::DATA);
-        Serial.println(" Free RAM: "+String(FreeRam()));
-    },this->comInterval,true,false);
+    },5000,false,true);
+
+    this->comTimer.onInterval([&](){ 
+         this->ComUpdate();
+    }, 
+    this->comInterval, true, false);
 
     this->updateTimer.onInterval([&](){
         this->probeControl.GetProbeResults(this->probeResults);
@@ -144,22 +144,78 @@ void Controller::SetupComponents(){
     RegisterChild(this->probeControl);
     RegisterChild(this->testController);
     
-    this->CheckSavedState();    
+    this->CheckSavedState(0);
 }
 
-void Controller::CheckSavedState(){
+void Controller::ComUpdate(){
+    this->UpdateSerialData();
+    bool probeRtOkay[PROBE_COUNT] = {false, false, false, false, false, false};
+    this->testController.GetProbeRunTimeOkay(probeRtOkay);
+    this->comData.Set(this->probeResults, this->heaterResults, probeRtOkay, *(this->testController.GetBurnTimer()));
+    this->comData.currentSP = this->probeControl.GetSetCurrent();
+    this->comData.temperatureSP = this->heaterControl.GetSetPoint();
+    ComHandler::MsgPacketSerializer(this->comData, PacketType::DATA);
+}
+
+void Controller::NeedRestartHandler(){
+    if(this->testController.IsRunning() || this->heaterControl.IsTuning()){
+        this->needsReset=true;
+        return;
+    }
+    this->Reset();
+}
+
+void Controller::GetConfigHandler(ConfigType configType){
+    switch(configType){
+        case ConfigType::HEATER_CONFIG:{
+            HeaterControllerConfig config;
+            auto success=FileManager::LoadConfiguration(&config,configType);
+            if(success){
+                ComHandler::SendConfig(configType,&config);
+            }else{
+                ComHandler::SendErrorMessage(SystemError::CONFIG_LOAD_FAILED);
+            }
+            break;
+        }
+        case ConfigType::PROBE_CONFIG:{
+            ProbeControllerConfig config;
+            auto success=FileManager::LoadConfiguration(&config,configType);
+            if(success){
+                ComHandler::SendConfig(configType,&config);
+            }else{
+                ComHandler::SendErrorMessage(SystemError::CONFIG_LOAD_FAILED);
+            }
+            break;
+        }
+        case ConfigType::SYSTEM_CONFIG:{
+            ControllerConfig config;
+            auto success=FileManager::LoadConfiguration(&config,configType);
+            if(success){
+                ComHandler::SendConfig(configType,&config);
+            }else{
+                ComHandler::SendErrorMessage(SystemError::CONFIG_LOAD_FAILED);
+            }
+            break;
+        }
+        default:{
+            ComHandler::SendErrorMessage(SystemError::CONFIG_LOAD_FAILED);
+            break;
+        }
+    }
+}
+
+void Controller::FormatSdHandler(){
+    FileManager::FormatNoBackup();
+}
+
+void Controller::CheckSavedState(int attempts){
     ComHandler::SendSystemMessage(SystemMessage::CHECK_SAVED_STATE,MessageType::INIT,FreeSRAM());
-    FileResult result=FileManager::LoadState(&this->saveState);
-    //Serial.println("FileResult: "+String(result));
+    SaveState loadState;
+    FileResult result=FileManager::LoadState(&loadState);
     switch(result){
         case FileResult::LOADED:{
             ComHandler::SendSystemMessage(SystemMessage::STATE_LOADED,MessageType::INIT);
-            if(this->testController.StartTest(this->saveState.currentTimes)){
-                this->probeControl.SetCurrent(this->saveState.setCurrent);
-                this->heaterControl.ChangeSetPoint(this->saveState.setTemperature);
-                this->heaterControl.TurnOn();
-                this->probeControl.TurnOnSrc();
-            }
+            this->StartFromSavedState(loadState);
             break;
         }
         case FileResult::DOES_NOT_EXIST:{
@@ -168,7 +224,12 @@ void Controller::CheckSavedState(){
         }
         case FileResult::DESERIALIZE_FAILED:
         case FileResult::FAILED_TO_OPEN:{
-            ComHandler::SendErrorMessage(SystemError::SAVED_STATE_FAILED,MessageType::ERROR);
+            if(attempts>2){
+                ComHandler::SendErrorMessage(SystemError::SAVED_STATE_FAILED,MessageType::ERROR);
+                break;
+            }
+            FileManager::ClearState();
+            this->CheckSavedState(attempts+1);
             break;
         }
     }
@@ -182,11 +243,48 @@ void Controller::UpdateSerialData(){
         this->probeResults[i].current=random(148,151);
         this->probeResults[i].voltage=random(60,65);
     }
+    this->heaterControl.GetResults(this->heaterResults);
 
-    for(uint8_t i=0;i<HEATER_COUNT;i++){
+/*     for(uint8_t i=0;i<HEATER_COUNT;i++){
         this->heaterResults[i].temperature=random(82,85);
         this->heaterResults[i].tempOkay=true;
-        this->heaterResults[i].state=(bool)random(0,1);
+        this->heaterResults[i].state=!this->heaterResults[i].state;
+    } */
+}
+
+void Controller::Acknowledge(AckType ack){
+    switch(ack){
+        case AckType::TEST_START_ACK:{
+            this->testController.AcknowledgeTestStart();
+            break;
+        }
+        case AckType::VER_ACK:{
+            this->versionTimer.cancel();
+            break;
+        }
+        case AckType::ID_ACK:{
+            this->idTimer.cancel();
+            break;
+        }
+        case AckType::TEST_FINISH_ACK:{
+            this->testController.AcknowledgeTestComplete();
+            break;
+        }
+    }
+}
+
+void Controller::StartFromSavedState(const SaveState& savedState){
+    if(this->testController.IsRunning()){
+        ComHandler::SendErrorMessage(SystemError::TEST_RUNNING_ERR,MessageType::ERROR);
+        return;
+    }
+    if(this->testController.StartTest(savedState)){
+        this->saveState=savedState;
+        this->probeControl.SetCurrent(this->saveState.setCurrent);
+        this->heaterControl.ChangeSetPoint(this->saveState.setTemperature);
+        this->heaterControl.TurnOn();
+        this->probeControl.TurnOnSrc();
+        this->stateLogTimer.start();
     }
 }
 
@@ -195,14 +293,10 @@ void Controller::HandleCommand(StationCommand command){
         case StationCommand::START:{
             auto tempOkay=this->heaterControl.TempOkay();
             if(tempOkay=true){//TODO: undo bypass for testing
-/*                 if(this->testController.StartTest(this->probeControl.GetSetCurrent())){
-                    this->probeControl.TurnOnSrc();
-                    this->heaterControl.TurnOn();
-                } */
-                if(this->testController.StartTest(CurrentValue::c060)){
-                    this->probeControl.TurnOnSrc();
-                    this->heaterControl.TurnOn();
-                }
+                if(this->testController.StartTest(this->probeControl.GetSetCurrent())){
+                        this->probeControl.TurnOnSrc();
+                        this->heaterControl.TurnOn();
+                } 
             }else{
                 //TODO: Send temperature notification
             }
@@ -222,11 +316,10 @@ void Controller::HandleCommand(StationCommand command){
             break;
         }
         case StationCommand::TOGGLE_HEAT:{
-            //Serial.println("Toggle Heat");
             if(!this->testController.IsRunning()){
                 this->heaterControl.ToggleHeaters();
             }else{
-                //ComHandler::SendErrorMessage(SystemError::TEST_RUNNING,MessageType::ERROR);
+                ComHandler::SendErrorMessage(SystemError::TEST_RUNNING_ERR);
             }
             break;
         }
@@ -234,7 +327,7 @@ void Controller::HandleCommand(StationCommand command){
             if(!this->testController.IsRunning()){
                 this->probeControl.StartProbeTest();
             }else{
-                //ComHandler::SendErrorMessage(SystemError::TEST_RUNNING,MessageType::ERROR);
+                ComHandler::SendErrorMessage(SystemError::TEST_RUNNING_ERR);
             }
             break;
         }
@@ -303,6 +396,19 @@ void Controller::HandleCommand(StationCommand command){
             this->Reset();
             break;
         }
+        case StationCommand::REQUEST_RUNNING_TEST:{
+            this->testController.SendRunningTest();
+            break;
+        }
+        case StationCommand::FORMAT_SD:{
+            if(!this->testController.IsRunning() && !this->heaterControl.IsTuning()){
+                this->FormatSdHandler();
+                this->Reset();
+            }else{
+                ComHandler::SendErrorMessage(SystemError::TEST_RUNNING_ERR);
+            }
+            break;
+        }
         default:{
             ComHandler::SendErrorMessage(SystemError::INVALID_COMMAND);
             break;
@@ -314,20 +420,16 @@ void Controller::privateLoop(){
 
 }
 
-void Controller::UpdateCurrent(int value){
-    if(!this->testController.IsRunning()){
-        this->probeControl.SetCurrent((CurrentValue)value);
-    }else{
-       ComHandler::SendErrorMessage(SystemError::CHANGE_RUNNING_ERR,MessageType::ERROR);
-    }
- 
-}
-
 void Controller::UpdateTempSp(int value){
-    if(!this->testController.IsRunning()){
-        this->heaterControl.ChangeSetPoint(value);
-    }else{
-
+    if(this->testController.IsRunning()){
+        ComHandler::SendErrorMessage(SystemError::TEST_RUNNING_ERR,MessageType::ERROR);
+        return;
+    }
+    if(this->heaterControl.ChangeSetPoint(value)){
+        HeaterControllerConfig heatersConfig;
+        FileManager::LoadConfiguration(&heatersConfig,ConfigType::HEATER_CONFIG);
+        heatersConfig.tempSp=value;
+        FileManager::SaveConfiguration(&heatersConfig,ConfigType::HEATER_CONFIG);
     }
 }
 
@@ -354,6 +456,10 @@ bool* Controller::CheckCurrents(){
 void Controller::TestFinished(){
     this->probeControl.TurnOffSrc();
     this->heaterControl.TurnOff();
+    this->saveState.Clear();
     FileManager::ClearState();
-    ComHandler::SendTestCompleted(F("Test Completed"));
+    if(this->needsReset){
+        ComHandler::SendSystemMessage(SystemMessage::RESETTING_CONTROLLER,MessageType::GENERAL);
+        this->Reset();
+    }
 }

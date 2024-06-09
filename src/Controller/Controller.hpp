@@ -20,13 +20,18 @@ using namespace components;
 class Controller:public Component{
 public:
     Controller();
-
     //Init
     void LoadConfigurations();
     void SetupComponents();
-    void CheckSavedState();
-    //other
+    void ComUpdate();
+    void CheckSavedState(int attempts);
+    // other
     void HandleCommand(StationCommand command);
+    void Acknowledge(AckType ack);
+    void NeedRestartHandler();
+    void GetConfigHandler(ConfigType configType);
+    void FormatSdHandler();
+    void UpdateCurrentTempHandler(int current,int temp);
 
 private:
 
@@ -36,8 +41,9 @@ private:
     void TestFinished();
     void Reset();
     void UpdateSerialData();
-    void UpdateCurrent(int value);
     void UpdateTempSp(int value);
+    void StartFromSavedState(const SaveState& savedState);
+
 
 private:
     ProbeController        probeControl;
@@ -46,22 +52,21 @@ private:
     CommandCallback        _commandCallback=[](StationCommand){_NOP();};
     TestFinsihedCallback   _testFinishedCallback=[](){_NOP();};
     AckCallback            _ackCallback=[](AckType){_NOP();};
-    ChangeCurrentCallback  _changeCurrentCallback=[](int){_NOP();};
-    ChangeTempCallback     _changeTempCallback=[](int){_NOP();};
-
-
+    LoadStateCallback      _loadStateCallback=[](const SaveState&){_NOP();};
+    GetConfigCallback      _getConfigCallback=[](ConfigType){_NOP();};
+    //FormatSdCallback       _formatSdCallback=[](){_NOP();};
+    RestartRequiredCallback _restartRequiredCallback=[](void){_NOP();};
     ProbeResult            probeResults[PROBE_COUNT];
     HeaterResult           heaterResults[HEATER_COUNT];
     unsigned long          comInterval=COM_INTERVAL;
     unsigned long          updateInterval=UPDATE_INTERVAL;
     unsigned long          logInterval=LOG_INTERVAL;
     unsigned long          versionInterval=VER_CHECK_INTERVAL;
+    bool                   needsReset=false;
+    bool                   toggler=false;
     SaveState              saveState;
     StationTimer           comTimer,updateTimer,testTimer,stateLogTimer,idTimer,versionTimer;
     SerialDataOutput       comData;
-    HeaterControllerConfig heatersConfig;
-    ProbeControllerConfig  probesConfig;
     bool                   probeChecks[PROBE_COUNT]={true,true,true,true,true,true};
-    ControllerConfig       controllerConfig;
     void privateLoop() override;
 };

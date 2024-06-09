@@ -13,9 +13,9 @@ using namespace components;
 class Heater:public Component{
 	typedef void(Heater::*RunFunc)(void);
 public:
-	Heater(const HeaterConfig& config,int tempSp);
+	Heater(const HeaterConfig& config,int tempSp,unsigned long windowSize);
 	Heater();
-	void SetConfiguration(const HeaterConfig& config);
+	void SetConfiguration(const HeaterConfig& config,unsigned long windowSize,int tempSp);
 	void Initialize();
 	void UpdatePid(HeaterTuneResult newPid);
 	void TurnOn();
@@ -24,6 +24,8 @@ public:
 	bool IsTuning();
 	bool IsComplete();
 	bool TempOkay();
+
+	void SetWindowSize(unsigned long windowSize);
 	
 	HeaterResult Read();
 	HeaterResult GetHeaterResult();
@@ -40,7 +42,6 @@ public:
 
 private:
 	void OutputAction(unsigned long now);
-	void PrintTuning(bool completed);	
 
 
 private:

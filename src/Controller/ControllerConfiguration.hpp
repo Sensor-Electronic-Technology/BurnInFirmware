@@ -13,6 +13,15 @@ struct ControllerConfig:public Serializable{
     unsigned long           versionInterval=VER_CHECK_INTERVAL;
     float                   timeOffPercent=0.0f;
 
+    void Reset(){
+        burnTimerConfig.Reset();
+        comInterval=COM_INTERVAL;
+        updateInterval=UPDATE_INTERVAL;
+        logInterval=LOG_INTERVAL;
+        versionInterval=VER_CHECK_INTERVAL;
+        timeOffPercent=0.0f;
+    }
+
     virtual void Deserialize(JsonDocument &doc)override{
         JsonObject timeJson=doc[F("BurnTimerConfig")].as<JsonObject>();
         this->burnTimerConfig.time60mASecs=timeJson[F("Time60mASec")];

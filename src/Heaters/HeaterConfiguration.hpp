@@ -32,6 +32,7 @@ public:
                 resultJson[F("kp")]=result.kp;
                 resultJson[F("ki")]=result.ki;
                 resultJson[F("kd")]=result.kd;
+                resultJson[F("WindowSize")]=result.windowSize;
             }
         }else{
             JsonArray turnResultsJson=(*packet)[F("AutoTuneResults")].as<JsonArray>();
@@ -41,6 +42,7 @@ public:
                 resultJson[F("kp")]=results[i].kp;
                 resultJson[F("ki")]=results[i].ki;
                 resultJson[F("kd")]=results[i].kd;
+                resultJson[F("WindowSize")]=results[i].windowSize;
             }
         }
     }
@@ -86,24 +88,24 @@ public:
 class PidConfig{
 public:
 	float kp,kd,ki;
-	unsigned long windowSize;
+	//unsigned long windowSize;
 
-    PidConfig(float _kp=0,float _ki=0,float _kd=0,unsigned long window=DEFAULT_WINDOW)
-    :kp(_kp),ki(_ki),kd(_kd),windowSize(window){  
+    PidConfig(float _kp=0,float _ki=0,float _kd=0)
+    :kp(_kp),ki(_ki),kd(_kd){  
     }
 
     void Serialize(JsonObject *pidJson){
         (*pidJson)[F("Kp")] = this->kp;
         (*pidJson)[F("Ki")] = this->ki;
         (*pidJson)[F("Kd")] = this->kd;
-        (*pidJson)[F("WindowSizeMs")] = this->windowSize;
+        //(*pidJson)[F("WindowSizeMs")] = this->windowSize;
     }
 
     void Deserialize(JsonObject& pidJson){
         this->kp=pidJson[F("Kp")];
         this->ki=pidJson[F("Ki")];
         this->kd=pidJson[F("Kd")];
-        this->windowSize=pidJson[F("WindowSizeMs")];
+        //this->windowSize=pidJson[F("WindowSizeMs")];
     }
 
     //virtual void Serialize(JsonObject*,bool);
@@ -169,14 +171,28 @@ class HeaterControllerConfig:public Serializable{
 public:
 	unsigned long readInterval=TEMP_INTERVAL;
     int tempSp=DEFAULT_TEMPSP;
+    unsigned long windowSize=DEFAULT_WINDOW;
 	HeaterConfig heaterConfigs[HEATER_COUNT]={
-		HeaterConfig(NtcConfig(PIN_HEATER1_TEMP,NTC1_A,NTC1_B,NTC1_C),PidConfig(242.21f,1868.81f,128.49f,DEFAULT_WINDOW),1,PIN_HEATER1_HEATER),
-		HeaterConfig(NtcConfig(PIN_HEATER2_TEMP,NTC2_A,NTC2_B,NTC2_C),PidConfig(765.77f,1345.82f,604.67f,DEFAULT_WINDOW),2,PIN_HEATER2_HEATER),
-		HeaterConfig(NtcConfig(PIN_HEATER3_TEMP,NTC3_A,NTC3_B,NTC3_C),PidConfig(179.95f,2216.84f,81.62f,DEFAULT_WINDOW),3,PIN_HEATER3_HEATER)
+		HeaterConfig(NtcConfig(PIN_HEATER1_TEMP,NTC1_A,NTC1_B,NTC1_C),PidConfig(242.21f,1868.81f,128.49f),1,PIN_HEATER1_HEATER),
+		HeaterConfig(NtcConfig(PIN_HEATER2_TEMP,NTC2_A,NTC2_B,NTC2_C),PidConfig(765.77f,1345.82f,604.67f),2,PIN_HEATER2_HEATER),
+		HeaterConfig(NtcConfig(PIN_HEATER3_TEMP,NTC3_A,NTC3_B,NTC3_C),PidConfig(179.95f,2216.84f,81.62f),3,PIN_HEATER3_HEATER)
 	};
 
     void UpdateHeaterPid(HeaterTuneResult newPid){
         this->heaterConfigs[newPid.heaterNumber-1].UpdatePid(newPid);
+    }
+
+    void UpdateWindowSize(unsigned long windowSize){
+        this->windowSize=windowSize;
+    }
+
+    void Reset(){
+        this->heaterConfigs[0]=HeaterConfig(NtcConfig(PIN_HEATER1_TEMP,NTC1_A,NTC1_B,NTC1_C),PidConfig(242.21f,1868.81f,128.49f),1,PIN_HEATER1_HEATER);
+        this->heaterConfigs[1]=HeaterConfig(NtcConfig(PIN_HEATER2_TEMP,NTC2_A,NTC2_B,NTC2_C),PidConfig(765.77f,1345.82f,604.67f),2,PIN_HEATER2_HEATER);
+        this->heaterConfigs[2]=HeaterConfig(NtcConfig(PIN_HEATER3_TEMP,NTC3_A,NTC3_B,NTC3_C),PidConfig(179.95f,2216.84f,81.62f),3,PIN_HEATER3_HEATER);
+        this->tempSp=DEFAULT_TEMPSP;
+        this->readInterval=TEMP_INTERVAL;
+        this->windowSize=DEFAULT_WINDOW;
     }
 
     virtual void Serialize(JsonDocument *doc,bool initialize) override{
@@ -196,6 +212,7 @@ public:
         }
         (*doc)[F("ReadInterval")] = this->readInterval;
         (*doc)[F("TemperatureSetPoint")]=this->tempSp;
+        (*doc)[F("WindowSize")]=this->windowSize;
     }
 
     virtual void Serialize(JsonObject *packet,bool initialize){
@@ -215,6 +232,7 @@ public:
         }
         (*packet)[F("ReadInterval")] = this->readInterval;
         (*packet)[F("TemperatureSetPoint")]=this->tempSp;
+        (*packet)[F("WindowSize")]=this->windowSize;
     }
 
     virtual void Deserialize(JsonDocument &doc) override{
@@ -225,6 +243,7 @@ public:
         }
         this->readInterval = doc[F("ReadInterval")];
         this->tempSp=doc[F("TemperatureSetPoint")];
+        this->windowSize=doc[F("WindowSize")];
     }
 
     virtual void Deserialize(JsonObject &packet) override{
@@ -235,5 +254,7 @@ public:
         }
         this->readInterval = packet[F("ReadInterval")];
         this->tempSp=packet[F("TemperatureSetPoint")];
+        this->windowSize=packet[F("WindowSize")];
     }
+
 };

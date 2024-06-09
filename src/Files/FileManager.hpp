@@ -2,8 +2,9 @@
 #include <ArduinoJson.h>
 #include <StreamUtils.h>
 #include <ArduinoComponents.h>
-#include <SD.h>
-#include <SPI.h>
+/* #include <SD.h>
+#include <SPI.h> */
+#include <SdFat.h>
 #include "../Serializable.hpp"
 #include "../Heaters/HeaterConfiguration.hpp"
 #include "../Probes/ProbeConfiguration.hpp"
@@ -26,18 +27,56 @@ public:
         }
         return instance;
     }
+
+    static void Init(){
+        auto instance=FileManager::Instance();
+        if(!instance->sd.begin(SD_CONFIG)){
+            sdInitialized=false;
+            ComHandler::SendErrorMessage(SystemError::SD_INIT_FAILED);
+            return;
+        }
+        sdInitialized=true;
+    }
+
+    static void FormatCard(){
+        auto instance=FileManager::Instance();
+        if(sdInitialized){
+            instance->InstanceFormatCard();
+            return;
+        }
+        ComHandler::SendErrorMessage(SystemError::SD_FORMAT_FAILED,0,0);
+    }
+
+    static void FormatNoBackup(){
+        auto instance=FileManager::Instance();
+        if(sdInitialized){
+            auto success=instance->sd.format(&Serial);
+            if(!success){
+                ComHandler::SendErrorMessage(SystemError::SD_FORMAT_FAILED,instance->sd.sdErrorCode(),instance->sd.sdErrorData());
+            }else{
+                ComHandler::SendSystemMessage(SystemMessage::SD_FORMATTED,MessageType::NOTIFY);
+            }
+            return;
+        }
+        ComHandler::SendErrorMessage(SystemError::SD_FORMAT_FAILED,0,0);
+    }
     
-    static void Load(Serializable* config,PacketType configType){
+    static bool LoadConfiguration(Serializable* config,ConfigType configType){
         auto instance=FileManager::Instance();
          if(sdInitialized){
+            digitalWrite(LED_BUILTIN,HIGH);
             instance->InstanceLoadConfig(config,configType);
+            digitalWrite(LED_BUILTIN,LOW);
         }
     }
 
     static FileResult LoadState(Serializable* sysState){
         auto instance=FileManager::Instance();
         if(sdInitialized){
-            return instance->InstanceLoadState(sysState);
+            digitalWrite(LED_BUILTIN,HIGH);
+            auto fileResult=instance->InstanceLoadState(sysState);
+            digitalWrite(LED_BUILTIN,LOW);
+            return fileResult;
         }
         return FileResult::SD_NOT_INITIALIZED;
     }
@@ -45,7 +84,10 @@ public:
     static bool ClearState(){
         auto instance=FileManager::Instance();
         if(sdInitialized){
-            return instance->InstanceClearState();
+            digitalWrite(LED_BUILTIN,HIGH);
+            auto fileResult= instance->InstanceClearState();
+            digitalWrite(LED_BUILTIN,LOW);
+            return fileResult;
         }
         return false;
     }
@@ -55,26 +97,35 @@ public:
      * @param config Configuration of type ControllerConfiguration
      * @param fileNameIndex While file name
      */
-    static void Save(Serializable* config,PacketType configType){
+    static bool SaveConfiguration(Serializable* config,ConfigType configType){
         auto instance=FileManager::Instance();
+        bool result=false;
         if(sdInitialized){
-            instance->InstanceSaveConfigLog(config,configType);
+            digitalWrite(LED_BUILTIN,HIGH);
+            result=instance->InstanceSaveConfig(config,configType);
+            digitalWrite(LED_BUILTIN,LOW);
         }
+        return result;
     }
 
-    static bool SaveConfig(Serializable* sysState){
+    static bool SaveState(Serializable* sysState){
         auto instance=FileManager::Instance();
         if(sdInitialized){
-            return instance->InstanceSaveConfig(sysState,PacketType::SAVE_STATE);
+            digitalWrite(LED_BUILTIN,HIGH);
+            auto fileResult=instance->InstanceSaveState(sysState);
+            digitalWrite(LED_BUILTIN,LOW);
+            return fileResult;
         }
         return false;
     }
 private:
-    void InstanceLoadConfig(Serializable* config,PacketType configType);
-    bool InstanceSaveConfig(Serializable* config,PacketType configType);
-    void InstanceSaveConfigLog(Serializable* config,PacketType configType);
+    bool InstanceLoadConfig(Serializable* config,ConfigType configType);
+    bool InstanceSaveState(Serializable* config);
+    bool InstanceSaveConfig(Serializable* config,ConfigType configType);
     bool InstanceClearState();
+    bool InstanceFormatCard();
     FileResult InstanceLoadState(Serializable* config);
 private:
     static FileManager* instance;
+    SdFs sd;
 };

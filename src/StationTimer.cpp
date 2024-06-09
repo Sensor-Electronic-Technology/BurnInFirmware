@@ -27,7 +27,7 @@ void StationTimer::onInterval(VoidCallback callback, unsigned long interval,bool
     this->_timer_running = start;
     this->_timeout_callback = callback;
     if(start){
-        this->_deadline = millisTime() + interval;
+        this->_deadline = millisTime(); //+ interval;
     }
         
 }
@@ -37,7 +37,7 @@ void StationTimer::start() {
     if(this->_intervaling && this->_fireImmediately){
         this->_timeout_callback();
     }
-    this->_deadline = millisTime() + this->_period;  
+    this->_deadline = millis() + this->_period;  
 }
 
 void StationTimer::reset() {
@@ -60,7 +60,7 @@ unsigned long StationTimer::timeLeft() {
 
 void StationTimer::privateLoop() {
     if(!this->_timer_running) return;
-    if(millisTime() >= this->_deadline) {
+    if(millis() >= this->_deadline) {
         if(this->_intervaling) {
             this->_deadline = millis() + this-> _period;
             this->_timeout_callback();

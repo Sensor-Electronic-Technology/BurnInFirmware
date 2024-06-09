@@ -9,8 +9,8 @@
 
 class PID_AutoTune{
 public:
-    PID_AutoTune(float *in=nullptr,float *out=nullptr,float sp=0,unsigned long period=0,int cyc=10);
-    void Setup(float *in,float *out,float sp,unsigned long period,int cyc=10);
+    PID_AutoTune(float *in=nullptr,float *out=nullptr,float sp=0,unsigned long period=0,int cyc=5);
+    void Setup(float *in,float *out,float sp,unsigned long period,int cyc=5);
     void SetOutputRange(float _min,float _max);
     void StartTuning();
     bool Tune();
@@ -18,11 +18,13 @@ public:
     float GetKd();
     float GetKi();
     bool Finished();
+    int GetSampleTimeMs();
+    
 private:
     float setPoint;
     float minOut,maxOut;
     float sampleTime;
-    int cycles=10;
+    int cycles=5;
 
     int cycleCount;
     bool output;

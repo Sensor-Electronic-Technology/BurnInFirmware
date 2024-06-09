@@ -23,26 +23,27 @@ typedef struct HeaterResult{
 	float temperature=0;
 	bool state=false;
 	bool tempOkay=false;
-
+    
 	HeaterResult operator=(const HeaterResult& rhs){
 		this->temperature=rhs.temperature;
 		this->state=rhs.state;
 		this->tempOkay=rhs.tempOkay;
 		return *this;
 	}
-
 }HeaterResult;
 
 struct HeaterTuneResult:Serializable{
     int heaterNumber=-1;
     bool complete=false;
     float kp=0,ki=0,kd=0;
+    unsigned long windowSize=1000;
     void clear(){
         this->heaterNumber=-1;
         this->complete=false;
         this->kp=0;
         this->ki=0;
         this->kd=0;
+        this->windowSize=0;
     }
 
     virtual void Serialize(JsonObject *packet,bool initialize){
@@ -50,6 +51,7 @@ struct HeaterTuneResult:Serializable{
         (*packet)[F("kp")]=this->kp;
         (*packet)[F("ki")]=this->ki;
         (*packet)[F("kd")]=this->kd;
+        (*packet)[F("WindowSize")]=this->windowSize;
     }
 
     virtual void Serialize(JsonDocument *doc,bool initialize)override{
@@ -63,6 +65,7 @@ struct HeaterTuneResult:Serializable{
         heaterTune[F("kp")]=this->kp;
         heaterTune[F("ki")]=this->ki;
         heaterTune[F("kd")]=this->kd;
+        heaterTune[F("WindowSize")]=this->windowSize;
     }
     virtual void Deserialize(JsonDocument &doc)  override{   }
     virtual void Deserialize(JsonObject &packet) override{   }
@@ -92,10 +95,12 @@ enum ModeTrigger:uint8_t{
 };
 
 
-
-
-
 typedef components::Function<void(HeaterTuneResult)> TuningCompleteCallback;
+
+#define HEATER_DEBUG 		1
+#define HEATER_STATE_COUNT 	3
+#define TUNE_STATE_COUNT 	3
+#define MODE_COUNT          2
 
 //NTC-1 Values
 #define NTC1_A	1.159e-3f
@@ -130,8 +135,8 @@ typedef components::Function<void(HeaterTuneResult)> TuningCompleteCallback;
 #define KP_DEFAULT		                2
 #define KI_DEFAULT		                5
 #define KD_DEFAULT		                1
-#define DEFAULT_WINDOW	                250
-#define DEFAULT_TEMPSP	                40
+#define DEFAULT_WINDOW	                1000
+#define DEFAULT_TEMPSP	                85
 
 
 

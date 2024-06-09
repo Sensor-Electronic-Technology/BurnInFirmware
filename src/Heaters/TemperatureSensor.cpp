@@ -16,7 +16,8 @@ TemperatureSensor::TemperatureSensor(const NtcConfig& config)
     
 float TemperatureSensor::Read(){
     float aValue = analogRead(this->inputPin);
-    float ntc_res=R_REF/(ADC_MAX/aValue-1);
+    aValue=(aValue==0) ? 1 : aValue;
+    float ntc_res=R_REF/((float)ADC_MAX/aValue-1);
     //Steinhart and Hart Equation 1/A+Bln(R)+C[ln(R)]^3  
     float temp=(1/(this->aValue+(this->bValue*log(ntc_res))+(this->cValue*pow(log(ntc_res),3))))-KELVIN_RT;
     this->temperature+=(temp-this->temperature)*fWeight;

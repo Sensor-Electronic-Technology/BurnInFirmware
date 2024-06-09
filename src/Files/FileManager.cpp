@@ -2,24 +2,42 @@
 
 FileManager* FileManager::instance=nullptr;
 
-void FileManager::InstanceLoadConfig(Serializable* config,PacketType configType){
+bool FileManager::InstanceLoadConfig(Serializable* config,ConfigType configType){
     JsonDocument doc;
-    File file;
+    //File file;
+    FsFile file;
     char filename[BUFFER_SIZE];
     strcpy_P(filename,read_filename(configType));
-    file=SD.open(filename);
+    if(!this->sd.exists(filename)){
+        WriteBufferingStream fileWriteBuffer{file, 64};
+        file.open(filename,FILE_WRITE);
+        if(!file){
+            ComHandler::SendErrorMessage(SystemError::CONFIG_SAVE_FAILED_FILE,filename);
+            return false;
+        }
+        config->Serialize(&doc,true);
+        if(serializeJsonPretty(doc,fileWriteBuffer)==0){
+            file.close();
+            ComHandler::SendErrorMessage(SystemError::CONFIG_SAVE_FAILED_FILE,filename);
+            return false;
+        }
+        fileWriteBuffer.flush();
+        file.close();
+        doc.clear();
+        return false;
+    }
+    file.open(filename,FILE_READ);
     if(!file){
         ComHandler::SendErrorMessage(SystemError::CONFIG_LOAD_FAILED_FILE,filename);
-        return;
+        return false;
     }
     doc.clear();
     auto error=deserializeJson(doc,file);
     if(error){
         ComHandler::SendErrorMessage(SystemError::CONFIG_LOAD_FAILED_FILE,filename);
         file.close();
-        return;
+        return false;
     }
-    
     config->Deserialize(doc);
     file.close();
     doc.clear();
@@ -27,15 +45,14 @@ void FileManager::InstanceLoadConfig(Serializable* config,PacketType configType)
 
 FileResult FileManager::InstanceLoadState(Serializable* sysState){
     JsonDocument doc;
-    File file;
+    //File file;
+    FsFile file;
     char filename[BUFFER_SIZE];
-    strcpy_P(filename,read_filename(PacketType::SAVE_STATE));
-     if(!SD.exists(filename)){
-        //Serial.println(F("File does not exist"));
+    strcpy_P(filename,strFile_04);
+    if(!this->sd.exists(filename)){
         return FileResult::DOES_NOT_EXIST;
     }
-    //Serial.println(F("File exists"));
-    file=SD.open(filename);
+    file.open(filename,FILE_READ);
     if(!file){
         return FileResult::FAILED_TO_OPEN;
     }
@@ -51,51 +68,24 @@ FileResult FileManager::InstanceLoadState(Serializable* sysState){
     return FileResult::LOADED;
 }
 
-void FileManager::InstanceSaveConfigLog(Serializable* config,PacketType configType){
+bool FileManager::InstanceSaveConfig(Serializable* config,ConfigType configType){
     JsonDocument doc;
-    File file;
+    FsFile file;
     WriteBufferingStream fileWriteBuffer{file, 64};
     char filename[BUFFER_SIZE];
-    strcpy_P(filename,read_filename(configType));    
-    SD.remove(filename);//overwrite file
-    file=SD.open(filename,FILE_WRITE);
+    strcpy_P(filename,read_filename(configType));  
+    if(this->sd.exists(filename)){
+        this->sd.remove(filename);//overwrite file  
+    }
+    file.open(filename,FILE_WRITE);
     if(!file){
         ComHandler::SendErrorMessage(SystemError::CONFIG_SAVE_FAILED_FILE,filename);
-        // ComHandler::SendFileMsg(FileResult::FAILED_TO_OPEN,F("Configuration file failed to open.  Please save values and restart the system"));
-        return;
-    }
-    doc.clear();
-    config->Serialize(&doc,true);
-    if(serializeJsonPretty(doc,fileWriteBuffer)==0){
-        file.close();
-        ComHandler::SendErrorMessage(SystemError::CONFIG_SAVE_FAILED_FILE,filename);
-        // ComHandler::SendFileMsg(FileResult::FAILED_TO_SAVE,F("Configuration save failed. Changed will be lost on restart.\n Suggest manually enter changes"));
-        return;
-    }
-    fileWriteBuffer.flush();
-    file.close();
-    doc.clear();
-}
-
-bool FileManager::InstanceSaveConfig(Serializable* config,PacketType configType){
-    JsonDocument doc;
-    File file;
-    WriteBufferingStream fileWriteBuffer{file, 64};
-    char filename[BUFFER_SIZE];
-    strcpy_P(filename,read_filename(configType));    
-    SD.remove(filename);//overwrite file
-    file=SD.open(filename,FILE_WRITE);
-    if(!file){
-        ComHandler::SendErrorMessage(SystemError::CONFIG_SAVE_FAILED_FILE,filename);
-        // ComHandler::SendFileMsg(FileResult::FAILED_TO_OPEN,F("Configuration file failed to open.  Please save values and restart the system"));
         return false;
     }
-    doc.clear();
     config->Serialize(&doc,true);
     if(serializeJsonPretty(doc,fileWriteBuffer)==0){
         file.close();
         ComHandler::SendErrorMessage(SystemError::CONFIG_SAVE_FAILED_FILE,filename);
-        // ComHandler::SendFileMsg(FileResult::FAILED_TO_SAVE,F("Configuration save failed. Changed will be lost on restart.\n Suggest manually enter changes"));
         return false;
     }
     fileWriteBuffer.flush();
@@ -104,8 +94,60 @@ bool FileManager::InstanceSaveConfig(Serializable* config,PacketType configType)
     return true;
 }
 
+bool FileManager::InstanceSaveState(Serializable* config){
+    JsonDocument doc;
+    FsFile file;
+    WriteBufferingStream fileWriteBuffer{file, 64};
+    char filename[BUFFER_SIZE];
+    strcpy_P(filename,strFile_04);    
+    if(this->sd.exists(filename)){
+        this->sd.remove(filename);//overwrite file  
+    }
+    file.open(filename,FILE_WRITE);
+    if(!file){
+        ComHandler::SendErrorMessage(SystemError::SAVED_STATE_FAILED,filename);
+        return;
+    }
+    config->Serialize(&doc,true);
+    if(serializeJsonPretty(doc,fileWriteBuffer)==0){
+        file.close();
+        ComHandler::SendErrorMessage(SystemError::SAVED_STATE_FAILED,filename);
+        return;
+    }
+    fileWriteBuffer.flush();
+    file.close();
+    doc.clear();
+}
+
+bool FileManager::InstanceFormatCard(){
+    HeaterControllerConfig heaterConfig;
+    ProbeControllerConfig probeConfig;
+    ControllerConfig controllerConfig;
+    bool okay=true;
+    okay&=this->LoadConfiguration(&heaterConfig,ConfigType::HEATER_CONFIG);
+    okay&=this->LoadConfiguration(&probeConfig,ConfigType::PROBE_CONFIG);
+    okay&=this->LoadConfiguration(&controllerConfig,ConfigType::SYSTEM_CONFIG);
+    if(!okay){
+        ComHandler::SendErrorMessage(SystemError::SD_FORMAT_FAILED,this->sd.sdErrorCode(),this->sd.sdErrorData());
+        return false;
+    }
+    auto success=this->sd.format(&Serial);
+    if(!success){
+        ComHandler::SendErrorMessage(SystemError::SD_FORMAT_FAILED,this->sd.sdErrorCode(),this->sd.sdErrorData());
+        return false;
+    }
+    this->SaveConfiguration(&heaterConfig,ConfigType::HEATER_CONFIG);
+    this->SaveConfiguration(&probeConfig,ConfigType::PROBE_CONFIG);
+    this->SaveConfiguration(&controllerConfig,ConfigType::SYSTEM_CONFIG);
+    ComHandler::SendSystemMessage(SystemMessage::SD_FORMATTED,MessageType::NOTIFY);
+    return true;
+}
+
 bool FileManager::InstanceClearState(){
     char filename[BUFFER_SIZE];
-    strcpy_P(filename,read_filename(PacketType::SAVE_STATE));
-    return SD.remove(filename);
+    strcpy_P(filename,strFile_04);
+    if(!this->sd.exists(filename)){
+        return true;
+    }
+    return this->sd.remove(filename);
 }

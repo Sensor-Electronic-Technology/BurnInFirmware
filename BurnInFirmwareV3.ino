@@ -1,5 +1,6 @@
 #include <ArduinoJson.h>
-#include <SD.h>
+// #include <SD.h>
+#include <SdFat.h>
 #include "src/constants.h"
 #include "src/Communication/ComHandler.hpp"
 #include "src/Heaters/heater_constants.h"
@@ -10,18 +11,14 @@
 #include "src/Controller/Controller.hpp"
 #include "src/StressTest/TestController.hpp" 
 #include "src/free_memory.h"
-#include "src/Heaters/HeaterTests.hpp"
 
 Controller controller;
 
 void setup(){
+    pinMode(LED_BUILTIN,OUTPUT);
     Serial.begin(38400);
     ComHandler::SetSerial(&Serial);
-    sdInitialized=true;
-    if(!SD.begin(SS)){
-        ComHandler::SendErrorMessage(SystemError::SD_INIT_FAILED);
-        sdInitialized=false;
-    }
+    FileManager::Init();
     ComHandler::SendSystemMessage(SystemMessage::SD_INIT,MessageType::GENERAL);
     Serial.print(F("Free SRAM: "));
     Serial.println(FreeSRAM());
