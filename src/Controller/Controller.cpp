@@ -99,7 +99,11 @@ void Controller::SetupComponents(){
     ComHandler::SendSystemMessage(SystemMessage::TIMER_INIT,MessageType::INIT); 
 
     this->testTimer.onInterval([&](){
-        bool probeChecks[PROBE_COUNT]={true,true,false,true,true,true};
+/*         bool probeChecks[PROBE_COUNT]={false};
+        this->UpdateSerialData(); */
+        for(uint8_t i=0;i<PROBE_COUNT;i++){
+            probeChecks[i]=this->probeResults[i].okay;
+        }
         this->testController.Tick(probeChecks);
     },250);
 
@@ -110,25 +114,24 @@ void Controller::SetupComponents(){
                                 this->testController.GetTestId());
             FileManager::SaveState(&this->saveState);
         }
-    },5000,false,true);
+    },10000,false,true);
 
     this->comTimer.onInterval([&](){ 
          this->ComUpdate();
-    }, 
-    this->comInterval, true, false);
+    }, this->comInterval, true, false);
 
     this->updateTimer.onInterval([&](){
         this->probeControl.GetProbeResults(this->probeResults);
         this->heaterControl.GetResults(this->heaterResults);
-    },this->updateInterval);
+    },this->updateInterval,true,false);
 
-    this->versionTimer.onInterval([&](){
+/*     this->versionTimer.onInterval([&](){
         ComHandler::SendVersion();
-    },VERSION_PERIOD,false,true);
+    },VERSION_PERIOD,false,true); */
 
-    this->idTimer.onInterval([&](){
+/*     this->idTimer.onInterval([&](){
         ComHandler::SendId();
-    },ID_PERIOD,false,true);
+    },ID_PERIOD,false,true); */
 
     ComHandler::SendSystemMessage(SystemMessage::TIMER_INIT_COMPLETE,MessageType::INIT); 
     ComHandler::SendSystemMessage(SystemMessage::REG_COMPONENTS,MessageType::INIT);
@@ -137,8 +140,6 @@ void Controller::SetupComponents(){
     RegisterChild(this->stateLogTimer);
     RegisterChild(this->comTimer);
     RegisterChild(this->updateTimer);
-    RegisterChild(this->versionTimer);
-    RegisterChild(this->idTimer);
 
     RegisterChild(this->heaterControl);
     RegisterChild(this->probeControl);
@@ -148,8 +149,9 @@ void Controller::SetupComponents(){
 }
 
 void Controller::ComUpdate(){
-    this->UpdateSerialData();
-    bool probeRtOkay[PROBE_COUNT] = {false, false, false, false, false, false};
+/*     this->probeControl.GetProbeResults(this->probeResults);
+    this->heaterControl.GetResults(this->heaterResults); */
+    bool probeRtOkay[PROBE_COUNT] = {false, false, false, false, false, false}; 
     this->testController.GetProbeRunTimeOkay(probeRtOkay);
     this->comData.Set(this->probeResults, this->heaterResults, probeRtOkay, *(this->testController.GetBurnTimer()));
     this->comData.currentSP = this->probeControl.GetSetCurrent();
@@ -234,22 +236,34 @@ void Controller::CheckSavedState(int attempts){
         }
     }
     ComHandler::SendSystemMessage(SystemMessage::COMPONENTS_INIT_COMPLETE,MessageType::INIT);
-    this->idTimer.start();
-    this->versionTimer.start();
 }
 
 void Controller::UpdateSerialData(){
     for(uint8_t i=0;i<PROBE_COUNT;i++){
-        this->probeResults[i].current=random(148,151);
-        this->probeResults[i].voltage=random(60,65);
+        if(i==2){
+            if(this->testController.GetBurnTimer()->GetElapsed()>30){
+                this->probeResults[i].current=0;
+                this->probeResults[i].voltage=random(60,65);
+            }else{
+                this->probeResults[i].current=random(148,151);
+                this->probeResults[i].voltage=random(60,65);
+            }
+        
+        }else{
+            this->probeResults[i].current=random(148,151);
+            this->probeResults[i].voltage=random(60,65);
+        }
+       
+        this->probeResults[i].check(93.5,this->probeControl.GetSetCurrent());
     }
     this->heaterControl.GetResults(this->heaterResults);
+    /* this->probeControl.GetProbeResults(this->probeResults); */
 
-/*     for(uint8_t i=0;i<HEATER_COUNT;i++){
+    for(uint8_t i=0;i<HEATER_COUNT;i++){
         this->heaterResults[i].temperature=random(82,85);
         this->heaterResults[i].tempOkay=true;
         this->heaterResults[i].state=!this->heaterResults[i].state;
-    } */
+    }
 }
 
 void Controller::Acknowledge(AckType ack){
@@ -296,6 +310,7 @@ void Controller::HandleCommand(StationCommand command){
                 if(this->testController.StartTest(this->probeControl.GetSetCurrent())){
                         this->probeControl.TurnOnSrc();
                         this->heaterControl.TurnOn();
+                        this->stateLogTimer.start();
                 } 
             }else{
                 //TODO: Send temperature notification

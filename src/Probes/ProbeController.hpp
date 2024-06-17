@@ -26,6 +26,7 @@ public:
     CurrentValue GetSetCurrent();
     void SetCurrent(CurrentValue current);
     void GetProbeResults(ProbeResult* fill);
+    void GetProbeChecks(bool* fill);
 
 private:
     Probe           probes[PROBE_COUNT];

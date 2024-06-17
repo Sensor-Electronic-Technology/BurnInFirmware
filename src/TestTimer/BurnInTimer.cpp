@@ -50,6 +50,7 @@
         this->testTimer=savedState;
         this->testTimer.running=true;
         this->testTimer.paused=false;
+        this->minTimeOn=(this->testTimer.duration_secs*(this->timeOffPercent/100.0f));
         this->testTimer.lastCheck=millis();
         return true;
     }
@@ -101,30 +102,20 @@
         if(this->testTimer.running && !this->testTimer.paused){
             auto millis_t=millis();
             if(millis_t-this->testTimer.lastCheck>=(TIMER_PERIOD*TIMER_FACTOR)){
-                //this->testTimer.lastCheck=millis_t;
-                /* this->testTimer.elapsed_secs++; */
                 this->testTimer++;
                 for(uint8_t i=0;i<PROBE_COUNT;i++){
                     if(probeOkay[i]){
                         this->testTimer.incrementProbe(i);
-                    }else{
-                        auto remaining=this->testTimer.Remaining();
-                        if(this->testTimer.probeRunTimes[i]+remaining<=this->minTimeOn){
-                            probeRunTimeOkay[i]=false;
-                        }
+                    }
+                    auto remaining=this->testTimer.Remaining();
+                    if(this->testTimer.probeRunTimes[i]+remaining<=this->minTimeOn){
+                        probeRunTimeOkay[i]=false;
                     }
                 }
                 this->testTimer.lastCheck=millis();
                 if(this->testTimer.is_done()){
-                    
                     this->_finishedCallback();
                 }
-                //this->testTimer.elapsed_secs++;
-/*                 bool done=(this->testTimer.elapsed_secs*TIMER_PERIOD)>=this->testTimer.duration_secs;  
-                this->testTimer.running=!done;
-                if(done){
-                    this->_finishedCallback();
-                } */
             }
         }
     }

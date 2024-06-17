@@ -31,7 +31,6 @@ public:
         this->currentPin120=config.pin120mA;
         this->currentPin060=config.pin60mA;
         this->currentOutput=config.currentPin;
-
         this->setCurrent=config.SetCurrent;
         this->switchEnabled=config.switchEnabled;
         pinMode(this->currentOutput,OUTPUT);

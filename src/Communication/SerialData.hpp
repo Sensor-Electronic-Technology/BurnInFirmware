@@ -18,10 +18,10 @@ public:
      bool probeRunTimeOkay[PROBE_COUNT]={true,true,true,true,true,true};
   
      bool running=false,paused=false;
-     uint8_t currentSP=150;
-     float temperatureSP=85;
-     long runTimeSecs=54234;
-     long elapsedSecs=12345;
+     uint8_t currentSP=0;
+     float temperatureSP=0;
+     long runTimeSecs=0;
+     long elapsedSecs=0;
 
     void Set(ProbeResult probeResults[PROBE_COUNT],
                 HeaterResult heaterResults[HEATER_COUNT],

@@ -7,12 +7,6 @@ ProbeController::ProbeController(const ProbeControllerConfig& config)
     currentPercent(config.probeCurrentPercent),
     probeTestTime(config.probeTestTime),
     readInterval(config.readInterval){
-
-    /*     for(uint8_t i=0;i<PROBE_COUNT;i++){
-        this->probes[i]=new Probe(config.probeConfigs[i]);
-        RegisterChild(this->probes[i]);
-        this->results[i]=ProbeResult();
-    } */
    for(uint8_t i=0;i<PROBE_COUNT;i++){
         this->probes[i].Setup(config.probeConfigs[i]);
         RegisterChild(&this->probes[i]);
@@ -30,11 +24,6 @@ void ProbeController::Setup(const ProbeControllerConfig& config){
     this->currentPercent=config.probeCurrentPercent;
     this->probeTestTime=config.probeTestTime;
     this->readInterval=config.readInterval;
-/*     for(uint8_t i=0;i<PROBE_COUNT;i++){
-        this->probes[i]=new Probe(config.probeConfigs[i]);
-        RegisterChild(this->probes[i]);
-        this->results[i]=ProbeResult();
-    } */
     for(uint8_t i=0;i<PROBE_COUNT;i++){
         this->probes[i].Setup(config.probeConfigs[i]);
         RegisterChild(&this->probes[i]);
@@ -94,12 +83,18 @@ void ProbeController::TurnOnSrc(){
 void ProbeController::Read(){
     for(uint8_t i=0;i<PROBE_COUNT;i++){
         results[i]=probes[i].Read();
-        results[i].check(this->currentPercent);
+        results[i].check(this->currentPercent,(int)this->currentSelector.GetSetCurrent());
     }
 }
 
 void ProbeController::GetProbeResults(ProbeResult* fill){
     for(uint8_t i=0;i<PROBE_COUNT;i++){
         fill[i]=this->results[i];
+    }
+}
+
+void ProbeController::GetProbeChecks(bool* fill){
+    for(uint8_t i=0;i<PROBE_COUNT;i++){
+        fill[i]=this->results[i].okay;
     }
 }

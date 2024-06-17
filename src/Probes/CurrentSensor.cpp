@@ -26,7 +26,9 @@ CurrentSensor::CurrentSensor(const CurrentSensorConfig& config)
 
 float CurrentSensor::ReadCurrent() {
     int value=analogRead(this->currentIn);
+    //Serial.println(value);
     value=map(value,ADC_MIN,ADC_MAX,CURRENT_MIN,CURRENT_MAX);
+    //Serial.println(value);
     this->current+=(((float)value)-this->current)*this->fWeight;
     return this->current;
 }

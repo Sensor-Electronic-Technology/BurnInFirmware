@@ -27,7 +27,7 @@ void VoltageSensor::Setup(const VoltageSensorConfig& config){
 
 float VoltageSensor::ReadVoltage() {
     float value=analogRead(this->voltageIn);
-    value=map(value,ADC_MIN,ADC_MAX,VOLTAGE_MIN,VOLTAGE_MIN);
+    value=map(value,ADC_MIN,ADC_MAX,VOLTAGE_MIN,VOLTAGE_MAX);
     this->voltage += (((float)value) - this->voltage) * this->fWeight;
     return this->voltage;
 }
