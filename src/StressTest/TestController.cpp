@@ -180,5 +180,6 @@ bool TestController::ContinueTest(){
         return false;
     }
     this->burn_timer.Continue();
+    return true;
 }
 

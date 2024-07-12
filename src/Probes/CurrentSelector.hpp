@@ -92,6 +92,8 @@ public:
 
     void TurnOff(){
         digitalWrite(this->currentOutput,LOW);
+        digitalWrite(this->currentPin060,LOW);
+        digitalWrite(this->currentPin120,LOW);
     }
     
 private:

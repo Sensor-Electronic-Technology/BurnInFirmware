@@ -49,9 +49,9 @@ void Controller::LoadConfigurations(){
     ProbeControllerConfig probesConfig;
     ControllerConfig controllerConfig;
     
-/*     FileManager::SaveConfiguration(&heatersConfig,ConfigType::HEATER_CONFIG);
+/*    FileManager::SaveConfiguration(&heatersConfig,ConfigType::HEATER_CONFIG);
     FileManager::SaveConfiguration(&probesConfig,ConfigType::PROBE_CONFIG);
-    FileManager::SaveConfiguration(&controllerConfig,ConfigType::SYSTEM_CONFIG); */ 
+    FileManager::SaveConfiguration(&controllerConfig,ConfigType::SYSTEM_CONFIG);   */
 
     if(!FileManager::LoadConfiguration(&heatersConfig,ConfigType::HEATER_CONFIG)){
        heatersConfig.Reset();
@@ -63,12 +63,6 @@ void Controller::LoadConfigurations(){
     if(!FileManager::LoadConfiguration(&controllerConfig,ConfigType::SYSTEM_CONFIG)){
         controllerConfig.Reset();
     }
-    //probesConfig.probeTestCurrent=CurrentValue::c060;
-    //probesConfig.probeTestTime=PROBE_TESTTIME;
-
-/*     JsonDocument doc;
-    heatersConfig.Serialize(&doc,true);
-    serializeJsonPretty(doc,Serial); */
 
     this->heaterControl.Setup(heatersConfig);
     this->probeControl.Setup(probesConfig);
@@ -123,6 +117,7 @@ void Controller::SetupComponents(){
     this->updateTimer.onInterval([&](){
         this->probeControl.GetProbeResults(this->probeResults);
         this->heaterControl.GetResults(this->heaterResults);
+        //this->UpdateSerialData();
     },this->updateInterval,true,false);
 
 /*     this->versionTimer.onInterval([&](){
@@ -256,7 +251,7 @@ void Controller::UpdateSerialData(){
        
         this->probeResults[i].check(93.5,this->probeControl.GetSetCurrent());
     }
-    this->heaterControl.GetResults(this->heaterResults);
+    /* this->heaterControl.GetResults(this->heaterResults); */
     /* this->probeControl.GetProbeResults(this->probeResults); */
 
     for(uint8_t i=0;i<HEATER_COUNT;i++){
