@@ -17,6 +17,17 @@ jobs:
         id: check_ver
         with:
           repo: Sensor-Electronic-Technology/BurnInFirmware
+  deploy-s01:
+    needs: check
+    runs-on: [burn-in]
+    strategy:
+      matrix:
+        runner: [ S01, S02, S03, S04, S05, S06, S07, S08, S09, S10 ] # Replace with your runner names
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          cd /home/setitech/Documents/StationSoft/StationService/app/updates/
+          curl -L 'https://github.com/Sensor-Electronic-Technology/BurnInFirmware/releases/download/${{fromJson(needs.check.outputs.result).versions.latest.name}}/BurnInFirmwareV3.ino.hex' > BurnInFirmwareV3.ino.hex
   deploy:
     needs: check
     runs-on:
@@ -42,70 +53,70 @@ jobs:
   #   - run: |
   #       cd /home/setitech/Documents/StationSoft/StationService/app/updates/
   #       curl -L 'https://github.com/Sensor-Electronic-Technology/BurnInFirmware/releases/download/${{fromJson(needs.check.outputs.result).versions.latest.name}}/BurnInFirmwareV3.ino.hex' > BurnInFirmwareV3.ino.hex
-  deploy-s03:
-    needs: check
-    runs-on: [burn-in,S03]
-    steps:
-      - uses: actions/checkout@v4
-      - run: |
-          cd /home/setitech/Documents/StationSoft/StationService/app/updates/
-          curl -L 'https://github.com/Sensor-Electronic-Technology/BurnInFirmware/releases/download/${{fromJson(needs.check.outputs.result).versions.latest.name}}/BurnInFirmwareV3.ino.hex' > BurnInFirmwareV3.ino.hex
-  deploy-s04:
-    needs: check
-    runs-on: [burn-in,S04]
-    steps:
-      - uses: actions/checkout@v4
-      - run: |
-          cd /home/setitech/Documents/StationSoft/StationService/app/updates/
-          curl -L 'https://github.com/Sensor-Electronic-Technology/BurnInFirmware/releases/download/${{fromJson(needs.check.outputs.result).versions.latest.name}}/BurnInFirmwareV3.ino.hex' > BurnInFirmwareV3.ino.hex
-  deploy-s05:
-    needs: check
-    runs-on: [burn-in,S05]
-    steps:
-      - uses: actions/checkout@v4
-      - run: |
-          cd /home/setitech/Documents/StationSoft/StationService/app/updates/
-          curl -L 'https://github.com/Sensor-Electronic-Technology/BurnInFirmware/releases/download/${{fromJson(needs.check.outputs.result).versions.latest.name}}/BurnInFirmwareV3.ino.hex' > BurnInFirmwareV3.ino.hex
-  deploy-s06:
-    needs: check
-    runs-on: [burn-in,S06]
-    steps:
-      - uses: actions/checkout@v4
-      - run: |
-          cd /home/setitech/Documents/StationSoft/StationService/app/updates/
-          curl -L 'https://github.com/Sensor-Electronic-Technology/BurnInFirmware/releases/download/${{fromJson(needs.check.outputs.result).versions.latest.name}}/BurnInFirmwareV3.ino.hex' > BurnInFirmwareV3.ino.hex
-  deploy-s07:
-    needs: check
-    runs-on: [burn-in,S07]
-    steps:
-      - uses: actions/checkout@v4
-      - run: |
-          cd /home/setitech/Documents/StationSoft/StationService/app/updates/
-          curl -L 'https://github.com/Sensor-Electronic-Technology/BurnInFirmware/releases/download/${{fromJson(needs.check.outputs.result).versions.latest.name}}/BurnInFirmwareV3.ino.hex' > BurnInFirmwareV3.ino.hex
-  deploy-s08:
-    needs: check
-    runs-on: [burn-in,S08]
-    steps:
-      - uses: actions/checkout@v4
-      - run: |
-          cd /home/setitech/Documents/StationSoft/StationService/app/updates/
-          curl -L 'https://github.com/Sensor-Electronic-Technology/BurnInFirmware/releases/download/${{fromJson(needs.check.outputs.result).versions.latest.name}}/BurnInFirmwareV3.ino.hex' > BurnInFirmwareV3.ino.hex
-  deploy-s09:
-    needs: check
-    runs-on: [burn-in,S09]
-    steps:
-      - uses: actions/checkout@v4
-      - run: |
-          cd /home/setitech/Documents/StationSoft/StationService/app/updates/
-          curl -L 'https://github.com/Sensor-Electronic-Technology/BurnInFirmware/releases/download/${{fromJson(needs.check.outputs.result).versions.latest.name}}/BurnInFirmwareV3.ino.hex' > BurnInFirmwareV3.ino.hex
-  deploy-s10:
-    needs: check
-    runs-on: [burn-in,S10]
-    steps:
-      - uses: actions/checkout@v4
-      - run: |
-          cd /home/setitech/Documents/StationSoft/StationService/app/updates/
-          curl -L 'https://github.com/Sensor-Electronic-Technology/BurnInFirmware/releases/download/${{fromJson(needs.check.outputs.result).versions.latest.name}}/BurnInFirmwareV3.ino.hex' > BurnInFirmwareV3.ino.hex
+  # deploy-s03:
+  #   needs: check
+  #   runs-on: [burn-in,S03]
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - run: |
+  #         cd /home/setitech/Documents/StationSoft/StationService/app/updates/
+  #         curl -L 'https://github.com/Sensor-Electronic-Technology/BurnInFirmware/releases/download/${{fromJson(needs.check.outputs.result).versions.latest.name}}/BurnInFirmwareV3.ino.hex' > BurnInFirmwareV3.ino.hex
+  # deploy-s04:
+  #   needs: check
+  #   runs-on: [burn-in,S04]
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - run: |
+  #         cd /home/setitech/Documents/StationSoft/StationService/app/updates/
+  #         curl -L 'https://github.com/Sensor-Electronic-Technology/BurnInFirmware/releases/download/${{fromJson(needs.check.outputs.result).versions.latest.name}}/BurnInFirmwareV3.ino.hex' > BurnInFirmwareV3.ino.hex
+  # deploy-s05:
+  #   needs: check
+  #   runs-on: [burn-in,S05]
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - run: |
+  #         cd /home/setitech/Documents/StationSoft/StationService/app/updates/
+  #         curl -L 'https://github.com/Sensor-Electronic-Technology/BurnInFirmware/releases/download/${{fromJson(needs.check.outputs.result).versions.latest.name}}/BurnInFirmwareV3.ino.hex' > BurnInFirmwareV3.ino.hex
+  # deploy-s06:
+  #   needs: check
+  #   runs-on: [burn-in,S06]
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - run: |
+  #         cd /home/setitech/Documents/StationSoft/StationService/app/updates/
+  #         curl -L 'https://github.com/Sensor-Electronic-Technology/BurnInFirmware/releases/download/${{fromJson(needs.check.outputs.result).versions.latest.name}}/BurnInFirmwareV3.ino.hex' > BurnInFirmwareV3.ino.hex
+  # deploy-s07:
+  #   needs: check
+  #   runs-on: [burn-in,S07]
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - run: |
+  #         cd /home/setitech/Documents/StationSoft/StationService/app/updates/
+  #         curl -L 'https://github.com/Sensor-Electronic-Technology/BurnInFirmware/releases/download/${{fromJson(needs.check.outputs.result).versions.latest.name}}/BurnInFirmwareV3.ino.hex' > BurnInFirmwareV3.ino.hex
+  # deploy-s08:
+  #   needs: check
+  #   runs-on: [burn-in,S08]
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - run: |
+  #         cd /home/setitech/Documents/StationSoft/StationService/app/updates/
+  #         curl -L 'https://github.com/Sensor-Electronic-Technology/BurnInFirmware/releases/download/${{fromJson(needs.check.outputs.result).versions.latest.name}}/BurnInFirmwareV3.ino.hex' > BurnInFirmwareV3.ino.hex
+  # deploy-s09:
+  #   needs: check
+  #   runs-on: [burn-in,S09]
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - run: |
+  #         cd /home/setitech/Documents/StationSoft/StationService/app/updates/
+  #         curl -L 'https://github.com/Sensor-Electronic-Technology/BurnInFirmware/releases/download/${{fromJson(needs.check.outputs.result).versions.latest.name}}/BurnInFirmwareV3.ino.hex' > BurnInFirmwareV3.ino.hex
+  # deploy-s10:
+  #   needs: check
+  #   runs-on: [burn-in,S10]
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - run: |
+  #         cd /home/setitech/Documents/StationSoft/StationService/app/updates/
+  #         curl -L 'https://github.com/Sensor-Electronic-Technology/BurnInFirmware/releases/download/${{fromJson(needs.check.outputs.result).versions.latest.name}}/BurnInFirmwareV3.ino.hex' > BurnInFirmwareV3.ino.hex
 
   # print: # Just for show the output
   #   name: Print the result from check
