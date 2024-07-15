@@ -173,9 +173,9 @@ public:
     int tempSp=DEFAULT_TEMPSP;
     unsigned long windowSize=DEFAULT_WINDOW;
 	HeaterConfig heaterConfigs[HEATER_COUNT]={
-		HeaterConfig(NtcConfig(PIN_HEATER1_TEMP,NTC1_A,NTC1_B,NTC1_C),PidConfig(242.21f,1868.81f,128.49f),1,PIN_HEATER1_HEATER),
-		HeaterConfig(NtcConfig(PIN_HEATER2_TEMP,NTC2_A,NTC2_B,NTC2_C),PidConfig(765.77f,1345.82f,604.67f),2,PIN_HEATER2_HEATER),
-		HeaterConfig(NtcConfig(PIN_HEATER3_TEMP,NTC3_A,NTC3_B,NTC3_C),PidConfig(179.95f,2216.84f,81.62f),3,PIN_HEATER3_HEATER)
+		HeaterConfig(NtcConfig(PIN_HEATER1_TEMP,NTC1_A,NTC1_B,NTC1_C),PidConfig(51.42811f,1.638761f,1125.866f),1,PIN_HEATER1_HEATER),
+		HeaterConfig(NtcConfig(PIN_HEATER2_TEMP,NTC2_A,NTC2_B,NTC2_C),PidConfig(69.1832f,2.294319f,1408.117f),2,PIN_HEATER2_HEATER),
+		HeaterConfig(NtcConfig(PIN_HEATER3_TEMP,NTC3_A,NTC3_B,NTC3_C),PidConfig(36.24575f,0.855281f,1019.849f),3,PIN_HEATER3_HEATER)
 	};
 
     void UpdateHeaterPid(HeaterTuneResult newPid){

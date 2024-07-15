@@ -109,8 +109,8 @@ struct ProbeConfig{
 
 class ProbeControllerConfig:public Serializable{
 public:
-	int readInterval=PROBE_READINTERVAL;
-    int probeTestTime=PROBE_TESTTIME;
+	int readInterval=100;
+    int probeTestTime=10000;
     CurrentValue probeTestCurrent=CurrentValue::c060;
     float probeCurrentPercent=CURRENT_PERCENT;
     CurrentSelectorConfig   currentSelectConfig;

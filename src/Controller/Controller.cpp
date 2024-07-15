@@ -49,9 +49,9 @@ void Controller::LoadConfigurations(){
     ProbeControllerConfig probesConfig;
     ControllerConfig controllerConfig;
     
-/*    FileManager::SaveConfiguration(&heatersConfig,ConfigType::HEATER_CONFIG);
+/*      FileManager::SaveConfiguration(&heatersConfig,ConfigType::HEATER_CONFIG);
     FileManager::SaveConfiguration(&probesConfig,ConfigType::PROBE_CONFIG);
-    FileManager::SaveConfiguration(&controllerConfig,ConfigType::SYSTEM_CONFIG);   */
+    FileManager::SaveConfiguration(&controllerConfig,ConfigType::SYSTEM_CONFIG);  */
 
     if(!FileManager::LoadConfiguration(&heatersConfig,ConfigType::HEATER_CONFIG)){
        heatersConfig.Reset();

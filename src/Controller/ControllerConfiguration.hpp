@@ -15,11 +15,11 @@ struct ControllerConfig:public Serializable{
 
     void Reset(){
         burnTimerConfig.Reset();
-        comInterval=COM_INTERVAL;
-        updateInterval=UPDATE_INTERVAL;
+        comInterval=500;
+        updateInterval=250;
         logInterval=LOG_INTERVAL;
         versionInterval=VER_CHECK_INTERVAL;
-        timeOffPercent=0.0f;
+        timeOffPercent=95.0f;
     }
 
     virtual void Deserialize(JsonDocument &doc)override{

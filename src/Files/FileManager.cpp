@@ -105,13 +105,13 @@ bool FileManager::InstanceSaveState(Serializable* config){
     }
     file.open(filename,FILE_WRITE);
     if(!file){
-        ComHandler::SendErrorMessage(SystemError::SAVED_STATE_FAILED,filename);
+        //ComHandler::SendErrorMessage(SystemError::SAVED_STATE_FAILED,filename);
         return;
     }
     config->Serialize(&doc,true);
     if(serializeJsonPretty(doc,fileWriteBuffer)==0){
         file.close();
-        ComHandler::SendErrorMessage(SystemError::SAVED_STATE_FAILED,filename);
+        //ComHandler::SendErrorMessage(SystemError::SAVED_STATE_FAILED,filename);
         return;
     }
     fileWriteBuffer.flush();

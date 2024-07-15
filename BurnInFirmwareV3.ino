@@ -19,7 +19,7 @@ void setup(){
     Serial.begin(38400);
     ComHandler::SetSerial(&Serial);
     FileManager::Init();
-    ComHandler::SendSystemMessage(SystemMessage::SD_INIT,MessageType::GENERAL);
+    //ComHandler::SendSystemMessage(SystemMessage::SD_INIT,MessageType::GENERAL);
     Serial.print(F("Free SRAM: "));
     Serial.println(FreeSRAM());
 
