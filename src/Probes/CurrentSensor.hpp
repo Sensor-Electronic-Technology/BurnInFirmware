@@ -12,12 +12,12 @@ public:
 	CurrentSensor(const CurrentSensorConfig& config);
 	CurrentSensor();
 	void Setup(const CurrentSensorConfig& config);
-	float ReadCurrent();
-	float GetCurrent();
+	float ReadCurrent(bool filtered=true);
 
 private:
 	uint8_t currentIn;
-	float current=0;
+	float current=0.00;
+	float currentNf=0.00;
 	float fWeight=1;
 
 	void privateLoop() {

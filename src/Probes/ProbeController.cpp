@@ -43,6 +43,7 @@ void ProbeController::Initialize(){
     this->probeTestTimer.setTimeout([&]{
         this->TurnOffSrc();
         this->currentSelector.SetCurrent(this->savedCurrent);
+        this->probeTestRunning=false;
         ComHandler::SendProbeTestDone();
     },this->probeTestTime);
     RegisterChild(this->readTimer);
@@ -54,6 +55,7 @@ void ProbeController::StartProbeTest(){
     this->currentSelector.SetCurrent(this->testCurrent);
     this->currentSelector.TurnOn();
     this->probeTestTimer.start();
+    this->probeTestRunning=true;
     ComHandler::SendSystemMessage(SystemMessage::PROBE_TEST_START,MessageType::NOTIFY,(uint8_t)this->testCurrent);
 }
 
@@ -88,8 +90,22 @@ void ProbeController::Read(){
 }
 
 void ProbeController::GetProbeResults(ProbeResult* fill){
+    if(this->probeTestRunning){
+        for(uint8_t i=0;i<PROBE_COUNT;i++){
+            fill[i]=this->probes[i].Read(false);
+            fill[i].check(this->currentPercent,(int)this->currentSelector.GetSetCurrent());
+        }
+    }else{
+        for(uint8_t i=0;i<PROBE_COUNT;i++){
+            fill[i]=this->results[i];
+        }
+    }
+}
+
+void ProbeController::GetUnFilteredResults(ProbeResult* fill){
     for(uint8_t i=0;i<PROBE_COUNT;i++){
-        fill[i]=this->results[i];
+        fill[i]=this->probes[i].Read(false);
+        fill[i].check(this->currentPercent,(int)this->currentSelector.GetSetCurrent());
     }
 }
 

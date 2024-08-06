@@ -40,8 +40,11 @@ private:
     //actions
     void TestFinished();
     void Reset();
-    void UpdateSerialData();
+    void UpdateSerialData(bool filtered=true);
     void UpdateTempSp(int value);
+    void BurnTimerTick();
+    void UpdateReadings();
+    void SaveSystemState();
     void StartFromSavedState(const SaveState& savedState);
 
 
@@ -64,6 +67,8 @@ private:
     unsigned long          versionInterval=VER_CHECK_INTERVAL;
     bool                   needsReset=false;
     bool                   toggler=false;
+    bool                   initTestReadings=false;
+    unsigned long          initTestTime=0;
     SaveState              saveState;
     StationTimer           comTimer,updateTimer,testTimer,stateLogTimer,idTimer,versionTimer;
     SerialDataOutput       comData;

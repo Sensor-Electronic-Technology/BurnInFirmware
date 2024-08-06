@@ -29,7 +29,7 @@ public:
 	Probe(const ProbeConfig& config);
 	Probe();
 	void Setup(const ProbeConfig& config);
-	ProbeResult Read();
+	ProbeResult Read(bool filtered=true);
 	ProbeResult GetProbeReading();
 
 private:

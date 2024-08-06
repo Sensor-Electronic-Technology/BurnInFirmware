@@ -13,12 +13,14 @@ void Probe::Setup(const ProbeConfig& config){
     this->currentSensor.Setup(config.currentConfig);
 }
 
-ProbeResult Probe::Read(){
+ProbeResult Probe::Read(bool filtered=true){
     this->probeResult.voltage=this->voltSensor.ReadVoltage();
-    this->probeResult.current=this->currentSensor.ReadCurrent();
+    this->probeResult.current=this->currentSensor.ReadCurrent(filtered);
     ProbeResult data=this->probeResult;
     return data;
 }
+
+
 
 ProbeResult Probe::GetProbeReading(){
     ProbeResult data=this->probeResult;

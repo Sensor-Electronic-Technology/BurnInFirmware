@@ -110,6 +110,8 @@
                     auto remaining=this->testTimer.Remaining();
                     if(this->testTimer.probeRunTimes[i]+remaining<=this->minTimeOn){
                         probeRunTimeOkay[i]=false;
+                    }else{
+                        probeRunTimeOkay[i]=probeOkay[i];
                     }
                 }
                 this->testTimer.lastCheck=millis();

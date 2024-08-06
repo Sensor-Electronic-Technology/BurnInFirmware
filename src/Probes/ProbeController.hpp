@@ -26,11 +26,13 @@ public:
     CurrentValue GetSetCurrent();
     void SetCurrent(CurrentValue current);
     void GetProbeResults(ProbeResult* fill);
+    void GetUnFilteredResults(ProbeResult* fill);
     void GetProbeChecks(bool* fill);
 
 private:
     Probe           probes[PROBE_COUNT];
     ProbeResult     results[PROBE_COUNT];
+    ProbeResult     results_uf[PROBE_COUNT];
     CurrentSelector currentSelector;
     CurrentValue    savedCurrent;
     CurrentValue    testCurrent;
@@ -38,6 +40,7 @@ private:
     Timer           readTimer;
     StationTimer    probeTestTimer;
     int             probeTestTime;
+    bool            probeTestRunning=false;
     unsigned long   readInterval=1000;
     void privateLoop(){ }
 };

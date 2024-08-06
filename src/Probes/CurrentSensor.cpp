@@ -24,15 +24,10 @@ CurrentSensor::CurrentSensor(const CurrentSensorConfig& config)
         fWeight(config.fWeight){
 }
 
-float CurrentSensor::ReadCurrent() {
+float CurrentSensor::ReadCurrent(bool filtered=true) {
     int value=analogRead(this->currentIn);
-    //Serial.println(value);
     value=map(value,ADC_MIN,ADC_MAX,CURRENT_MIN,CURRENT_MAX);
-    //Serial.println(value);
+    this->currentNf+=(((float)value)-this->current)*0.1f;
     this->current+=(((float)value)-this->current)*this->fWeight;
-    return this->current;
-}
-
-float CurrentSensor::GetCurrent(){
-    return this->current;
+    return filtered ? this->current:this->currentNf;
 }

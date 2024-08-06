@@ -93,40 +93,24 @@ void Controller::SetupComponents(){
     ComHandler::SendSystemMessage(SystemMessage::TIMER_INIT,MessageType::INIT); 
 
     this->testTimer.onInterval([&](){
-/*         bool probeChecks[PROBE_COUNT]={false};
-        this->UpdateSerialData(); */
-        for(uint8_t i=0;i<PROBE_COUNT;i++){
+/*         for(uint8_t i=0;i<PROBE_COUNT;i++){
             probeChecks[i]=this->probeResults[i].okay;
         }
-        this->testController.Tick(probeChecks);
+        this->testController.Tick(probeChecks); */
+        this->BurnTimerTick();
     },250);
 
     this->stateLogTimer.onInterval([&](){
-        if(this->testController.IsRunning()){
-            this->saveState.Set(CurrentValue::c150,85,
-                                this->testController.GetTimerData(),
-                                this->testController.GetTestId());
-            FileManager::SaveState(&this->saveState);
-        }
-    },10000,false,true);
+        this->SaveSystemState();
+    },300000,false,true);
 
     this->comTimer.onInterval([&](){ 
          this->ComUpdate();
     }, this->comInterval, true, false);
 
     this->updateTimer.onInterval([&](){
-        this->probeControl.GetProbeResults(this->probeResults);
-        this->heaterControl.GetResults(this->heaterResults);
-        //this->UpdateSerialData();
+        this->UpdateReadings();
     },this->updateInterval,true,false);
-
-/*     this->versionTimer.onInterval([&](){
-        ComHandler::SendVersion();
-    },VERSION_PERIOD,false,true); */
-
-/*     this->idTimer.onInterval([&](){
-        ComHandler::SendId();
-    },ID_PERIOD,false,true); */
 
     ComHandler::SendSystemMessage(SystemMessage::TIMER_INIT_COMPLETE,MessageType::INIT); 
     ComHandler::SendSystemMessage(SystemMessage::REG_COMPONENTS,MessageType::INIT);
@@ -143,9 +127,36 @@ void Controller::SetupComponents(){
     this->CheckSavedState(0);
 }
 
+void Controller::BurnTimerTick(){
+    for(uint8_t i=0;i<PROBE_COUNT;i++){
+        probeChecks[i]=this->probeResults[i].okay;
+    }
+    this->testController.Tick(probeChecks);
+}
+
+void Controller::UpdateReadings(){
+    if(this->initTestReadings){  
+        this->probeControl.GetUnFilteredResults(this->probeResults);
+        if(millis()>=this->initTestTime){
+            this->initTestReadings=false;
+        }
+    }else{
+        this->probeControl.GetProbeResults(this->probeResults);
+    }
+    
+    this->heaterControl.GetResults(this->heaterResults);
+}
+
+void Controller::SaveSystemState(){
+    if(this->testController.IsRunning()){
+        this->saveState.Set(CurrentValue::c150,85,
+                            this->testController.GetTimerData(),
+                            this->testController.GetTestId());
+        FileManager::SaveState(&this->saveState);
+    }
+}
+
 void Controller::ComUpdate(){
-/*     this->probeControl.GetProbeResults(this->probeResults);
-    this->heaterControl.GetResults(this->heaterResults); */
     bool probeRtOkay[PROBE_COUNT] = {false, false, false, false, false, false}; 
     this->testController.GetProbeRunTimeOkay(probeRtOkay);
     this->comData.Set(this->probeResults, this->heaterResults, probeRtOkay, *(this->testController.GetBurnTimer()));
@@ -233,31 +244,18 @@ void Controller::CheckSavedState(int attempts){
     ComHandler::SendSystemMessage(SystemMessage::COMPONENTS_INIT_COMPLETE,MessageType::INIT);
 }
 
-void Controller::UpdateSerialData(){
-    for(uint8_t i=0;i<PROBE_COUNT;i++){
-        if(i==2){
-            if(this->testController.GetBurnTimer()->GetElapsed()>30){
-                this->probeResults[i].current=0;
-                this->probeResults[i].voltage=random(60,65);
-            }else{
-                this->probeResults[i].current=random(148,151);
-                this->probeResults[i].voltage=random(60,65);
-            }
-        
-        }else{
-            this->probeResults[i].current=random(148,151);
-            this->probeResults[i].voltage=random(60,65);
+void Controller::UpdateSerialData(bool filtered=true){
+    if(filtered){
+        for(uint8_t i=0;i<PROBE_COUNT;i++){
+            this->probeResults[i].current=69;
+            this->probeResults[i].voltage=69;
+            this->probeResults[i].okay=false;
         }
-       
-        this->probeResults[i].check(93.5,this->probeControl.GetSetCurrent());
-    }
-    /* this->heaterControl.GetResults(this->heaterResults); */
-    /* this->probeControl.GetProbeResults(this->probeResults); */
-
-    for(uint8_t i=0;i<HEATER_COUNT;i++){
-        this->heaterResults[i].temperature=random(82,85);
-        this->heaterResults[i].tempOkay=true;
-        this->heaterResults[i].state=!this->heaterResults[i].state;
+    }else{
+        for(uint8_t i=0;i<PROBE_COUNT;i++){
+            this->probeResults[i].current=269;
+            this->probeResults[i].voltage=269;
+        }
     }
 }
 
@@ -294,22 +292,21 @@ void Controller::StartFromSavedState(const SaveState& savedState){
         this->heaterControl.TurnOn();
         this->probeControl.TurnOnSrc();
         this->stateLogTimer.start();
+        this->initTestReadings=true;
+        this->initTestTime=millis()+TIME_INIT_TEST;
     }
 }
 
 void Controller::HandleCommand(StationCommand command){
     switch(command){
         case StationCommand::START:{
-            auto tempOkay=this->heaterControl.TempOkay();
-            if(tempOkay=true){//TODO: undo bypass for testing
-                if(this->testController.StartTest(this->probeControl.GetSetCurrent())){
-                        this->probeControl.TurnOnSrc();
-                        this->heaterControl.TurnOn();
-                        this->stateLogTimer.start();
-                } 
-            }else{
-                //TODO: Send temperature notification
-            }
+            if(this->testController.StartTest(this->probeControl.GetSetCurrent())){
+                this->probeControl.TurnOnSrc();
+                this->heaterControl.TurnOn();
+                this->stateLogTimer.start();
+                this->initTestReadings=true;
+                this->initTestTime=millis()+TIME_INIT_TEST;
+            } 
             break;
         }
         case StationCommand::PAUSE:{
@@ -322,6 +319,8 @@ void Controller::HandleCommand(StationCommand command){
         case StationCommand::CONTINUE:{
             if(this->testController.ContinueTest()){
                 this->probeControl.TurnOnSrc();
+                this->initTestTime=millis()+TIME_INIT_TEST;
+                this->initTestTime=millis();
             }
             break;
         }
@@ -450,6 +449,7 @@ void Controller::Reset(){
         ComHandler::SendErrorMessage(SystemError::STATE_DELETE_FAILED,MessageType::ERROR);
     }
     ComHandler::SendSystemMessage(SystemMessage::RESETTING_CONTROLLER,MessageType::GENERAL);
+    cli();
     wdt_disable();
 	wdt_enable(WDTO_15MS);
 	while(true){_NOP();}

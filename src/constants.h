@@ -63,6 +63,7 @@ template <class T> int EEPROM_read(int addr, T& value) {
     //Timer
     #define TIMER_PERIOD                   1
     #define TIMER_FACTOR                   1000
+    #define TIME_INIT_TEST                 120000ul
 
     //LED Control
     #define PIN_CURRENT		               2
